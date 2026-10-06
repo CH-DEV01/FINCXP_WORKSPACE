@@ -21,7 +21,7 @@ Este manual describe el funcionamiento completo de la plataforma de Financiamien
 11. [Correos automáticos](#11-correos-automáticos)
 12. [Casos prácticos y preguntas frecuentes](#12-casos-prácticos-y-preguntas-frecuentes)
 13. [Mensajes frecuentes y cómo resolverlos](#13-mensajes-frecuentes-y-cómo-resolverlos)
-- [Anexo A — Estado actual de funcionalidades (equipo técnico)](#anexo-a--estado-actual-de-funcionalidades-equipo-técnico)
+- [Anexo A — Límites de esta versión (equipo técnico)](#anexo-a--límites-de-esta-versión-equipo-técnico)
 
 ---
 
@@ -33,12 +33,12 @@ La plataforma permite que un **Pagador** (empresa cliente del banco) registre la
 
 | Rol | Quién es | Qué hace en la plataforma |
 |---|---|---|
-| Administrador (operador bancario) | Personal del banco | Carga documentos en nombre de un pagador; administra convenios, usuarios y cupos de crédito; genera y confirma lotes de desembolso, ejecuta cortes de cuarentena y notifica a los clientes. |
+| Administrador (operador bancario) | Personal del banco | Carga documentos en nombre de un pagador; administra convenios, usuarios, pagadores, proveedores y cupos de crédito; genera y confirma lotes de desembolso y de dispersión. |
 | Administrador del sistema | Personal del banco | Administra los parámetros del sistema. |
 | Pagador | Empresa cliente del banco | Carga el archivo Excel con las facturas de sus proveedores y consulta su bitácora. |
 | Proveedor | Empresa que vende al pagador | Consulta sus facturas financiables, simula el costo y solicita el anticipo. |
 
-En este manual, **operador** se refiere al Administrador cuando trabaja en las terminales de desembolso, dispersión y cuarentena.
+En este manual, **operador** se refiere al Administrador cuando trabaja en las terminales de desembolso y de dispersión.
 
 ### Flujo general
 
@@ -50,7 +50,6 @@ flowchart LR
     D --> E[Operador confirma<br/>desembolso]
     E --> F[Desembolsado]
     B -. vence sin solicitarse .-> Q[Cuarentena]
-    C -. vence antes del desembolso .-> Q
 ```
 
 ---
@@ -69,8 +68,7 @@ flowchart LR
 | **Período de gracia (usura)** | Los 5 días previos al vencimiento. Un documento que vence dentro de ese margen respecto a su fecha de desembolso **no puede financiarse** por riesgo de infringir la ley de usura. |
 | **Línea de crédito (cupo)** | Monto máximo que el banco autoriza al pagador para el programa. |
 | **Lote de desembolso** | Agrupación de documentos solicitados que el operador procesa en conjunto. Código `DSB-AAAAMMDD-XXXXXX`. |
-| **Cuarentena** | Estado de un documento que ya no será financiado. Requiere notificar al cliente. |
-| **Corte de cuarentena** | Proceso del operador que consolida los documentos en cuarentena y genera el reporte oficial. Código `QUA-AAAAMMDD-XXXXXX`. |
+| **Cuarentena** | Estado *No financiable*: el documento ya no se anticipa. Al pasar a este estado, su monto nominal vuelve al cupo. Después puede incluirse en un lote de dispersión. |
 | **Lote de carga** | Registro de cada archivo Excel procesado. Código `UPL-AAAAMMDD-XXXXXX`. |
 | **Solicitud de financiamiento** | Pedido del proveedor sobre uno o más documentos. Código `REQ-XXXXXXXX`. |
 
@@ -80,26 +78,31 @@ flowchart LR
 
 ### 3.1 Inicio de sesión
 
-1. Ingrese su **DUI** (9 dígitos, sin guion) y su contraseña.
-2. Presione **"Iniciar sesión"**.
-3. El sistema lo lleva a la pantalla inicial de su rol:
-   - Administrador → Menú de administración.
-   - Administrador del sistema → Gestión de parámetros.
-   - Pagador → Carga de archivos.
-   - Proveedor → Selección de convenio.
+El ingreso es desde el **portal del banco**. El portal entrega la sesión y abre Financiamiento de Cuentas por Pagar. Esta aplicación no tiene un formulario de DUI y contraseña.
+
+Al entrar, cada rol llega a su pantalla inicial:
+
+- Administrador → Menú de administración.
+- Administrador del sistema → Gestión de parámetros.
+- Pagador → Carga de archivos.
+- Proveedor → Selección de convenio.
 
 **Reglas**
 
-- El usuario debe estar registrado y **activo**. Si no existe: *"Usuario no registrado en el sistema local."*
-- La sesión dura **24 horas** (parámetro `JWT_EXPIRATION_MINUTES`). Al expirar, deberá ingresar de nuevo.
+- El usuario debe estar registrado y **activo**, y su entidad también. Si el correo del portal no existe en la plataforma: *"Usuario no registrado en el sistema local."* Si el usuario está inactivo: *"El usuario se encuentra inactivo."*
+- La sesión dura **24 horas** (parámetro `JWT_EXPIRATION_MINUTES`). Además se cierra si no hay actividad durante **15 minutos** (parámetro `SESSION_IDLE_TIMEOUT_MINUTES`). Al cerrarse, el navegador vuelve al portal.
 
 ### 3.2 Barra superior
 
+El **logo de Davivienda** regresa a la pantalla inicial del rol.
+
 | Botón | Disponible para | Acción |
 |---|---|---|
-| **INICIO** | Todos | Regresa a la pantalla inicial del rol. |
-| **BITACORA** | Administrador, Pagador, Proveedor | Historial de documentos. El Administrador consulta la de cada pagador (ver [6.8](#68-bitácora-de-documentos)). |
-| **CUARENTENA** | Administrador | Corte de cuarentena y notificaciones a clientes. |
+| **DOCUMENTOS** | Administrador, Pagador, Proveedor | Historial de documentos. El Administrador consulta la de cada pagador (ver [6.8](#68-bitácora-de-documentos)). |
+| **DESEMBOLSOS** | Administrador | Terminal de desembolsos (ver [9.1](#91-terminal-de-desembolsos)). |
+| **DISPERSIONES** | Administrador | Terminal de dispersiones (ver [9.7](#97-terminal-de-dispersiones)). |
+
+Cada botón aparece solo si el rol tiene esa pantalla. El administrador del sistema no ve ninguno: su única pantalla es la de parámetros.
 
 ### 3.3 Tarjeta de usuario y cierre de sesión
 
@@ -122,7 +125,7 @@ Al pasar el cursor sobre su nombre (esquina superior derecha) se muestra una tar
 | `REQUESTED_FOR_FINANCING` | Solicitado | El proveedor solicitó el anticipo. Espera su fecha de desembolso. |
 | `REQUESTED_FOR_DISBURSEMENT` | En proceso | Incluido en un lote de desembolso generado por el operador. |
 | `DISBURSED` | Desembolsado | El operador confirmó el desembolso. Estado final. |
-| `IN_QUARANTINE` | No financiable | El sistema lo retiró porque venció o vence dentro de los días de gracia sin haberse solicitado. Estado final. |
+| `IN_QUARANTINE` | No financiable | El sistema lo retiró porque venció o vence dentro de los días de gracia sin haberse solicitado. Su monto vuelve al cupo y después puede pasar a dispersión. |
 | `INACTIVATED_BY_PAYER` | Inactivo | El pagador lo pasó manualmente a Inactivo, sea financiable o no. Estado final. |
 | `REQUESTED_FOR_DISPERSION` | En dispersión | El administrador lo incluyó en un lote de dispersión: el banco cargará la cuenta del pagador y abonará al proveedor en la fecha de dispersión. |
 | `DISPERSED` | Dispersado | El administrador confirmó la dispersión del lote. Estado final. |
@@ -136,7 +139,6 @@ stateDiagram-v2
     APPROVED --> IN_QUARANTINE: El proveedor consulta sus documentos y ya no es financiable
     APPROVED --> INACTIVATED_BY_PAYER: El pagador lo pasa a Inactivo
     REQUESTED_FOR_FINANCING --> REQUESTED_FOR_DISBURSEMENT: Operador genera lote
-    REQUESTED_FOR_FINANCING --> IN_QUARANTINE: Al generar lote, vence en ≤ 5 días
     REQUESTED_FOR_DISBURSEMENT --> DISBURSED: Operador confirma lote
     APPROVED --> IN_QUARANTINE: Al generar lote de dispersión, ya no es financiable
     IN_QUARANTINE --> REQUESTED_FOR_DISPERSION: Admin genera lote de dispersión
@@ -230,7 +232,7 @@ Consecuencias:
 | Quién | Qué ocurre si el documento **no** cumple |
 |---|---|
 | Proveedor | El documento **no aparece** en su lista de documentos financiables. Si intenta solicitarlo (por ejemplo, porque pasó la hora de corte mientras tenía la pantalla abierta), la solicitud se rechaza indicando qué documentos no cumplen. |
-| Operador | El documento aparece **de inmediato** en *Pendientes de corte* y en *Clientes pendientes de notificar*, para que informe al cliente y lo incluya en el próximo corte de cuarentena. |
+| Operador | Esos documentos no se anticipan. Pasan a *No financiable* cuando el proveedor abre su lista de documentos, o cuando el administrador genera el lote de dispersión de ese vencimiento. En ese momento el monto nominal vuelve al cupo. |
 
 **Ejemplo con política "solo viernes"**: hoy es viernes 2 de octubre y el próximo desembolso es el viernes 9.
 
@@ -240,8 +242,6 @@ Consecuencias:
 | 12 de octubre | No | El límite es el 14 (9 + 5); vence antes. |
 | 14 de octubre | No | Vence exactamente en el límite. |
 | 15 de octubre | **Sí** | Vence después del límite. |
-
-**Red de seguridad al generar el lote:** cuando el operador genera un lote, el desembolso ocurre ese mismo día. Si un documento **ya solicitado** vence en 5 días o menos contando desde hoy (por ejemplo, porque el lote se generó con atraso), el sistema lo envía automáticamente a cuarentena con el motivo *"Solicitado, próximo a vencer"* y no lo incluye en el lote.
 
 ### 5.5 Cálculo financiero
 
@@ -277,19 +277,19 @@ Monto a desembolsar   = Monto nominal − Intereses − (Comisión + IVA)
 | IVA | 100 × 13 % | $13.00 |
 | **Monto a desembolsar** | 10,000 − 123.46 − 113.00 | **$9,763.54** |
 
-> El cálculo se hace con la fecha de desembolso vigente **en el momento de la solicitud**. Si el lote se genera después de esa fecha, los montos **no se recalculan** automáticamente (ver [sección 9.3](#93-documentos-atrasados)).
+> El cálculo se hace con la fecha de desembolso vigente **en el momento de la solicitud**. Si el lote se genera después de esa fecha, los montos **no se recalculan** automáticamente (ver [sección 9.3](#93-si-el-lote-se-genera-después-de-la-fecha-programada)).
 
 ### 5.6 Línea de crédito del pagador
 
 - Cada pagador tiene una línea de crédito con: **cupo total**, **consumo actual** y **disponible** (*cupo total − consumo*).
 - **El cupo se consume al cargar el archivo Excel**, por el total de los montos nominales del archivo.
 - Si la carga supera el disponible, **se rechaza completa** y se descarga un reporte PDF de rechazo por límite de crédito, con el mismo formato del reporte de rechazo e indicando el total del archivo y el cupo disponible.
-- **El cupo se libera únicamente cuando un administrador registra un abono** (pago parcial o liquidación total). No se libera automáticamente al desembolsar, al vencer ni al pasar a cuarentena.
+- **El monto nominal vuelve al cupo** cuando el documento pasa a *No financiable* o cuando el pagador lo pasa a *Inactivo*. No se libera al desembolsar ni al dispersar.
 
 ### 5.7 Términos y condiciones
 
 - **Pagador / Administrador**: debe aceptar los términos del pagador antes de procesar cada carga.
-- **Proveedor**: debe aceptar los términos del proveedor antes de enviar cada solicitud. La cláusula 7 muestra la tasa de interés y comisión aplicables.
+- **Proveedor**: debe aceptar los términos del proveedor antes de enviar cada solicitud. El texto se muestra tal como fue publicado; la plataforma no sustituye tasas ni comisiones dentro del documento.
 - Se usa siempre la **versión activa más reciente** de cada tipo de términos.
 - Cada aceptación queda auditada (usuario, versión aceptada, navegador utilizado) y vinculada a los documentos procesados.
 
@@ -304,16 +304,22 @@ Monto a desembolsar   = Monto nominal − Intereses − (Comisión + IVA)
 | Carga de documentos | Cargar el Excel de facturas en nombre de un pagador. |
 | Gestión de convenios comerciales | Consultar y modificar convenios marco. |
 | Gestión de usuarios | Registrar y consultar usuarios. |
+| Gestión de pagadores | Registrar y consultar pagadores, su línea de crédito y su cuenta. |
+| Gestión de proveedores | Consultar y actualizar proveedores y su cuenta de abono. |
 | Gestión de cupos de crédito | Consultar líneas de crédito y registrar abonos. |
+| Terminal de desembolsos | Generar y confirmar los lotes de las solicitudes de anticipo (ver [9.1](#91-terminal-de-desembolsos)). |
+| Bitácora de lotes | Consultar los lotes de desembolso, su estado y volver a descargar el reporte. |
 | Terminal de dispersiones | Generar y confirmar los lotes de dispersión de los documentos que el proveedor no anticipó (ver [9.7](#97-terminal-de-dispersiones)). |
 | Bitácora de dispersiones | Consultar los lotes de dispersión, su estado, quién los generó y confirmó, y volver a descargar la solicitud. |
+| Términos y condiciones | Publicar el texto que aceptan pagadores y proveedores. |
+| Calendario de días feriados | Registrar los feriados que se excluyen al calcular fechas de desembolso (ver [10.5](#105-feriados)). |
 | Recursos de carga | Publicar la plantilla de Excel y el manual que se ofrecen en la carga de documentos (ver [6.9](#69-recursos-de-carga)). |
 
 ### 6.2 Carga de documentos
 
 1. En **"Directorio de Pagadores"**, busque y seleccione el pagador (por nombre, NIT o código). Sus datos aparecen en *"Detalles del Pagador"*.
 2. Si aún no tiene el archivo, use la sección **"Recursos"**: cada **"Descargar"** baja la plantilla de Excel vigente o el manual en PDF que explica cómo llenarla. Si el administrador no los ha publicado, aparecen como *"No disponible"*.
-3. Presione **"Seleccionar archivo"** y elija el Excel (formato `.xlsx`).
+3. Presione **"Seleccionar archivo"** y elija el Excel (`.xlsx` o `.xls`).
 4. Presione **"Ver términos y condiciones"**, lea el texto, marque la casilla de aceptación y presione **"Confirmar solicitud"**.
 5. Presione **"Procesar archivo"**.
 6. Resultado:
@@ -366,7 +372,8 @@ Las reglas del archivo se detallan en la [sección 6.3](#63-reglas-del-archivo-e
 **Control de doble financiamiento**
 
 - **DTE**: el código de generación, el número de control y el sello de recepción no pueden existir ya en la plataforma ni repetirse dentro del archivo.
-- **Papel**: el número de documento no puede repetirse para el mismo proveedor (NIT) en el mismo año de emisión, ni dentro del archivo.
+- **Papel, dentro del archivo**: el número de documento no puede repetirse para el mismo proveedor (NIT). El año de emisión no se toma en cuenta: dos filas con el mismo número y distinto año se rechazan.
+- **Papel, en la plataforma**: el número de documento no puede existir ya para el mismo proveedor (NIT) en el mismo año de emisión. El mismo número en otro año sí se acepta.
 
 **Límite de crédito**
 
@@ -426,7 +433,7 @@ Los parámetros del sistema (ver [sección 10.1](#101-parámetros)) no los admin
 
 ### 6.8 Bitácora de documentos
 
-Desde **BITACORA** (barra superior, a la derecha de **INICIO**), el administrador consulta la bitácora de cualquier pagador. Es la misma que ve el pagador ([sección 7.2](#72-bitácora)), en modo de solo lectura:
+Desde **DOCUMENTOS** (barra superior), el administrador consulta la bitácora de cualquier pagador. Es la misma que ve el pagador ([sección 7.2](#72-bitácora)), en modo de solo lectura:
 
 - **Directorio de pagadores** (izquierda): búsqueda por nombre, NIT o código. Al entrar se selecciona el primero.
 - **Tarjeta del pagador seleccionado** (arriba): datos de la entidad y estado de su línea de crédito.
@@ -530,7 +537,7 @@ La pantalla muestra:
 
 ### 8.3 Bitácora del proveedor
 
-Desde **BITACORA** se consulta el historial de documentos con: número, fecha de emisión, fecha de desembolso, monto, monto abonado (lo acreditado en su cuenta, ya descontados intereses y comisión; solo en documentos desembolsados), pagador y estado. Se puede filtrar por estado:
+Desde **DOCUMENTOS** se consulta el historial de documentos con: número, fecha de emisión, fecha de desembolso, monto, monto abonado (lo acreditado en su cuenta, ya descontados intereses y comisión; solo en documentos desembolsados), pagador y estado. Se puede filtrar por estado:
 
 | Filtro | Estado |
 |---|---|
@@ -553,103 +560,58 @@ Cada vez que un proveedor envía una solicitud de financiamiento, el operador re
 
 ### 9.1 Terminal de desembolsos
 
-**Aviso de notificaciones**: en la parte superior aparece *"N cliente(s) por notificar"* cuando hay documentos que no serán financiados. Al presionarlo lleva a la sección de notificaciones.
+Se abre desde el menú o con **DESEMBOLSOS** en la barra superior.
 
-**Resumen por pagador**
-
-1. Seleccione el pagador.
-2. Se muestra:
-   - Política de pago y línea de crédito disponible.
-   - **Docs. listos**: documentos solicitados con fecha de desembolso **hoy o anterior**, que aún son financiables.
-   - **Atrasados** (ámbar): documentos cuya fecha de desembolso ya pasó. Requieren ajuste manual (ver [9.3](#93-documentos-atrasados)).
-   - **Próximos a vencer** (rojo): documentos solicitados que ya no son financiables. Pasarán a cuarentena al generar el lote.
-   - **Programados para después**: documentos con fecha de desembolso futura y la próxima fecha.
+1. Seleccione el pagador. El panel muestra su nombre, el número de cupo, el disponible y cuántas solicitudes faltan por generar.
+2. La tabla **"Solicitudes de desembolso"** tiene una fila por combinación de fecha de desembolso, vencimiento y fecha de solicitud. Muestra el número de lote (o un guion si aún no se generó), proveedores, monto a desembolsar y estado.
+3. En una fila *Ingresado*, el ícono de descarga es **"Generar lote y descargar reporte"**. En una fila *En proceso*, el doble check es **"Confirmar desembolso"**. El ojo abre el detalle por proveedor.
 
 ### 9.2 Generar lote de desembolso
 
-1. Presione **"Generar batch"** y confirme con **"Sí, generar lote"**.
-2. El sistema:
-   1. Envía a cuarentena los documentos solicitados que vencen en **5 días o menos** desde hoy (motivo *"Solicitado, próximo a vencer"*).
-   2. Incluye en el lote todos los documentos con fecha de desembolso **hoy o anterior** que sigan siendo financiables.
-   3. Cambia esos documentos a *En proceso*.
-   4. Descarga un ZIP con los reportes PDF del lote.
-3. Si hubo documentos enviados a cuarentena, se muestra el recordatorio **"Notifique a los clientes"**.
-4. Si no hay documentos listos: *"El pagador no tiene documentos con fecha de desembolso programada para hoy o antes."*
+1. En la fila *Ingresado*, presione el ícono de descarga.
+2. Confirme **"¿Generar lote de desembolso?"** con **"Sí, generar"**. El aviso indica cuántos documentos, el pagador, el vencimiento, la fecha de solicitud, el monto y la fecha de desembolso.
+3. El sistema:
+   1. Toma los documentos *Solicitados* de esa combinación y los pasa a *En proceso*.
+   2. Crea el lote `DSB-AAAAMMDD-XXXXXX`.
+   3. Descarga un PDF (`Reporte_Desembolso_…`) y muestra *"Se descargó el reporte PDF del lote. Confirme el desembolso cuando el core bancario lo procese."*
+4. Si esa solicitud ya no tiene documentos pendientes: *"Las solicitudes seleccionadas ya no tienen documentos listos para desembolso."*
 
-**Reportes PDF del lote**
+El mismo PDF se vuelve a bajar desde **Bitácora de lotes**, con **"Descargar reporte PDF"**.
 
-- **Un PDF por grupo** de documentos con la misma fecha de vencimiento y fecha de solicitud. Título: *"Desembolso Lote: … - Plazo: N días"*. Incluye: dueño de la línea de crédito, monto total a desembolsar, comisión con IVA, número de cupo, fecha de desembolso y plazo; y por documento: número, monto nominal, interés, comisión y monto a desembolsar.
-- **Un PDF adicional de documentos atrasados** (si los hay), titulado *"Documentos atrasados – requieren ajuste manual"*, con la fecha programada, los días de atraso y el vencimiento de cada documento.
+### 9.3 Si el lote se genera después de la fecha programada
 
-Los reportes pueden volver a descargarse desde el histórico con **"Re-descargar reportes"**.
-
-### 9.3 Documentos atrasados
-
-Un documento está **atrasado** cuando su fecha de desembolso programada es **anterior** a la fecha del lote (por ejemplo, el lote no se generó el día que correspondía).
-
-- Sus montos (intereses y monto a desembolsar) **se calcularon para la fecha original** y **no se recalculan** en el sistema.
-- El ajuste de montos se gestiona **fuera del sistema**, de forma manual.
-- El sistema los identifica con la etiqueta *"Atrasado N día(s)"*, los separa en su propio PDF y exige una observación al confirmar.
+Los montos (intereses, comisión y monto a desembolsar) se calcularon al solicitar el anticipo y **no se recalculan** cuando el lote se genera más tarde. La fila sigue en la terminal con su fecha de desembolso. No hay una etiqueta de atraso, un PDF aparte ni una observación obligatoria al confirmar.
 
 ### 9.4 Confirmar desembolso
 
-1. En **"Histórico de batch generados"**, presione **"Confirmar pago"** en el lote.
-2. Revise el detalle: documento, proveedor, fecha programada y monto a desembolsar.
-3. Si el lote tiene documentos atrasados:
-   - Marque la casilla *"Revisé los documentos atrasados y sus ajustes manuales fueron gestionados fuera del sistema."*
-   - Escriba la **observación de ajustes manuales** (obligatoria, hasta 1,000 caracteres).
-4. Presione **"Confirmar lote completo"** y confirme con **"Sí, confirmar"**.
+1. En la fila *En proceso*, presione el ícono **"Confirmar desembolso"**.
+2. Revise el detalle: número de documento, proveedor, fecha programada y monto a desembolsar.
+3. Presione **"Confirmar lote completo"** y confirme con **"Sí, confirmar"**. Si la fecha de desembolso aún no llega, el título del aviso es **"Confirmación antes de la fecha de desembolso"**.
 
 **Reglas**
 
-- La confirmación aplica al **lote completo**. No existe confirmación parcial ni devolución de documentos al proveedor.
+- La confirmación aplica al **lote completo**. No existe confirmación parcial.
 - Un lote solo puede confirmarse una vez.
-- Al confirmar, todos los documentos pasan a *Desembolsado* y el lote a *Liquidado*.
+- Al confirmar, todos los documentos pasan a *Desembolsado*.
 - **La acción no se puede deshacer.**
 
-### 9.5 Corte de cuarentena
+### 9.5 Cuándo un documento pasa a No financiable
 
-La pantalla **CUARENTENA** muestra en **"Pendientes de corte"**:
+No hay una pantalla de corte. Un documento *Cargado* pasa a *No financiable* en dos momentos, y en ambos su monto nominal vuelve al cupo:
 
-- Documentos ya marcados en cuarentena que aún no están en un corte.
-- **Documentos no solicitados y no financiables**: documentos aprobados que ya no cumplen la regla de financiabilidad según la política de su convenio.
-- Desglose por motivo y por pagador, con el monto total.
+- Cuando el proveedor abre la lista de documentos financiables y el documento ya no cumple la regla.
+- Cuando el administrador genera el lote de dispersión de ese vencimiento y el documento seguía *Cargado* (ver [9.7](#97-terminal-de-dispersiones)). En el mismo paso queda incluido en el lote y pasa a *En dispersión*.
 
-**Ejecutar el corte**
+| Motivo | Cuándo se asigna |
+|---|---|
+| No solicitado, próximo a vencer | No fue solicitado y ya no es financiable, aunque aún no vence. |
+| Vencido sin solicitar | No fue solicitado y su fecha de vencimiento ya pasó. |
 
-1. Presione **"Generar corte"** y confirme con **"Sí, generar corte"**.
-2. El sistema:
-   - Pasa a cuarentena los documentos aprobados no financiables, con el motivo correspondiente.
-   - Crea el corte y descarga un ZIP con **un PDF por pagador** (documento, proveedor, emisión, vencimiento, monto, motivo y fecha de cuarentena).
-3. Los cortes anteriores están en la pestaña **"Histórico de cortes"** y pueden volver a descargarse.
+Un documento ya *Solicitado* no pasa a *No financiable* al generar el lote de desembolso: entra al lote en *En proceso*.
 
-**Motivos de cuarentena**
+### 9.6 Aviso al cliente
 
-| Motivo | Cuándo se asigna | Requiere notificar al cliente |
-|---|---|---|
-| Solicitado, próximo a vencer | El proveedor lo solicitó, pero al generar el lote vence en 5 días o menos. | Sí |
-| No solicitado, próximo a vencer | No fue solicitado y ya no es financiable, aunque aún no vence. | Sí |
-| Vencido sin solicitar | No fue solicitado y su fecha de vencimiento ya pasó. | Sí |
-| Fallo de desembolso | Reservado para fallos del core bancario. | No |
-| Revisión manual | Reservado para revisión manual. | No |
-
-### 9.6 Notificación a clientes
-
-La sección **"Clientes pendientes de notificar"** agrupa por proveedor todos los documentos que no serán financiados y cuyo cliente aún no ha sido informado.
-
-1. Contacte al cliente por los canales del banco e infórmele qué documentos no serán financiados y el motivo.
-2. Presione **"Marcar como notificado"** en el proveedor y confirme con **"Sí, ya fue notificado"**.
-3. La notificación queda registrada con la fecha y el usuario que la realizó.
-
-**Reglas**
-
-- Un documento aparece en esta lista **en cuanto deja de ser financiable**, aunque todavía no se haya ejecutado el corte.
-- Cada documento se notifica **una sola vez**.
-- La plataforma no envía correos: la notificación la realiza el operador y el sistema solo registra que se hizo.
-
-**Historial de notificaciones por pagador**
-
-En la pestaña **"Notificaciones por pagador"** se consultan todas las notificaciones realizadas, agrupadas por pagador, con: documento, proveedor, motivo, vencimiento, monto, fecha de notificación y usuario. Se puede filtrar por pagador.
+La plataforma no tiene una lista de clientes por notificar ni un botón para marcar el aviso. El contacto con el cliente se hace por los canales del banco, fuera del sistema. El correo automático de la sección [11.1](#111-aviso-de-nueva-solicitud-de-anticipo) solo avisa a los operadores cuando un proveedor solicita un anticipo.
 
 ### 9.7 Terminal de dispersiones
 
@@ -719,6 +681,13 @@ Desde la tarjeta **"Bitácora de dispersiones"** se consultan los lotes de dispe
 | `CORS_ALLOWED_ORIGINS` | Lista de orígenes `https://dominio[:puerto]` separados por comas | `http://localhost:5173,https://devpay.davivienda.com.sv` | Direcciones desde las que el navegador puede usar la API. Debe incluir la URL del cliente del ambiente. |
 | `JWT_EXPIRATION_MINUTES` | Entero de 5 a 10080 | `1440` | Duración de la sesión, en minutos. Aplica a los inicios de sesión posteriores al cambio. |
 | `JWT_SECRET` | Base64 de al menos 32 bytes | `G9UuPSmEz8a18PARiE8Rs9QKvDrdUOJjjNe3duoQqUw=` | Llave con la que se firman las sesiones. Cada ambiente puede reemplazarla. Cambiarla invalida las sesiones ya emitidas. |
+| `SESSION_IDLE_TIMEOUT_MINUTES` | Entero de 1 a 480 | `15` | Minutos sin actividad antes de cerrar la sesión. |
+| `MAILJET_API_KEY` | Texto | `CONFIGURAR` | Llave de Mailjet. Mientras valga `CONFIGURAR`, no se envían correos. |
+| `MAILJET_API_SECRET` | Texto | `CONFIGURAR` | Secreto de Mailjet. Misma regla que la llave. |
+| `MAILJET_FROM_EMAIL` | Correo | `CONFIGURAR` | Remitente de los correos. |
+| `MAILJET_FROM_NAME` | Texto | `CONFIGURAR` | Nombre del remitente. |
+| `MAILJET_API_URL` | URL http(s) | `https://api.mailjet.com/v3/send` | Endpoint de envío. |
+| `APP_LOGIN_URL` | URL http(s) | `CONFIGURAR` | Dirección de acceso que se incluye en los correos. |
 
 Al guardar, el sistema valida el formato y el rango; la clave no se puede modificar. Los cambios aplican en menos de un minuto, sin reiniciar. Si un valor guardado es inválido o la fila no existe, el sistema usa el valor por defecto.
 
@@ -729,17 +698,13 @@ Al guardar, el sistema valida el formato y el rango; la clave no se puede modifi
 | Regla | Valor |
 |---|---|
 | Zona horaria de negocio | America/El_Salvador |
-| Observación de documentos atrasados | Máximo 1,000 caracteres |
 
 ### 10.3 Configuración por ambiente
 
-| Componente | Variable | Descripción |
+| Componente | Dónde se configura | Descripción |
 |---|---|---|
 | Backend | Parámetro `JWT_SECRET` | Llave de firma de las sesiones (sección 10.1). Vive en `system_parameters`, no en una variable de entorno. El valor inicial permite arrancar; conviene reemplazarlo en cada ambiente. |
-| Cliente | `VITE_API_BASE_URL` | URL base del backend, sin `/api`. |
-| Cliente | `VITE_PORTAL_URL` | Portal del banco al que se redirige sin sesión o al salir. |
-
-Las variables del cliente se toman al compilar, desde `.env.development` (`npm run dev`) o `.env.production` (`npm run build`). Hay una plantilla en `.env.example`.
+| Cliente | `src/constants/apiConstants.js` | `API_BASE_URL` es el origen de la API, con el context path y sin `/api`. `PORTAL_URL` es el portal al que vuelve el navegador sin sesión o al salir. Un cambio exige volver a compilar el cliente y copiar `dist/` al WAR del portal. |
 
 ### 10.4 Crear una nueva política de desembolso
 
@@ -824,7 +789,7 @@ Si la solicitud es rechazada (por ejemplo, el proveedor no tiene cuenta de abono
 ## 12. Casos prácticos y preguntas frecuentes
 
 **¿Por qué el proveedor no ve una factura que el pagador cargó?**
-Porque no cumple la regla de financiabilidad: vence dentro de los 5 días posteriores a la próxima fecha de desembolso de su convenio. El operador la verá en *Clientes pendientes de notificar*.
+Porque no cumple la regla de financiabilidad: vence dentro de los 5 días posteriores a la próxima fecha de desembolso de su convenio. Al abrir esa lista, el documento pasa a *No financiable* y su monto vuelve al cupo. El administrador lo dispersa desde la terminal de dispersiones.
 
 **Solicité antes de las 15:00, ¿cuándo me desembolsan?**
 Depende de la política del convenio. Con T+1, el siguiente día hábil. Con "solo viernes", el primer viernes que caiga al menos un día hábil después de la solicitud. La pantalla del proveedor muestra la fecha exacta.
@@ -833,13 +798,13 @@ Depende de la política del convenio. Con T+1, el siguiente día hábil. Con "so
 La solicitud se considera recibida el día hábil siguiente, y la fecha de desembolso se calcula a partir de ese día.
 
 **El operador no generó el lote el día programado, ¿qué pasa con los documentos?**
-Se incluyen en el siguiente lote como **atrasados**. Sus montos no se recalculan; el operador realiza los ajustes fuera del sistema y registra una observación obligatoria al confirmar. Si al generar el lote alguno ya vence en 5 días o menos, pasa a cuarentena y debe notificarse al cliente.
+La solicitud sigue en la terminal de desembolsos. Los montos no se recalculan: quedan los de la fecha en que el proveedor solicitó el anticipo.
 
 **¿Puedo confirmar solo una parte del lote?**
 No. La confirmación es siempre del lote completo.
 
 **¿Cuándo se libera el cupo de crédito del pagador?**
-Solo cuando un administrador registra un abono en *Gestión de cupos de crédito*.
+El monto de un documento vuelve al cupo cuando pasa a *No financiable* o cuando el pagador lo inactiva. Un abono en *Gestión de cupos de crédito* también libera consumo. Desembolsar o dispersar no libera cupo.
 
 **Un archivo fue rechazado, ¿se registró algo?**
 No. La carga se guarda en una sola operación: si se rechaza, no queda registrado ningún documento, proveedor, cuenta bancaria ni convenio. Corrija el archivo y cárguelo completo de nuevo.
@@ -853,9 +818,10 @@ No. El sistema lo detecta como riesgo de doble financiamiento (por código de ge
 
 | Mensaje | Causa | Qué hacer |
 |---|---|---|
-| Usuario no registrado en el sistema local. | El DUI no existe en la plataforma. | Solicitar el alta al administrador. |
+| Usuario no registrado en el sistema local. | El correo del portal no tiene usuario en la plataforma. | Solicitar el alta al administrador. |
+| El usuario se encuentra inactivo. | El usuario está inactivo. | Solicitar la reactivación al administrador. |
 | No hay términos y condiciones activos para el pagador. | No hay versión activa de términos del pagador. | Contactar al administrador. |
-| Formato de archivo no permitido… | El archivo no es Excel. | Usar `.xlsx`. |
+| Formato de archivo no permitido… | El archivo no es Excel. | Usar `.xlsx` o `.xls`. |
 | …Se requiere que aplique el formato de celda 'Número' o 'Contabilidad'… | El monto está como texto. | Cambiar el formato de la celda. |
 | …Se requiere que aplique el formato de celda 'Fecha'… | La fecha está como texto. | Cambiar el formato de la celda. |
 | La factura supera la antigüedad máxima permitida de 120 días. | Fecha de emisión muy antigua. | Excluir la factura. |
@@ -864,38 +830,20 @@ No. El sistema lo detecta como riesgo de doble financiamiento (por código de ge
 | No se encontró una línea de crédito activa asignada a este Pagador. | El pagador no tiene línea de crédito. | Contactar al administrador. |
 | Los siguientes documentos ya no pueden financiarse porque vencen antes del… | Los documentos dejaron de cumplir la regla de financiabilidad. | Actualizar la lista y seleccionar otros documentos. |
 | El documento ya fue solicitado o no está disponible para financiamiento. | El documento ya fue solicitado. | Actualizar la lista. |
-| El pagador no tiene documentos con fecha de desembolso programada para hoy o antes. | No hay documentos listos. | Revisar los programados para después. |
-| El lote contiene N documento(s) atrasado(s). Debe registrar una observación… | Falta la observación de atrasados. | Marcar la casilla y escribir la observación. |
+| Las solicitudes seleccionadas ya no tienen documentos listos para desembolso. | Esa combinación ya no tiene documentos *Solicitados*. | Actualizar la terminal. |
 | El lote … ya fue confirmado. | Se intentó confirmar dos veces. | Ninguna acción. |
-| El cliente del documento … ya fue notificado. | Notificación duplicada. | Ninguna acción. |
 
 ---
 
-## Anexo A — Estado actual de funcionalidades (equipo técnico)
+## Anexo A — Límites de esta versión (equipo técnico)
 
-> Este anexo es para el equipo de desarrollo y **no debe publicarse** a usuarios finales. Lista las funciones que aparecen en la interfaz o en el modelo de datos pero que hoy no operan con el backend refactorizado, y comportamientos que conviene corregir antes de salir a producción.
+> Este anexo es para el equipo de desarrollo y **no debe publicarse** a usuarios finales.
 
-### A.1 Funciones de la interfaz sin endpoint en el backend
+Lo que el manual anterior daba por pendiente y **ya está en el código**: alta y edición de usuarios, pagadores, proveedores y feriados; historial de documentos; creación de convenios; rechazo de una política inexistente dentro del reporte de carga; devolución del cupo al pasar a *No financiable* o a *Inactivo*; ingreso por el portal (el formulario de DUI responde 403).
 
-| Pantalla / acción | Endpoint esperado |
-|---|---|
-| Bitácora de documentos del admin y modal de auditoría | `/agreement/bySupplier/{id}`, `/logs/{id}` |
-| Exportar histórico a Excel (admin) | `/reports/excel/full-admin` |
-| Tasas en términos del proveedor (cláusula 7) | `/disclaimers/{supplierId}` |
-| Guardar usuarios | `/users/linkUser`, `PUT /users/{id}` (el backend solo tiene `POST /v1/users`) |
-| Gestión de pagadores y proveedores | `/entities/create`, `PUT /entities/{id}` |
-| Gestión de feriados | `/holidays` (los feriados hoy se gestionan directamente en base de datos) |
-| Cierre de sesión en backend | `/auth/logout` (falla en silencio; el cierre de sesión en el cliente sí funciona) |
+Lo que esta versión **no tiene**:
 
-### A.2 Comportamientos a corregir
-
-- **Seguridad**: el login por SSO no valida contra el proveedor de identidad (solo el DUI).
-- **Tablas de proveedores del administrador**: leen la respuesta paginada como arreglo y quedan vacías.
-- **Convenios**: no hay botón para crear un convenio desde la interfaz; el endpoint de creación busca el pagador con el `supplierId`.
-- **Pagador con más de un convenio**: `findByPayerId` retorna un único convenio; el resumen del operador y los PDF del lote pueden fallar.
-- **Parámetros**: la actualización exige que el valor sea único entre todos los parámetros.
-- **Reporte de lote**: el punto "4. Monto a desembolsar menos comisión" resta la comisión a un monto que ya la tiene descontada.
-- **Fallos de desembolso**: no existe flujo para `DISBURSEMENT_FAILED` ni para lotes fallidos o parciales.
-- **Solicitud del proveedor**: no valida que los documentos pertenezcan al convenio/proveedor ni el tipo de la versión de términos.
-- **Carga masiva**: un código de política inexistente produce un error 500 genérico en lugar de una inconsistencia en el reporte.- **Línea de crédito**: no se libera automáticamente (ni al desembolsar ni al pasar a cuarentena); solo por abono manual.
-- **Textos**: el ZIP del corte se descarga como `Corte_Cuarentena_Corte_Cuarentena_<fecha>.zip`.
+- Pantalla de corte de cuarentena, ZIP de corte y registro de “cliente notificado”.
+- Etiqueta de documentos atrasados, PDF aparte y observación obligatoria al confirmar un desembolso.
+- Sustitución de tasas dentro del texto de términos: se muestra el texto publicado.
+- Cierre de sesión en el servidor. El cliente borra el token y vuelve al portal.
