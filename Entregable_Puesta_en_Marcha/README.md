@@ -6,14 +6,13 @@ Banco Davivienda Salvadoreño · Banca Empresas. Generado el 05/10/2026.
 
 | Carpeta | Archivo | Quién lo usa | Para qué |
 |---|---|---|---|
-| `01_Script_inicial` | `instalacion_inicial.sql` | DBA | Crea el esquema completo (V1 a V15), catálogos, parámetros, la entidad banco y los dos primeros usuarios, en una sola transacción. Se ejecuta una vez sobre una base PostgreSQL 16 vacía. |
-| `02_Script_inserts` | `inserts_iniciales.sql` | DBA | Solo los INSERT de catálogos y parámetros, sin esquema, sin entidad banco ni usuarios. Es la alternativa al 01 cuando las tablas ya existen. **No se ejecutan los dos.** |
-| `03_Manual_de_usuario` | `Manual_de_Usuario.pdf` | Usuarios | Uso de la plataforma por rol (versión 1.2). La sección 11 describe los correos automáticos: qué evento los dispara, a quién llegan y qué asunto tienen, incluido el aviso a los operadores bancarios cuando un proveedor envía una solicitud de anticipo. |
+| `01_Script_inicial` | `instalacion_inicial.sql` | DBA | Crea el esquema completo, catálogos, parámetros, la entidad banco y los dos primeros usuarios, en una sola transacción. Se ejecuta una vez sobre una base PostgreSQL 16 vacía. |
+| `02_Manual_de_usuario` | `Manual_de_Usuario.pdf` | Usuarios | Uso de la plataforma por rol (versión 1.2). La sección 11 describe los correos automáticos: qué evento los dispara, a quién llegan y qué asunto tienen, incluido el aviso a los operadores bancarios cuando un proveedor envía una solicitud de anticipo. |
 | | `Manual_de_Usuario_con_Anexo_Tecnico.pdf` | Equipo técnico | La misma guía más el anexo con el estado de las funcionalidades. |
 | | `Manual_de_Usuario.md` | Equipo técnico | Fuente editable. |
 | `04_Catalogo_de_rutas_por_rol` | `Catalogo_de_rutas_por_rol.pdf` | Seguridad / QA | Pantallas y rutas de API habilitadas para cada rol. |
-| `05_Manual_tecnico` | `Manual_Tecnico.pdf` y `.md` | Infraestructura | Instalación y configuración de la API y el frontend, variables de entorno y despliegue en QA y producción. |
-| `06_Carga_escenarios_exitosos` | `carga_escenarios_exitosos.xlsx` | QA | Carga válida: 31 documentos de 4 proveedores, total $25,000.00. Incluye facturas DIGITAL y PAPER, tipos CCF y FCI, políticas P30, P45, P60 y P90, desembolso T_PLUS_1 y ONLY_FRIDAYS, y documentos vencidos, cercanos al vencimiento y financiables. La hoja "Escenarios" explica qué pasa con cada uno. |
+| `03_Manual_tecnico` | `Manual_Tecnico.pdf` y `.md` | Infraestructura | Instalación y configuración de la API y el frontend, variables de entorno y despliegue en QA y producción. |
+| `04_Carga_escenarios_exitosos` | `carga_escenarios_exitosos.xlsx` | QA | Carga válida: 31 documentos de 4 proveedores, total $25,000.00. Incluye facturas DIGITAL y PAPER, tipos CCF y FCI, políticas P30, P45, P60 y P90, desembolso T_PLUS_1 y ONLY_FRIDAYS, y documentos vencidos, cercanos al vencimiento y financiables. La hoja "Escenarios" explica qué pasa con cada uno. |
 | | `generar_carga_exitosa.py` | QA | Vuelve a generar el archivo con fechas y códigos nuevos. |
 | `07_Carga_escenarios_fallidos` | `carga_escenarios_fallidos.xlsx` | QA | Carga que se rechaza: 27 filas con un error distinto cada una y 3 filas válidas. La hoja "Escenarios" indica, por fila, la columna y el mensaje que aparece en el reporte de rechazo. |
 | | `generar_carga_fallida.py` | QA | Vuelve a generar el archivo. |
