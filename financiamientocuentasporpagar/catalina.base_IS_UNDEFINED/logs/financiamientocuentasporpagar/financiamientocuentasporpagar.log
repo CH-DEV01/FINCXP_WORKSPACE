@@ -1,0 +1,26 @@
+2026-06-02 12:07:02 INFO  c.d.f.FinanciamientoApplication - Starting FinanciamientoApplication using Java 21.0.10 with PID 7828 (C:\Users\91737\Documents\WORKSPACE\SOFTWARE DEVELOPMENT\FinCxP\v3\v3\financiamientocuentasporpagar\target\classes started by 91737 in C:\Users\91737\Documents\WORKSPACE\SOFTWARE DEVELOPMENT\FinCxP\v3\v3\financiamientocuentasporpagar)
+2026-06-02 12:07:02 INFO  c.d.f.FinanciamientoApplication - No active profile set, falling back to 1 default profile: "default"
+2026-06-02 12:07:08 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-06-02 12:07:08 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-06-02 12:07:08 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.4]
+2026-06-02 12:07:08 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-06-02 12:07:08 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 6270 ms
+2026-06-02 12:07:10 INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+2026-06-02 12:07:11 WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2026-06-02 12:07:11 INFO  o.s.b.a.l.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-06-02 12:07:11 ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8080 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+

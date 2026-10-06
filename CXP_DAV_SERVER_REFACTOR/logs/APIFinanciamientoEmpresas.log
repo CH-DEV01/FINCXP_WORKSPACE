@@ -1,0 +1,48 @@
+2026-10-06 10:40:12 WARN  o.s.b.t.j.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer - 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/C:/Users/91737/.m2/repository/org/json/json/20140107/json-20140107.jar!/org/json/JSONObject.class
+	jar:file:/C:/Users/91737/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2026-10-06 10:40:12 INFO  c.d.f.i.config.SecurityConfigTest - Starting SecurityConfigTest using Java 21.0.12 with PID 5976 (started by 91737 in C:\Users\91737\Documents\REFACTOR_CON_SSO\REFACTOR_CON_SSO\CXP_DAV_SERVER_REFACTOR)
+2026-10-06 10:40:12 INFO  c.d.f.i.config.SecurityConfigTest - No active profile set, falling back to 1 default profile: "default"
+2026-10-06 10:40:15 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-10-06 10:40:15 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@4ec616d6, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@55b45ea1, org.springframework.security.web.context.SecurityContextHolderFilter@667dd150, org.springframework.security.web.header.HeaderWriterFilter@6abd8bcd, org.springframework.web.filter.CorsFilter@d5a72cd, org.springframework.security.web.authentication.logout.LogoutFilter@1253b822, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@21c34bf8, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@758d4aa9, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@335896bd, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@45f95ac0, org.springframework.security.web.session.SessionManagementFilter@3abadb65, org.springframework.security.web.access.ExceptionTranslationFilter@6942ee48, org.springframework.security.web.access.intercept.AuthorizationFilter@776d8097]
+2026-10-06 10:40:15 INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-06 10:40:15 INFO  o.s.t.w.s.TestDispatcherServlet - Initializing Servlet ''
+2026-10-06 10:40:15 INFO  o.s.t.w.s.TestDispatcherServlet - Completed initialization in 0 ms
+2026-10-06 10:40:15 INFO  c.d.f.i.config.SecurityConfigTest - Started SecurityConfigTest in 4.241 seconds (process running for 6.151)
+2026-10-06 10:40:16 WARN  c.d.f.i.mail.MailNoticeListener - Correo no enviado (OperatorChange): Mailjet no está configurado.
+2026-10-06 10:40:16 WARN  c.d.f.i.mail.MailNoticeListener - APP_LOGIN_URL no está configurada; no se envió el correo a los proveedores de Pagador Demo.
+2026-10-06 10:40:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-D3C7DF creado: pagador 656d297b-175e-49e4-90ec-e99b89b72f60, vencimiento 2026-09-20, 1 documento(s), total 100.00.
+2026-10-06 10:40:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-ABC123 confirmado por el usuario ba121028-1da7-436a-b63b-f0b929976782: 2 documento(s) dispersados.
+2026-10-06 10:40:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-A5C4F1 creado: pagador b87fc0a2-7385-41ae-ac64-f7e62e8c0d85, vencimiento 2026-10-05, 2 documento(s), total 17347.00.
+2026-10-06 10:40:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Cupo null liberado por inactivación de 1 documento(s): consumo $5000.00 -> $4000.00.
+2026-10-06 10:40:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Documento 38779d9f-bc0c-4049-8962-8ea36ad8e11e inactivado manualmente por el usuario 2aefc969-d3d1-4694-adea-40b8d9542fdc.
+2026-10-06 10:40:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Cupo null liberado por inactivación de 1 documento(s): consumo $5000.00 -> $4000.00.
+2026-10-06 10:40:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Documento 96bbda2f-9d07-4968-ae61-2c6c00ce4188 inactivado manualmente por el usuario e294e5dc-6b4b-4f1d-92f3-69bf6333f7d0.
+2026-10-06 10:40:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Fetching financeable documents for master agreement ID: db294b34-82d2-4ca1-9b97-5d0c1358c1c9
+2026-10-06 10:40:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Cupo null liberado por inactivación de 1 documento(s): consumo $5000.00 -> $4000.00.
+2026-10-06 10:40:17 INFO  c.d.f.s.impl.DocumentServiceImpl - 1 documento(s) del convenio db294b34-82d2-4ca1-9b97-5d0c1358c1c9 pasaron a cuarentena por no ser financiables.
+2026-10-06 10:40:17 INFO  c.d.f.service.impl.EntityServiceImpl - Registering payer with NIT 06140101901011
+2026-10-06 10:40:17 INFO  c.d.f.service.impl.EntityServiceImpl - Payer null registered with credit facility null and pricing term null
+2026-10-06 10:40:17 INFO  c.d.f.service.impl.EntityServiceImpl - Registering payer with NIT 06140101901011
+2026-10-06 10:40:17 INFO  c.d.f.service.impl.EntityServiceImpl - Updating payer 556f6a23-684c-4e1e-92ac-2e8643e62bfd
+2026-10-06 10:40:17 INFO  c.d.f.service.impl.EntityServiceImpl - Updating payer c6c90455-ef3d-4991-b467-988182815087
+2026-10-06 10:40:17 INFO  c.d.f.service.impl.EntityServiceImpl - Payer c6c90455-ef3d-4991-b467-988182815087 updated
+2026-10-06 10:40:17 ERROR c.d.f.service.impl.FundingCalculator - División por cero evitada: la base no puede ser cero.
+2026-10-06 10:40:17 INFO  c.d.f.service.impl.FundingCalculator - [CALCULO] Totales | nominal 3500.55 | monto a financiar 3440.491071731711441470 | interés 60.058928268288558530 | comisión con IVA 9.719387277642084823 | a desembolsar 3430.771684454069356647
+2026-10-06 10:40:18 INFO  c.d.f.service.impl.UserServiceImpl - Starting the creation of a new user
+2026-10-06 10:40:18 INFO  c.d.f.service.impl.UserServiceImpl - Searching for entity with identifier: f8ef8b7a-1adb-44ee-a63f-60896007e933
+2026-10-06 10:40:18 INFO  c.d.f.service.impl.UserServiceImpl - User created successfully with ID: null, role PAYER by 000000000
+2026-10-06 10:40:18 INFO  c.d.f.s.impl.HolidayServiceImpl - Holiday null registered for 2026-12-25
+2026-10-06 10:40:18 INFO  c.d.f.s.i.MasterAgreementServiceImpl - Creando convenio marco
+2026-10-06 10:40:18 INFO  c.d.f.s.i.MasterAgreementServiceImpl - Convenio marco creado con ID: null
+2026-10-06 10:40:18 INFO  c.d.f.s.impl.ParameterServiceImpl - Starting update for parameter with ID: b4d13420-2776-4ca0-9587-a08d8be26f48
+2026-10-06 10:40:18 INFO  c.d.f.s.impl.ParameterServiceImpl - Parameter MAILJET_API_SECRET successfully updated
+2026-10-06 10:40:19 INFO  c.d.f.s.i.UploadResourceServiceImpl - Recurso de carga TEMPLATE reemplazado por el usuario null (3357 bytes)
+2026-10-06 10:40:19 INFO  c.d.f.s.i.UploadResourceServiceImpl - Recurso de carga MANUAL reemplazado por el usuario null (813 bytes)
+2026-10-06 10:40:19 INFO  c.d.f.s.i.UploadResourceServiceImpl - Recurso de carga TEMPLATE reemplazado por el usuario null (3340 bytes)

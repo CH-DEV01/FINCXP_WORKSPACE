@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aviso de Auditoría</title>
+</head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#222222;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;">
+    <tr><td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;">
+        <tr><td style="background:#DA291C;padding:20px 20px 30px;">
+          <p style="margin:0;font-size:16px;font-weight:bold;color:#ffffff;">Estimado {{recipientName}},</p>
+        </td></tr>
+        <tr><td style="padding:24px 0 12px;font-size:13px;line-height:1.6;">
+          <p style="margin:0;">El sistema de la Plataforma de Financiamiento de Cuentas por Pagar ha registrado una modificación en la configuración o estado de los registros, realizada por otro usuario de la institución.</p>
+          <p style="margin:0;">A continuación, se detallan los cambios efectuados para fines de control y trazabilidad operativa:</p>
+        </td></tr>
+        <tr><td style="padding:0 0 16px;">
+          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="width:480px;max-width:100%;border:1px solid #e3e3e3;border-collapse:collapse;">
+            <tr><td colspan="2" align="center" style="background:#DA291C;padding:16px;font-size:13px;font-weight:bold;color:#ffffff;">Auditoría de Sistema CXP</td></tr>
+            <tr><td colspan="2" align="center" style="background:#f2f2f2;padding:16px;font-size:13px;font-weight:bold;color:#333333;">Modificación de Registros</td></tr>
+            <tr><td colspan="2" align="center" style="padding:10px;font-size:11px;color:#777777;border-bottom:1px solid #e3e3e3;">Módulo: {{menu}}</td></tr>
+            <tr>
+              <td width="35%" style="padding:14px 10px;font-size:13px;font-weight:bold;border-bottom:1px solid #e3e3e3;border-right:1px solid #e3e3e3;">Usuario que realizó el cambio</td>
+              <td style="padding:14px 10px;font-size:13px;border-bottom:1px solid #e3e3e3;">{{actorName}}</td>
+            </tr>
+            <tr>
+              <td width="35%" style="padding:14px 10px;font-size:13px;font-weight:bold;border-bottom:1px solid #e3e3e3;border-right:1px solid #e3e3e3;">Fecha y Hora</td>
+              <td style="padding:14px 10px;font-size:13px;border-bottom:1px solid #e3e3e3;">{{occurredAt}}</td>
+            </tr>
+            <tr>
+              <td width="35%" style="padding:14px 10px;font-size:13px;font-weight:bold;border-bottom:1px solid #e3e3e3;border-right:1px solid #e3e3e3;">Valor Anterior</td>
+              <td style="padding:14px 10px;font-size:13px;border-bottom:1px solid #e3e3e3;">{{previousValue}}</td>
+            </tr>
+            <tr>
+              <td width="35%" style="padding:14px 10px;font-size:13px;font-weight:bold;border-right:1px solid #e3e3e3;">Nuevo Valor</td>
+              <td style="padding:14px 10px;font-size:13px;">{{newValue}}</td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 0 16px;font-size:13px;line-height:1.6;">
+          <p style="margin:0;">Esta es una notificación automática orientada a mantener la transparencia y el control dentro de la Plataforma, por favor certifique que los cambios han sido aplicados correctamente.</p>
+        </td></tr>
+        <tr><td style="font-size:13px;line-height:1.6;">
+          <p style="margin:0 0 12px;">Atentamente,</p>
+          <p style="margin:0;">Financiamiento de Cuentas por Pagar</p>
+          <p style="margin:0;font-weight:bold;">Banca Empresas</p>
+          <p style="margin:0;font-weight:bold;">Banco Davivienda Salvadoreño, S.A.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
