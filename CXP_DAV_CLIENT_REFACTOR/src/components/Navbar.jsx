@@ -3,9 +3,7 @@ import logo from "../assets/Davivienda-Logo.png";
 import Icon from "@mdi/react";
 import {
   mdiLogout,
-  mdiShieldHome,
   mdiChevronDown,
-  mdiCloudSync,
   mdiDomain,
   mdiEmailOutline,
   mdiCardAccountDetailsOutline,
@@ -14,7 +12,11 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const HISTORY_ROUTE_PATH = "documents-history";
+const NAV_ITEMS = [
+  { path: "documents-history", label: "DOCUMENTOS" },
+  { path: "disbursement-terminal", label: "DESEMBOLSOS" },
+  { path: "dispersion-terminal", label: "DISPERSIONES" },
+];
 
 const ROLE_LABELS = {
   ADMIN: "Administrador",
@@ -48,9 +50,8 @@ const Navbar = () => {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const hasHistory = Boolean(user?.defaultRoute && user.routes?.some((route) => route.path === HISTORY_ROUTE_PATH));
-  const isHistoryActive = currentPath.includes(HISTORY_ROUTE_PATH);
-  const isHomeActive = !isHistoryActive;
+  const allowedPaths = new Set((user?.routes ?? []).map((route) => route.path));
+  const navItems = user?.defaultRoute ? NAV_ITEMS.filter((item) => allowedPaths.has(item.path)) : [];
 
   const handleLogout = () => {
     logout();
@@ -60,8 +61,8 @@ const Navbar = () => {
     if (user?.defaultRoute) navigate(user.defaultRoute);
   };
 
-  const goHistory = () => {
-    navigate(`${user.defaultRoute}/${HISTORY_ROUTE_PATH}`);
+  const goTo = (path) => {
+    if (user?.defaultRoute) navigate(`${user.defaultRoute}/${path}`);
   };
 
   useEffect(() => {
@@ -80,9 +81,14 @@ const Navbar = () => {
       <div className="w-full max-w-none px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="bg-white p-1.5 rounded-lg shadow-md">
+            <button
+              type="button"
+              onClick={goHome}
+              aria-label="Ir al inicio"
+              className="bg-white p-1.5 rounded-lg shadow-md cursor-pointer transition-transform duration-300 hover:scale-105"
+            >
               <img src={logo} alt="Davivienda" className="h-8 object-contain" />
-            </div>
+            </button>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-200 tracking-wider uppercase">Banca empresas</span>
               <h1 className="text-xs text-white leading-tight">
@@ -92,39 +98,24 @@ const Navbar = () => {
               </h1>
             </div>
           </div>
-          <nav className="flex items-center space-x-4">
-            <button
-              type="button"
-              onClick={goHome}
-              className={`hover:bg-red-600 shadow-lg flex items-center space-x-2
-                                        px-3 py-2 rounded-lg text-sm font-medium transition-all 
-                                        duration-300 cursor-pointer 
-                                        ${
-                                          isHomeActive
-                                            ? "text-white bg-red-600 shadow-inner"
-                                            : "text-gray-200 hover:text-white hover:bg-red-700/60"
-                                        }`}
-            >
-              <Icon path={mdiShieldHome} size={1} />
-              <span>INICIO</span>
-            </button>
-            {hasHistory && (
-              <button
-                type="button"
-                onClick={goHistory}
-                className={`hover:bg-red-600 shadow-lg flex items-center space-x-2
-                                        px-3 py-2 rounded-lg text-sm font-medium transition-all 
-                                        duration-300 cursor-pointer
-                                        ${
-                                          isHistoryActive
-                                            ? "text-white bg-red-600 shadow-inner"
-                                            : "text-gray-200 hover:text-white hover:bg-red-700/60"
-                                        }`}
-              >
-                <Icon path={mdiCloudSync} size={1} />
-                <span>BITACORA</span>
-              </button>
-            )}
+          <nav className="flex items-center space-x-3">
+            {navItems.map((item) => {
+              const isActive = currentPath.includes(item.path);
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => goTo(item.path)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all duration-300 cursor-pointer ${
+                    isActive
+                      ? "text-white bg-red-900 shadow-inner"
+                      : "text-white bg-red-700/80 shadow-lg hover:bg-red-900/80"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
             <p className="text-white p-0 m-0">|</p>
             <div className="relative group">
               <button className="cursor-pointer flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-200 hover:text-white hover:bg-red-700/60 transition-all duration-300">
