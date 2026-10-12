@@ -20,63 +20,53 @@
 --
 -- La API debe ejecutarse con FLYWAY_ENABLED=false contra esta base.
 --
+-- SQL estándar de PostgreSQL (16): no usa comandos de psql, así que corre igual en
+-- psql, pgAdmin (Query Tool), DBeaver o cualquier cliente que ejecute scripts.
+--
 -- Uso:
---   1. Copiar este archivo y completar la sección PARÁMETROS.
---   2. Ejecutar con un usuario dueño de la base:
---        psql -h <host> -U <usuario> -d <base> -f instalacion_inicial.sql
+--   1. Copiar este archivo y completar la sección PARÁMETROS (reemplazar cada
+--      'COMPLETAR' por el valor, entre comillas simples).
+--   2. Ejecutarlo completo con un usuario dueño de la base, con cualquiera de:
+--        - psql -h <host> -U <usuario> -d <base> -v ON_ERROR_STOP=1 -f instalacion_inicial.sql
+--        - pgAdmin o DBeaver: abrir el archivo y ejecutarlo como script.
 --
 -- Todo corre en una sola transacción. Si falta un parámetro, un formato no es
 -- válido o la base no está vacía, el script se detiene y no deja nada creado.
 -- =============================================================================
 
-\set ON_ERROR_STOP on
+BEGIN;
 
 -- -----------------------------------------------------------------------------
 -- PARÁMETROS
 -- -----------------------------------------------------------------------------
--- Orígenes desde los que el navegador puede llamar a la API (URL del cliente web),
--- separados por coma y sin barra final. Ej.: https://pay.davivienda.com.sv
-\set cors_origenes   'COMPLETAR'
+CREATE TEMP TABLE instalacion_parametros (clave text PRIMARY KEY, valor text) ON COMMIT DROP;
 
--- Entidad banco. NIT de 14 dígitos; se aceptan guiones (0614-010190-101-1).
-\set banco_nit       'COMPLETAR'
-\set banco_nombre    'COMPLETAR'
--- Código corto y único de la entidad (máximo 25 caracteres), por ejemplo DAVIVIENDA.
-\set banco_codigo    'COMPLETAR'
+INSERT INTO instalacion_parametros (clave, valor) VALUES
+    -- Orígenes desde los que el navegador puede llamar a la API (URL del cliente web),
+    -- separados por coma y sin barra final. Ej.: https://pay.davivienda.com.sv
+    ('cors_origenes',      'http://localhost:5173,https://devpay.davivienda.com.sv'),
 
--- Operador bancario (rol ADMIN). DUI de 9 dígitos; se acepta guion (01234567-8).
-\set operador_dui        'COMPLETAR'
-\set operador_correo     'COMPLETAR'
-\set operador_nombres    'COMPLETAR'
-\set operador_apellidos  'COMPLETAR'
+    -- Entidad banco. NIT de 14 dígitos; se aceptan guiones (0614-010190-101-1).
+    ('banco_nit',          '0614-271101-112-0'),
+    ('banco_nombre',       'BANCO DAVIVIENDA SALVADOREÑO'),
+    -- Código corto y único de la entidad (máximo 25 caracteres), por ejemplo DAVIVIENDA.
+    ('banco_codigo',       'BANK-001'),
 
--- Administrador del sistema (rol SYSTEM_ADMIN).
-\set sysadmin_dui        'COMPLETAR'
-\set sysadmin_correo     'COMPLETAR'
-\set sysadmin_nombres    'COMPLETAR'
-\set sysadmin_apellidos  'COMPLETAR'
+    -- Operador bancario (rol ADMIN). DUI de 9 dígitos; se acepta guion (01234567-8).
+    ('operador_dui',       '01331637-1'),
+    ('operador_correo',    'manuela.rivera@davivienda.com.sv'),
+    ('operador_nombres',   'MANUELA'),
+    ('operador_apellidos', 'RIVERA'),
+
+    -- Administrador del sistema (rol SYSTEM_ADMIN).
+    ('sysadmin_dui',       '06306281-7'),
+    ('sysadmin_correo',    'carlos.a.hernandez@davivienda.com.sv'),
+    ('sysadmin_nombres',   'CARLOS'),
+    ('sysadmin_apellidos', 'HERNANDEZ');
 
 -- -----------------------------------------------------------------------------
 -- EJECUCIÓN (no modificar a partir de aquí)
 -- -----------------------------------------------------------------------------
-BEGIN;
-
--- Las variables de psql no se expanden dentro de DO $$ ... $$; se pasan por esta tabla.
-CREATE TEMP TABLE instalacion_parametros (clave text PRIMARY KEY, valor text) ON COMMIT DROP;
-
-INSERT INTO instalacion_parametros (clave, valor) VALUES
-    ('cors_origenes', :'cors_origenes'),
-    ('banco_nit', :'banco_nit'),
-    ('banco_nombre', :'banco_nombre'),
-    ('banco_codigo', :'banco_codigo'),
-    ('operador_dui', :'operador_dui'),
-    ('operador_correo', :'operador_correo'),
-    ('operador_nombres', :'operador_nombres'),
-    ('operador_apellidos', :'operador_apellidos'),
-    ('sysadmin_dui', :'sysadmin_dui'),
-    ('sysadmin_correo', :'sysadmin_correo'),
-    ('sysadmin_nombres', :'sysadmin_nombres'),
-    ('sysadmin_apellidos', :'sysadmin_apellidos');
 
 -- Mismo formato con el que la API guarda los datos: identificadores sin guiones ni
 -- espacios, correos en minúsculas y código de entidad en mayúsculas.
