@@ -44,7 +44,7 @@ const PayerFormFields = ({ form, isEditing, canEditAccount, onSubmit }) => {
     <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit(onSubmit)}>
       {isEditing && (
         <p className="md:col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-[11px] text-gray-600">
-          Solo se pueden modificar la cuenta bancaria, las tasas, la base de cálculo, el estado y el umbral. El resto de
+          Solo se pueden modificar el NIU, la cuenta bancaria, las tasas, la base de cálculo, el estado y el umbral. El resto de
           datos del pagador y del cupo se muestran como referencia.
         </p>
       )}
@@ -83,6 +83,24 @@ const PayerFormFields = ({ form, isEditing, canEditAccount, onSubmit }) => {
         <FieldError error={errors.nit} />
       </div>
 
+      <div>
+        <FieldLabel htmlFor="payer-niu">NIU</FieldLabel>
+        <input
+          id="payer-niu"
+          type="text"
+          inputMode="numeric"
+          maxLength={25}
+          {...register("niu", {
+            onChange: (e) => {
+              e.target.value = e.target.value.replace(/\D/g, "");
+            },
+          })}
+          className={inputClass(errors.niu)}
+          placeholder="Ej. 1234567890"
+        />
+        <FieldError error={errors.niu} />
+      </div>
+
       {isEditing && (
         <div>
           <FieldLabel htmlFor="payer-status">Estado</FieldLabel>
@@ -97,7 +115,7 @@ const PayerFormFields = ({ form, isEditing, canEditAccount, onSubmit }) => {
         </div>
       )}
 
-      <div className={isEditing ? "" : "md:col-span-2"}>
+      <div className={isEditing ? "md:col-span-2" : ""}>
         <FieldLabel htmlFor="payer-account-number">Cuenta bancaria</FieldLabel>
         <input
           id="payer-account-number"
@@ -123,11 +141,16 @@ const PayerFormFields = ({ form, isEditing, canEditAccount, onSubmit }) => {
         <input
           id="payer-credit-facility-number"
           type="text"
+          inputMode="numeric"
           maxLength={255}
           readOnly={isEditing}
-          {...register("creditFacilityNumber")}
+          {...register("creditFacilityNumber", {
+            onChange: (e) => {
+              e.target.value = e.target.value.replace(/\D/g, "");
+            },
+          })}
           className={inputClass(errors.creditFacilityNumber, isEditing)}
-          placeholder="Ej. CF-0001"
+          placeholder="Ej. 000123456"
         />
         <FieldError error={errors.creditFacilityNumber} />
       </div>
@@ -157,7 +180,7 @@ const PayerFormFields = ({ form, isEditing, canEditAccount, onSubmit }) => {
           placeholder="Ej. 80"
         />
         <p className="text-gray-400 text-[10px] mt-1">
-          Porcentaje de ocupación del cupo a partir del cual el estado pasa a crítico.
+          Porcentaje de utilización del cupo a partir del cual el estado pasa a crítico.
         </p>
         <FieldError error={errors.warningThreshold} />
       </div>

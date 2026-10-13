@@ -14,6 +14,7 @@ public record PayerSummaryDTOResponse(
         String name,
         String nit,
         String code,
+        String niu,
         CreditLine creditLine
 ) {
 
@@ -38,7 +39,7 @@ public record PayerSummaryDTOResponse(
     public static PayerSummaryDTOResponse of(EntityModel payer, CreditFacilityModel facility,
             BigDecimal defaultThreshold) {
         return new PayerSummaryDTOResponse(payer.getId(), payer.getName(), payer.getNit(), payer.getCode(),
-                facility != null ? creditLine(facility, defaultThreshold) : null);
+                payer.getNiu(), facility != null ? creditLine(facility, defaultThreshold) : null);
     }
 
     private static CreditLine creditLine(CreditFacilityModel facility, BigDecimal defaultThreshold) {

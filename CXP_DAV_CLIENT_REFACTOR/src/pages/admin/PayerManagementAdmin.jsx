@@ -34,6 +34,11 @@ const columns = [
   { header: "NOMBRE", accessor: "name" },
   { header: "NIT", accessor: "nit" },
   {
+    header: "NIU",
+    accessor: "niu",
+    render: (value) => value || "—",
+  },
+  {
     header: "CUENTA BANCARIA",
     accessor: "accountNumber",
     render: (value) => value || "—",
@@ -128,6 +133,7 @@ const PayerManagementAdmin = () => {
 
     try {
       await entityService.updatePayer(editingPayer.id, {
+        niu: data.niu.trim(),
         accountNumber: canEditAccount ? data.accountNumber.trim() : null,
         interestRate: percentToFraction(data.interestRate),
         commissionRate: percentToFraction(data.commissionRate),
@@ -151,6 +157,7 @@ const PayerManagementAdmin = () => {
       await entityService.registerPayer({
         name: data.name.trim(),
         nit: data.nit,
+        niu: data.niu.trim(),
         accountNumber: data.accountNumber.trim(),
         creditFacilityNumber: data.creditFacilityNumber.trim(),
         facilityLimitAmount: Number(data.approvedAmount),
@@ -210,7 +217,7 @@ const PayerManagementAdmin = () => {
         <SearchInput
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Buscar pagador por nombre o NIT"
+          placeholder="Buscar pagador por nombre, NIT o NIU"
           ariaLabel="Buscar pagador"
           className="w-full md:w-1/3 md:max-w-md shadow-sm rounded-lg transition-shadow hover:shadow-md"
         />

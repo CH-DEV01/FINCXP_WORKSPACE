@@ -680,7 +680,7 @@ Desde la tarjeta **"Bitácora de dispersiones"** se consultan los lotes de dispe
 | `UPLOAD_MAX_ROWS` | Entero de 1 a 100000 | `5000` | Cantidad máxima de registros por archivo. |
 | `CORS_ALLOWED_ORIGINS` | Lista de orígenes `https://dominio[:puerto]` separados por comas | `http://localhost:5173,https://devpay.davivienda.com.sv` | Direcciones desde las que el navegador puede usar la API. Debe incluir la URL del cliente del ambiente. |
 | `JWT_EXPIRATION_MINUTES` | Entero de 5 a 10080 | `1440` | Duración de la sesión, en minutos. Aplica a los inicios de sesión posteriores al cambio. |
-| `JWT_SECRET` | Base64 de al menos 32 bytes | `G9UuPSmEz8a18PARiE8Rs9QKvDrdUOJjjNe3duoQqUw=` | Llave con la que se firman las sesiones. Cada ambiente puede reemplazarla. Cambiarla invalida las sesiones ya emitidas. |
+| `JWT_SECRET` | Base64 de al menos 32 bytes | `CONFIGURAR` | Llave con la que se firman las sesiones. La coloca el DBA al instalar; sin ella la API no arranca. No acepta `CONFIGURAR` desde esta pantalla. Cambiarla invalida las sesiones ya emitidas. |
 | `SESSION_IDLE_TIMEOUT_MINUTES` | Entero de 1 a 480 | `15` | Minutos sin actividad antes de cerrar la sesión. |
 | `MAILJET_API_KEY` | Texto | `CONFIGURAR` | Llave de Mailjet. Mientras valga `CONFIGURAR`, no se envían correos. |
 | `MAILJET_API_SECRET` | Texto | `CONFIGURAR` | Secreto de Mailjet. Misma regla que la llave. |
@@ -703,7 +703,7 @@ Al guardar, el sistema valida el formato y el rango; la clave no se puede modifi
 
 | Componente | Dónde se configura | Descripción |
 |---|---|---|
-| Backend | Parámetro `JWT_SECRET` | Llave de firma de las sesiones (sección 10.1). Vive en `system_parameters`, no en una variable de entorno. El valor inicial permite arrancar; conviene reemplazarlo en cada ambiente. |
+| Backend | Parámetro `JWT_SECRET` | Llave de firma de las sesiones (sección 10.1). Vive en `system_parameters`, no en una variable de entorno. El valor inicial es `CONFIGURAR` y la API no arranca hasta que cada ambiente coloque su propia llave. |
 | Cliente | `src/constants/apiConstants.js` | `API_BASE_URL` es el origen de la API, con el context path y sin `/api`. `PORTAL_URL` es el portal al que vuelve el navegador sin sesión o al salir. Un cambio exige volver a compilar el cliente y copiar `dist/` al WAR del portal. |
 
 ### 10.4 Crear una nueva política de desembolso

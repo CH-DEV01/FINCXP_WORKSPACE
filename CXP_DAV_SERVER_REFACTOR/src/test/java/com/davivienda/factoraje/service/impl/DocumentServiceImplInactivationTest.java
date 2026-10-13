@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,8 @@ import com.davivienda.factoraje.domain.entities.MasterAgreementModel;
 import com.davivienda.factoraje.domain.entities.UserModel;
 import com.davivienda.factoraje.domain.enums.DocumentStatusEnum;
 import com.davivienda.factoraje.domain.enums.QuarantineReasonEnum;
+import com.davivienda.factoraje.infrastructure.exception.ResourceNotFoundException;
+import com.davivienda.factoraje.infrastructure.exception.UnauthorizedAccessException;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.repository.CreditFacilityHistoryRepository;
 import com.davivienda.factoraje.repository.CreditFacilityRepository;
@@ -86,7 +89,7 @@ class DocumentServiceImplInactivationTest {
         UserModel payerUser = UserModel.builder().id(UUID.randomUUID()).entity(payer).build();
         DocumentModel document = document(TODAY.plusDays(3));
         when(currentUserService.managed()).thenReturn(payerUser);
-        when(documentRepository.findByIdForUpdate(document.getId())).thenReturn(Optional.of(document));
+        when(documentRepository.findAllByIdForUpdate(Set.of(document.getId()))).thenReturn(List.of(document));
 
         service.inactivateDocumentByPayer(document.getId());
 
@@ -101,7 +104,7 @@ class DocumentServiceImplInactivationTest {
         UserModel payerUser = UserModel.builder().id(UUID.randomUUID()).entity(payer).build();
         DocumentModel document = document(TODAY.plusDays(40));
         when(currentUserService.managed()).thenReturn(payerUser);
-        when(documentRepository.findByIdForUpdate(document.getId())).thenReturn(Optional.of(document));
+        when(documentRepository.findAllByIdForUpdate(Set.of(document.getId()))).thenReturn(List.of(document));
 
         service.inactivateDocumentByPayer(document.getId());
 
@@ -136,13 +139,78 @@ class DocumentServiceImplInactivationTest {
         DocumentModel document = document(TODAY.plusDays(40));
         document.setStatus(DocumentStatusEnum.REQUESTED_FOR_FINANCING);
         when(currentUserService.managed()).thenReturn(payerUser);
-        when(documentRepository.findByIdForUpdate(document.getId())).thenReturn(Optional.of(document));
+        when(documentRepository.findAllByIdForUpdate(Set.of(document.getId()))).thenReturn(List.of(document));
 
         assertThatThrownBy(() -> service.inactivateDocumentByPayer(document.getId()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Cargado");
         assertThat(document.getStatus()).isEqualTo(DocumentStatusEnum.REQUESTED_FOR_FINANCING);
         verify(documentLogRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void payerInactivatesSeveralDocumentsAtOnceAndReleasesTheirCredit() {
+        UserModel payerUser = UserModel.builder().id(UUID.randomUUID()).entity(payer).build();
+        DocumentModel first = document(TODAY.plusDays(40));
+        DocumentModel second = document(TODAY.plusDays(3));
+        CreditFacilityModel facility = CreditFacilityModel.builder()
+                .payer(payer).amountInUse(new BigDecimal("5000.00")).build();
+        when(currentUserService.managed()).thenReturn(payerUser);
+        when(documentRepository.findAllByIdForUpdate(Set.of(first.getId(), second.getId())))
+                .thenReturn(List.of(first, second));
+        when(creditFacilityRepository.findByPayerIdForUpdate(payer.getId())).thenReturn(Optional.of(facility));
+
+        service.inactivateDocumentsByPayer(List.of(first.getId(), second.getId(), first.getId()));
+
+        assertThat(first.getStatus()).isEqualTo(DocumentStatusEnum.INACTIVATED_BY_PAYER);
+        assertThat(second.getStatus()).isEqualTo(DocumentStatusEnum.INACTIVATED_BY_PAYER);
+        assertThat(savedLogStatuses()).containsExactly(
+                DocumentStatusEnum.INACTIVATED_BY_PAYER, DocumentStatusEnum.INACTIVATED_BY_PAYER);
+        assertThat(facility.getAmountInUse()).isEqualByComparingTo("3000.00");
+    }
+
+    @Test
+    void bulkInactivationIsAllOrNothingWhenOneDocumentIsNoLongerLoaded() {
+        UserModel payerUser = UserModel.builder().id(UUID.randomUUID()).entity(payer).build();
+        DocumentModel loaded = document(TODAY.plusDays(40));
+        DocumentModel requested = document(TODAY.plusDays(30));
+        requested.setStatus(DocumentStatusEnum.REQUESTED_FOR_FINANCING);
+        when(currentUserService.managed()).thenReturn(payerUser);
+        when(documentRepository.findAllByIdForUpdate(Set.of(loaded.getId(), requested.getId())))
+                .thenReturn(List.of(loaded, requested));
+
+        assertThatThrownBy(() -> service.inactivateDocumentsByPayer(List.of(loaded.getId(), requested.getId())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(requested.getDocumentNumber());
+        assertThat(loaded.getStatus()).isEqualTo(DocumentStatusEnum.APPROVED);
+        verify(documentLogRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void bulkInactivationRejectsDocumentsOfAnotherPayer() {
+        EntityModel otherPayer = EntityModel.builder().id(UUID.randomUUID()).build();
+        UserModel otherPayerUser = UserModel.builder().id(UUID.randomUUID()).entity(otherPayer).build();
+        DocumentModel document = document(TODAY.plusDays(40));
+        when(currentUserService.managed()).thenReturn(otherPayerUser);
+        when(documentRepository.findAllByIdForUpdate(Set.of(document.getId()))).thenReturn(List.of(document));
+
+        assertThatThrownBy(() -> service.inactivateDocumentsByPayer(List.of(document.getId())))
+                .isInstanceOf(UnauthorizedAccessException.class);
+        assertThat(document.getStatus()).isEqualTo(DocumentStatusEnum.APPROVED);
+    }
+
+    @Test
+    void bulkInactivationReportsMissingDocuments() {
+        UserModel payerUser = UserModel.builder().id(UUID.randomUUID()).entity(payer).build();
+        DocumentModel document = document(TODAY.plusDays(40));
+        UUID missing = UUID.randomUUID();
+        when(currentUserService.managed()).thenReturn(payerUser);
+        when(documentRepository.findAllByIdForUpdate(Set.of(document.getId(), missing))).thenReturn(List.of(document));
+
+        assertThatThrownBy(() -> service.inactivateDocumentsByPayer(List.of(document.getId(), missing)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(missing.toString());
+        assertThat(document.getStatus()).isEqualTo(DocumentStatusEnum.APPROVED);
     }
 
     private DocumentModel document(LocalDate dueDate) {

@@ -42,24 +42,47 @@ const BASE_COLUMNS = [
   },
 ];
 
-const buildActionsColumn = ({ onInactivate, inactivatingId }) => ({
-  header: "Acciones",
-  accessor: "inactivatable",
-  render: (inactivatable, row) =>
-    inactivatable ? (
-      <button
-        type="button"
-        onClick={() => onInactivate(row)}
-        disabled={inactivatingId !== null}
-        title="El proveedor ya no podrá solicitar este documento"
-        className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {inactivatingId === row.id ? "Inactivando…" : "Pasar a Inactivo"}
-      </button>
-    ) : (
-      <span className="text-gray-300">—</span>
+const CHECKBOX_CLASS = "h-4 w-4 accent-red-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50";
+
+const buildActionsColumn = ({ selected, pageRows, onToggle, onTogglePage, disabled }) => {
+  const selectedOnPage = pageRows.filter((row) => selected.has(row.id)).length;
+  const allOnPage = pageRows.length > 0 && selectedOnPage === pageRows.length;
+
+  return {
+    header: (
+      <label className="inline-flex items-center gap-2 cursor-pointer" title="Seleccionar los documentos de esta página">
+        <input
+          type="checkbox"
+          className={CHECKBOX_CLASS}
+          checked={allOnPage}
+          ref={(input) => {
+            if (input) input.indeterminate = selectedOnPage > 0 && !allOnPage;
+          }}
+          onChange={() => onTogglePage(!allOnPage)}
+          disabled={disabled || pageRows.length === 0}
+          aria-label="Seleccionar todos los documentos de esta página"
+        />
+        Acciones
+      </label>
     ),
-});
+    label: "Acciones",
+    accessor: "inactivatable",
+    render: (inactivatable, row) =>
+      inactivatable ? (
+        <input
+          type="checkbox"
+          className={CHECKBOX_CLASS}
+          checked={selected.has(row.id)}
+          onChange={() => onToggle(row)}
+          disabled={disabled}
+          title="El proveedor ya no podrá solicitar este documento"
+          aria-label={`Seleccionar el documento ${row.documentNumber}`}
+        />
+      ) : (
+        <span className="text-gray-300">—</span>
+      ),
+  };
+};
 
 /** Agrupa las filas del resumen (proveedor + estado) en una tarjeta por proveedor. */
 const buildSupplierSummaries = (rows) => {
@@ -121,7 +144,8 @@ const PayerDocumentHistory = ({ payerId, canInactivate = false, onInactivated })
   const [selectedSupplier, setSelectedSupplier] = useState(ALL);
   const [supplierSearch, setSupplierSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState(ALL);
-  const [inactivatingId, setInactivatingId] = useState(null);
+  const [selected, setSelected] = useState(() => new Map());
+  const [isInactivating, setIsInactivating] = useState(false);
   const [summaryVersion, setSummaryVersion] = useState(0);
 
   useEffect(() => {
@@ -173,42 +197,91 @@ const PayerDocumentHistory = ({ payerId, canInactivate = false, onInactivated })
     reload: reloadDocuments,
   } = useServerPagination(payerId ? fetchDocuments : null, { onError: showLoadError });
 
-  const handleInactivate = useCallback(
-    async (doc) => {
-      const confirm = await Swal.fire({
-        title: "¿Pasar documento a Inactivo?",
-        html: `El documento <b>${escapeHtml(doc.documentNumber)}</b> de <b>${escapeHtml(doc.supplierName || "el proveedor")}</b> dejará de estar disponible para que el proveedor lo solicite y su monto se liberará del cupo. Esta acción no se puede deshacer.`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#dc2626",
-        cancelButtonColor: "#94a3b8",
-        confirmButtonText: "Sí, inactivar",
-        cancelButtonText: "Cancelar",
-      });
-      if (!confirm.isConfirmed) return;
+  const clearSelection = useCallback(() => setSelected(new Map()), []);
 
-      setInactivatingId(doc.id);
-      try {
-        await documentService.inactivateDocument(doc.id);
-        Swal.fire("Documento inactivado", "El documento pasó a estado Inactivo.", "success");
-        setSummaryVersion((version) => version + 1);
-        reloadDocuments();
-        onInactivated?.();
-      } catch (error) {
-        showError(apiErrorMessage(error, "No se pudo inactivar el documento."));
-      } finally {
-        setInactivatingId(null);
-      }
+  const toggleDocument = useCallback((doc) => {
+    setSelected((current) => {
+      const next = new Map(current);
+      if (next.has(doc.id)) next.delete(doc.id);
+      else next.set(doc.id, doc);
+      return next;
+    });
+  }, []);
+
+  const inactivatableOnPage = useMemo(() => (documents ?? []).filter((doc) => doc.inactivatable), [documents]);
+
+  const togglePage = useCallback(
+    (select) => {
+      setSelected((current) => {
+        const next = new Map(current);
+        for (const doc of inactivatableOnPage) {
+          if (select) next.set(doc.id, doc);
+          else next.delete(doc.id);
+        }
+        return next;
+      });
     },
-    [reloadDocuments, onInactivated],
+    [inactivatableOnPage],
   );
+
+  const selectedDocs = useMemo(() => [...selected.values()], [selected]);
+  const selectedAmount = useMemo(
+    () => selectedDocs.reduce((sum, doc) => sum + (Number(doc.amount) || 0), 0),
+    [selectedDocs],
+  );
+
+  const handleInactivateSelected = useCallback(async () => {
+    if (selectedDocs.length === 0) return;
+    const single = selectedDocs.length === 1 ? selectedDocs[0] : null;
+
+    const confirm = await Swal.fire({
+      title: single ? "¿Pasar documento a Inactivo?" : `¿Pasar ${selectedDocs.length} documentos a Inactivo?`,
+      html: single
+        ? `El documento <b>${escapeHtml(single.documentNumber)}</b> de <b>${escapeHtml(single.supplierName || "el proveedor")}</b> dejará de estar disponible para que el proveedor lo solicite y su monto se liberará del cupo. Esta acción no se puede deshacer, pero el documento se podrá cargar nuevamente.`
+        : `Los <b>${selectedDocs.length}</b> documentos seleccionados, por un total de <b>${escapeHtml(formatAmount(selectedAmount))}</b>, dejarán de estar disponibles para que los proveedores los soliciten y su monto se liberará del cupo. Esta acción no se puede deshacer, pero los documentos se podrán cargar nuevamente.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#94a3b8",
+      confirmButtonText: "Sí, inactivar",
+      cancelButtonText: "Cancelar",
+    });
+    if (!confirm.isConfirmed) return;
+
+    setIsInactivating(true);
+    try {
+      await documentService.inactivateDocuments(selectedDocs.map((doc) => doc.id));
+      Swal.fire(
+        single ? "Documento inactivado" : "Documentos inactivados",
+        single ? "El documento pasó a estado Inactivo." : `${selectedDocs.length} documentos pasaron a estado Inactivo.`,
+        "success",
+      );
+      onInactivated?.();
+    } catch (error) {
+      showError(apiErrorMessage(error, "No se pudieron inactivar los documentos."));
+    } finally {
+      setIsInactivating(false);
+      clearSelection();
+      setSummaryVersion((version) => version + 1);
+      reloadDocuments();
+    }
+  }, [selectedDocs, selectedAmount, reloadDocuments, onInactivated, clearSelection]);
 
   const columns = useMemo(
     () =>
       canInactivate
-        ? [...BASE_COLUMNS, buildActionsColumn({ onInactivate: handleInactivate, inactivatingId })]
+        ? [
+            ...BASE_COLUMNS,
+            buildActionsColumn({
+              selected,
+              pageRows: inactivatableOnPage,
+              onToggle: toggleDocument,
+              onTogglePage: togglePage,
+              disabled: isInactivating,
+            }),
+          ]
         : BASE_COLUMNS,
-    [canInactivate, handleInactivate, inactivatingId],
+    [canInactivate, selected, inactivatableOnPage, toggleDocument, togglePage, isInactivating],
   );
 
   const supplierSummaries = useMemo(() => buildSupplierSummaries(summaryRows), [summaryRows]);
@@ -237,6 +310,7 @@ const PayerDocumentHistory = ({ payerId, canInactivate = false, onInactivated })
     setSelectedSupplier(key);
     setActiveStatus(ALL);
     setCurrentPage(1);
+    clearSelection();
   };
 
   const supplierCardClass = (active) =>
@@ -326,15 +400,15 @@ const PayerDocumentHistory = ({ payerId, canInactivate = false, onInactivated })
           </div>
         )}
 
-        <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="shrink-0 flex flex-col lg:flex-row lg:items-center gap-3">
           <SearchInput
             value={searchTerm}
             onChange={setSearchTerm}
             placeholder="Buscar por documento o proveedor"
-            className="w-full sm:w-72 md:w-80 shrink-0 shadow-sm rounded-lg"
+            className="w-full lg:w-72 xl:w-80 shrink-0 shadow-sm rounded-lg"
           />
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full lg:w-auto">
             <label htmlFor="status-filter" className="text-xs font-medium text-gray-600 font-montserrat shrink-0">
               Estado
             </label>
@@ -344,8 +418,9 @@ const PayerDocumentHistory = ({ payerId, canInactivate = false, onInactivated })
               onChange={(e) => {
                 setActiveStatus(e.target.value);
                 setCurrentPage(1);
+                clearSelection();
               }}
-              className="w-full sm:w-56 px-3 py-2 border border-gray-200 rounded-md bg-white shadow-sm text-xs font-montserrat text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer"
+              className="w-full lg:w-56 px-3 py-2 border border-gray-200 rounded-md bg-white shadow-sm text-xs font-montserrat text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer"
             >
               {[{ id: ALL, label: "Todos" }, ...DOCUMENT_STATUSES].map((status) => {
                 const count = status.id === ALL ? totalForSelection : statusCountsForSelection[status.id] || 0;
@@ -357,6 +432,41 @@ const PayerDocumentHistory = ({ payerId, canInactivate = false, onInactivated })
               })}
             </select>
           </div>
+
+          {canInactivate && (
+            <div className="flex items-center justify-end gap-3 lg:ml-auto font-montserrat">
+              {selectedDocs.length > 0 && (
+                <p className="text-xs text-gray-700 whitespace-nowrap">
+                  <span className="font-bold">{selectedDocs.length}</span>{" "}
+                  {selectedDocs.length === 1 ? "seleccionado" : "seleccionados"} ·{" "}
+                  <span className="font-semibold">{formatAmount(selectedAmount)}</span>
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    disabled={isInactivating}
+                    className="ml-2 text-gray-500 hover:text-red-600 underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Limpiar
+                  </button>
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={handleInactivateSelected}
+                disabled={selectedDocs.length === 0 || isInactivating}
+                title={
+                  selectedDocs.length === 0
+                    ? "Seleccione en la columna Acciones los documentos Cargados que desea pasar a Inactivo"
+                    : undefined
+                }
+                className="inline-flex items-center justify-center px-3 py-2 rounded-md text-xs font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors whitespace-nowrap cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                {isInactivating
+                  ? "Inactivando…"
+                  : `Pasar a Inactivo${selectedDocs.length > 0 ? ` (${selectedDocs.length})` : ""}`}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col">

@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.davivienda.factoraje.domain.enums.IssuanceMethodEnum;
 import com.davivienda.factoraje.dto.report.PdfReportData;
 import com.davivienda.factoraje.dto.upload_batch.InvoiceRecordDTO;
 import com.davivienda.factoraje.infrastructure.exception.CreditLimitExceededException;
@@ -105,7 +106,7 @@ public class UploadBatchReports {
             String supplierName = supplierNames.getOrDefault(inv.supplierNit(), inv.supplierName());
             tableRows.add(List.of(
                     String.valueOf(i + 1),
-                    inv.documentNumber() != null ? inv.documentNumber() : "-",
+                    receiptDocumentNumber(inv),
                     inv.issueDate() != null ? inv.issueDate().format(DATE_FORMAT) : "-",
                     supplierName != null ? supplierName : "-",
                     Money.format(inv.nominalAmount())));
@@ -125,11 +126,19 @@ public class UploadBatchReports {
                 null,
                 List.of("Correlativo", "N° de documento", "Fecha de emisión", "Nombre del proveedor", "Monto"),
                 tableRows,
-                new float[]{1.9f, 3.0f, 2.6f, 4.4f, 2.1f},
+                new float[]{1.8f, 4.6f, 2.5f, 3.2f, 1.9f},
                 new int[]{Element.ALIGN_CENTER, Element.ALIGN_LEFT, Element.ALIGN_CENTER, Element.ALIGN_LEFT,
                         Element.ALIGN_RIGHT},
                 Money.format(total)
         ));
+    }
+
+    /** Un DTE se identifica por su número de control; un documento en papel, por su número de documento. */
+    private static String receiptDocumentNumber(InvoiceRecordDTO inv) {
+        String number = IssuanceMethodEnum.fromString(inv.issuanceMethod()) == IssuanceMethodEnum.DIGITAL
+                ? inv.controlNumber()
+                : inv.documentNumber();
+        return number != null && !number.isBlank() ? number : "-";
     }
 
     /** Metadatos del PDF en el orden indicado, con pares clave-valor. */

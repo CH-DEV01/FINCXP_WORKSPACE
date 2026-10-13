@@ -11,6 +11,7 @@ import com.davivienda.factoraje.dto.entity.EntityDTOResponse;
 import com.davivienda.factoraje.dto.entity.PayerRegistrationDTORequest;
 import com.davivienda.factoraje.dto.entity.PayerSummaryDTOResponse;
 import com.davivienda.factoraje.dto.entity.PayerUpdateDTORequest;
+import com.davivienda.factoraje.dto.entity.SupplierRegistrationDTORequest;
 import com.davivienda.factoraje.dto.entity.SupplierSummaryDTOResponse;
 import com.davivienda.factoraje.dto.entity.SupplierUpdateDTORequest;
 
@@ -28,6 +29,8 @@ public interface EntityService {
     Page<PayerSummaryDTOResponse> getPayerSummaries(String search, int page, int size);
 
     Page<SupplierSummaryDTOResponse> getSupplierSummaries(String search, int page, int size);
+
+    SupplierSummaryDTOResponse registerSupplier(SupplierRegistrationDTORequest request);
 
     SupplierSummaryDTOResponse updateSupplier(UUID supplierId, SupplierUpdateDTORequest request);
 

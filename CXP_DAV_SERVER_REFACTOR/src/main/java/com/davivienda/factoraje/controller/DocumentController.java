@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,9 +18,11 @@ import com.davivienda.factoraje.dto.PageResponse;
 import com.davivienda.factoraje.dto.document.DocumentDTOResponse;
 import com.davivienda.factoraje.dto.document.DocumentHistoryDTOResponse;
 import com.davivienda.factoraje.dto.document.DocumentHistorySummaryDTOResponse;
+import com.davivienda.factoraje.dto.document.InactivateDocumentsDTORequest;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.service.DocumentService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -107,6 +110,20 @@ public class DocumentController {
         documentService.inactivateDocumentByPayer(documentId);
 
         return ResponseEntity.ok(ApiResponse.success(null, "El documento pasó a estado Inactivo."));
+    }
+
+    @PatchMapping("/inactivate")
+    public ResponseEntity<ApiResponse<Void>> inactivateDocuments(
+            @Valid @RequestBody InactivateDocumentsDTORequest request) {
+
+        log.info("Inactivación manual de {} documento(s).", request.documentIds().size());
+
+        documentService.inactivateDocumentsByPayer(request.documentIds());
+
+        return ResponseEntity.ok(ApiResponse.success(null,
+                request.documentIds().size() == 1
+                        ? "El documento pasó a estado Inactivo."
+                        : "Los documentos pasaron a estado Inactivo."));
     }
 
 }

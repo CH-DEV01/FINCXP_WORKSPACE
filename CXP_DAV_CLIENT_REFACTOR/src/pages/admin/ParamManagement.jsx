@@ -90,7 +90,8 @@ const ParamsManagement = () => {
     setEditingParam(param);
     reset({
       key: param.key || "",
-      value: param.value || "",
+      // El API no devuelve los secretos; solo se pueden reemplazar.
+      value: param.sensitive ? "" : param.value || "",
     });
   };
 
@@ -161,7 +162,19 @@ const ParamsManagement = () => {
             <FieldLabel htmlFor="param-value" required>
               Valor (Value)
             </FieldLabel>
-            <input id="param-value" type="text" {...register("value")} className={inputClass(errors.value)} />
+            <input
+              id="param-value"
+              type={editingParam?.sensitive ? "password" : "text"}
+              autoComplete={editingParam?.sensitive ? "new-password" : "off"}
+              placeholder={editingParam?.sensitive ? "Ingrese el nuevo valor" : undefined}
+              {...register("value")}
+              className={inputClass(errors.value)}
+            />
+            {editingParam?.sensitive && (
+              <p className="mt-1 text-xs text-gray-500">
+                Valor confidencial: no se muestra el actual. Lo que ingrese reemplazará el valor guardado.
+              </p>
+            )}
             <FieldError error={errors.value} />
           </div>
         </form>

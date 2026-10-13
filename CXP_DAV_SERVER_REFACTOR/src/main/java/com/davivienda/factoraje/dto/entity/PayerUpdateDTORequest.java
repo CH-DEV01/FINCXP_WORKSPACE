@@ -7,6 +7,7 @@ import com.davivienda.factoraje.domain.enums.GeneralStatusEnum;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -18,6 +19,11 @@ import jakarta.validation.constraints.Size;
  * en ese caso es obligatoria.
  */
 public record PayerUpdateDTORequest(
+
+        @NotBlank(message = "El NIU es obligatorio.")
+        @Size(max = 25, message = "El NIU no puede superar 25 dígitos.")
+        @Pattern(regexp = "[\\d\\s-]+", message = "El NIU solo puede contener números.")
+        String niu,
 
         @Size(max = 50, message = "La cuenta bancaria no puede superar 50 caracteres.")
         @Pattern(regexp = "[\\d\\s-]*", message = "La cuenta bancaria solo puede contener números.")

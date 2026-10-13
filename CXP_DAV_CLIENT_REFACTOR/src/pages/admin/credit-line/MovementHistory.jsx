@@ -27,6 +27,11 @@ const columns = [
     render: (type) => <MovementTypeChip type={type} />,
   },
   {
+    header: "Lote de desembolso",
+    accessor: "disbursementBatchNumber",
+    render: (batchNumber) => <span className="font-mono text-slate-600">{batchNumber || "-"}</span>,
+  },
+  {
     header: "Fecha aplicación",
     accessor: "date",
     render: (date) => new Date(date).toLocaleString("es-SV"),

@@ -33,10 +33,11 @@ public enum SystemParameterKey {
     UPLOAD_MAX_ROWS(ValueType.INTEGER, "5000", "1", "100000"),
     CORS_ALLOWED_ORIGINS(ValueType.ORIGINS, "http://localhost:5173,https://devpay.davivienda.com.sv", null, null),
     JWT_EXPIRATION_MINUTES(ValueType.INTEGER, "1440", "5", "10080"),
-    JWT_SECRET(ValueType.BASE64_KEY, "G9UuPSmEz8a18PARiE8Rs9QKvDrdUOJjjNe3duoQqUw=", true),
     SESSION_IDLE_TIMEOUT_MINUTES(ValueType.INTEGER, "15", "1", "480"),
     // El literal no puede ser la constante UNCONFIGURED: los campos estáticos del enum
     // se inicializan después de las constantes.
+    // Sin llave configurada la API no arranca (JwtService).
+    JWT_SECRET(ValueType.BASE64_KEY, "CONFIGURAR", true),
     MAILJET_API_KEY(ValueType.TEXT, "CONFIGURAR", true),
     MAILJET_API_SECRET(ValueType.TEXT, "CONFIGURAR", true),
     MAILJET_FROM_EMAIL(ValueType.EMAIL, "CONFIGURAR", false),
@@ -96,6 +97,17 @@ public enum SystemParameterKey {
     }
 
     /**
+     * Secretos que existen en la tabla pero no en este enum, porque los lee el SSO
+     * directamente por su llave.
+     */
+    private static final Set<String> EXTERNAL_SECRETS = Set.of("BEARER_TOKEN", "PAY_BEARER_TOKEN", "APP_CODE");
+
+    /** El valor no debe salir en los logs ni en las respuestas de la API. */
+    public static boolean isSensitive(String key) {
+        return EXTERNAL_SECRETS.contains(key) || find(key).map(SystemParameterKey::sensitive).orElse(false);
+    }
+
+    /**
      * Valida el valor y lo devuelve en su forma canónica.
      *
      * @throws IllegalArgumentException si el valor no es válido para este parámetro.
@@ -105,7 +117,8 @@ public enum SystemParameterKey {
             throw new IllegalArgumentException("El valor de " + name() + " no puede estar vacío.");
         }
         String value = raw.trim();
-        if (UNCONFIGURED.equals(value) && UNCONFIGURED.equals(defaultValue)) {
+        // Una llave en CONFIGURAR invalidaría todas las sesiones, incluida la de quien la guarda.
+        if (UNCONFIGURED.equals(value) && UNCONFIGURED.equals(defaultValue) && type != ValueType.BASE64_KEY) {
             return UNCONFIGURED;
         }
         return switch (type) {

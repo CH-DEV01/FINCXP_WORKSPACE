@@ -1,5 +1,6 @@
 package com.davivienda.factoraje.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.davivienda.factoraje.dto.ApiResponse;
 import com.davivienda.factoraje.dto.PageResponse;
 import com.davivienda.factoraje.dto.credit_facility.CreditFacilityDTOResponse;
+import com.davivienda.factoraje.dto.credit_facility.RestorableDisbursementBatchDTOResponse;
 import com.davivienda.factoraje.dto.credit_facility.RestoreCreditFacilityDTORequest;
 import com.davivienda.factoraje.dto.credit_facility_history.CreditFacilityHistoryDTOResponse;
 import com.davivienda.factoraje.service.CreditFacilityService;
@@ -53,6 +55,14 @@ public class CreditFacilityController {
         return ResponseEntity.ok(ApiResponse.success(
                 updatedFacility,
                 "Abono aplicado y cupo restaurado exitosamente."));
+    }
+
+    @GetMapping("/{creditFacilityId}/restorable-batches")
+    public ResponseEntity<ApiResponse<List<RestorableDisbursementBatchDTOResponse>>> getRestorableBatches(
+            @PathVariable UUID creditFacilityId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                creditFacilityService.getRestorableBatches(creditFacilityId),
+                "Lotes de desembolso por abonar consultados exitosamente."));
     }
 
     @GetMapping("/history/{creditFacilityId}")

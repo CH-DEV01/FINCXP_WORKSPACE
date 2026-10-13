@@ -44,6 +44,17 @@ const generateBatch = async (payload) => {
 };
 
 /**
+ * Genera un lote por cada vencimiento seleccionado (solicitudes en Generado) y devuelve el Blob
+ * de un ZIP con la solicitud de dispersión de cada lote. Si uno falla no se genera ninguno.
+ */
+const generateBatches = async ({ payerId, dueDates }) => {
+  const response = await api.post(`${BASE_URL}/generate-batches`, { payerId, dueDates }, {
+    responseType: "blob",
+  });
+  return response.data;
+};
+
+/**
  * Bitácora de lotes de dispersión paginada (page en base 0); payerId opcional:
  * { content: [{ id, batchNumber, payerId, payerName, payerAccountNumber, dueDate, dispersionDate,
  *    documentCount, totalAmount, status: 'CREATED' | 'SETTLED', createdByName, confirmedByName,
@@ -82,6 +93,7 @@ export const dispersionService = {
   getPayerRequests,
   getPendingDocuments,
   generateBatch,
+  generateBatches,
   getBatchHistory,
   getBatchDetails,
   confirmBatch,

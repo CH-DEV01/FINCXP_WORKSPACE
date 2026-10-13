@@ -14,7 +14,7 @@
 --        - Administrador del sistema (rol SYSTEM_ADMIN): administra los parámetros.
 --          Este rol solo se asigna directamente en la base de datos.
 --
--- Equivale a las migraciones V1 a V15 de src/main/resources/db/migration, con los
+-- Equivale a las migraciones V1 a V19 de src/main/resources/db/migration, con los
 -- mismos identificadores, más los datos propios de producción. Los cambios
 -- posteriores se entregan en db/prod/actualizaciones/.
 --
@@ -538,11 +538,17 @@ ALTER TABLE ONLY public.entity_types_cat ADD CONSTRAINT ukqa96cmb4a7grwp2xm89mg9
 ALTER TABLE ONLY public.bank_accounts ADD CONSTRAINT ukr9gi1et82prjsig51uqxj2qm6 UNIQUE (account_number);
 ALTER TABLE ONLY public.entities ADD CONSTRAINT ukrh9g82kd3mu9d7ncd5r451aiu UNIQUE (nit);
 
--- Índices únicos de negocio (doble fondeo y términos)
-CREATE UNIQUE INDEX uq_documents_control_number ON public.documents USING btree (upper((control_number)::text)) WHERE (control_number IS NOT NULL);
-CREATE UNIQUE INDEX uq_documents_generation_code ON public.documents USING btree (upper((generation_code)::text)) WHERE (generation_code IS NOT NULL);
-CREATE UNIQUE INDEX uq_documents_paper_number_year ON public.documents USING btree (master_agreement_id, document_number, EXTRACT(year FROM issue_date)) WHERE (((issuance_method)::text = 'PAPER'::text) AND (document_number IS NOT NULL));
-CREATE UNIQUE INDEX uq_documents_received_stamp ON public.documents USING btree (upper((received_stamp)::text)) WHERE (received_stamp IS NOT NULL);
+-- Índices únicos de negocio (doble fondeo y términos). Los documentos inactivados por el
+-- pagador no cuentan para el doble fondeo: se pueden volver a cargar.
+CREATE UNIQUE INDEX uq_documents_control_number ON public.documents USING btree (upper((control_number)::text))
+    WHERE (control_number IS NOT NULL AND status <> 'INACTIVATED_BY_PAYER');
+CREATE UNIQUE INDEX uq_documents_generation_code ON public.documents USING btree (upper((generation_code)::text))
+    WHERE (generation_code IS NOT NULL AND status <> 'INACTIVATED_BY_PAYER');
+CREATE UNIQUE INDEX uq_documents_paper_number_year ON public.documents USING btree
+    (master_agreement_id, document_number, EXTRACT(year FROM issue_date))
+    WHERE (issuance_method = 'PAPER' AND document_number IS NOT NULL AND status <> 'INACTIVATED_BY_PAYER');
+CREATE UNIQUE INDEX uq_documents_received_stamp ON public.documents USING btree (upper((received_stamp)::text))
+    WHERE (received_stamp IS NOT NULL AND status <> 'INACTIVATED_BY_PAYER');
 CREATE UNIQUE INDEX ux_term_versions_one_active ON public.term_versions_cat USING btree (term_type_id) WHERE ((status)::text = 'ACTIVE'::text);
 CREATE UNIQUE INDEX ux_term_versions_type_version ON public.term_versions_cat USING btree (term_type_id, lower((version_number)::text));
 
@@ -634,6 +640,17 @@ CREATE TABLE public.upload_resources (
     CONSTRAINT upload_resources_file_size_check CHECK (file_size > 0),
     CONSTRAINT fk_upload_resources_updated_by FOREIGN KEY (updated_by_id) REFERENCES public.users(id)
 );
+
+-- El pago parcial del cupo se registra por lote de desembolso; cada lote se abona una sola vez.
+ALTER TABLE public.credit_facility_histories ADD COLUMN disbursement_batch_id uuid;
+ALTER TABLE public.credit_facility_histories ADD CONSTRAINT fk_credit_facility_histories_disbursement_batch
+    FOREIGN KEY (disbursement_batch_id) REFERENCES public.disbursement_batches(id);
+CREATE UNIQUE INDEX uk_credit_facility_histories_disbursement_batch
+    ON public.credit_facility_histories (disbursement_batch_id) WHERE disbursement_batch_id IS NOT NULL;
+
+-- NIU de pagadores y proveedores; los proveedores creados desde la carga no lo traen.
+ALTER TABLE public.entities ADD COLUMN niu character varying(25);
+ALTER TABLE public.entities ADD CONSTRAINT uk_entities_niu UNIQUE (niu);
 
 -- -----------------------------------------------------------------------------
 -- 2. CATÁLOGOS
@@ -879,7 +896,7 @@ INSERT INTO public.system_parameters (id, created_at, param_key, updated_at, par
     ('d1200000-0000-4000-8000-000000000004', now(), 'MAILJET_FROM_NAME', now(), 'CONFIGURAR'),
     ('d1200000-0000-4000-8000-000000000005', now(), 'APP_LOGIN_URL', now(), 'CONFIGURAR'),
     ('d1300000-0000-4000-8000-000000000001', now(), 'MAILJET_API_URL', now(), 'https://api.mailjet.com/v3/send'),
-    ('d1400000-0000-4000-8000-000000000001', now(), 'JWT_SECRET', now(), 'G9UuPSmEz8a18PARiE8Rs9QKvDrdUOJjjNe3duoQqUw=');
+    ('d1400000-0000-4000-8000-000000000001', now(), 'JWT_SECRET', now(), 'CONFIGURAR');
 
 -- -----------------------------------------------------------------------------
 -- 4. ENTIDAD BANCO Y USUARIOS MADRE

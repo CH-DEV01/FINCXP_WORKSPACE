@@ -6,7 +6,7 @@ const money = (value) => `$${formatMoney(value)}`;
 
 const initial = (name) => (name ? name.trim().charAt(0).toUpperCase() : "P");
 
-/** Barra de ocupación con la marca del umbral a partir del cual ya no se admiten cargas. */
+/** Barra de utilización con la marca del umbral a partir del cual ya no se admiten cargas. */
 const UtilizationBar = ({ utilization, threshold, dark }) => {
   const used = Math.min(Number(utilization) || 0, 100);
   const limit = Math.min(Number(threshold) || 0, 100);
@@ -19,7 +19,7 @@ const UtilizationBar = ({ utilization, threshold, dark }) => {
           dark ? "text-red-200" : "text-gray-500"
         }`}
       >
-        <span>Ocupación</span>
+        <span>Utilización</span>
         <span>{formatPercent(utilization)}</span>
       </div>
       <div className={`relative w-full h-2.5 rounded-full overflow-hidden ${dark ? "bg-red-950/80" : "bg-gray-200"}`}>
@@ -43,7 +43,7 @@ const UtilizationBar = ({ utilization, threshold, dark }) => {
 const InactiveBadge = ({ status }) =>
   status && status !== "ACTIVE" ? (
     <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700">
-      Línea inactiva
+      Cupo inactivo
     </span>
   ) : null;
 
@@ -64,7 +64,7 @@ const Identity = ({ summary, dark }) => (
         {summary?.name || "Sin nombre"}
       </p>
       <p className="text-xs text-gray-500 mt-0.5">
-        NIT {summary?.nit || "-"} · Código {summary?.code || "-"}
+        NIT {summary?.nit || "-"} · NIU {summary?.niu || "-"}
       </p>
     </div>
   </div>
@@ -77,7 +77,7 @@ const LoadingCard = ({ className }) => (
   </div>
 );
 
-/** Panel lateral rojo de la vista de carga: identidad arriba y estado de la línea debajo. */
+/** Panel lateral rojo de la vista de carga: identidad arriba y estado del cupo debajo. */
 const PanelVariant = ({ summary, creditLine }) => (
   <div className="flex-1 shadow-2xl bg-gradient-to-r from-red-600 to-red-800 text-white p-4 rounded-xl font-montserrat flex flex-col gap-4">
     <div className="bg-white rounded-lg shadow-lg p-4">
@@ -87,7 +87,7 @@ const PanelVariant = ({ summary, creditLine }) => (
     {creditLine ? (
       <div className="bg-red-900/40 p-4 rounded-xl border border-red-500/30 shadow-inner">
         <h4 className="text-[10px] uppercase font-bold text-red-200 mb-3 tracking-wider flex items-center">
-          Estado de la línea
+          Estado del cupo
           <InactiveBadge status={creditLine.status} />
         </h4>
 
@@ -128,7 +128,7 @@ const PanelVariant = ({ summary, creditLine }) => (
       </div>
     ) : (
       <p className="text-xs text-red-100 bg-red-900/40 rounded-lg p-3 border border-red-500/30">
-        El pagador no tiene una línea de crédito asignada.
+        El pagador no tiene un cupo de crédito asignado.
       </p>
     )}
   </div>
@@ -141,7 +141,7 @@ const Metric = ({ label, value, highlight }) => (
   </div>
 );
 
-/** Franja horizontal de la bitácora: identidad a la izquierda y métricas de la línea a la derecha. */
+/** Franja horizontal de la bitácora: identidad a la izquierda y métricas del cupo a la derecha. */
 const BannerVariant = ({ summary, creditLine }) => (
   <div className="bg-white border border-gray-200 border-l-4 border-l-red-600 rounded-lg shadow-sm p-4 font-montserrat flex flex-col xl:flex-row xl:items-center gap-4">
     <div className="xl:w-80 shrink-0">
@@ -159,7 +159,7 @@ const BannerVariant = ({ summary, creditLine }) => (
         </div>
       </div>
     ) : (
-      <p className="flex-1 text-xs text-gray-500">El pagador no tiene una línea de crédito asignada.</p>
+      <p className="flex-1 text-xs text-gray-500">El pagador no tiene un cupo de crédito asignado.</p>
     )}
   </div>
 );

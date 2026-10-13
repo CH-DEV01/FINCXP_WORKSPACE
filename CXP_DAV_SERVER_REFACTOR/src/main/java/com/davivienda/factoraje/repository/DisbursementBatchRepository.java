@@ -1,5 +1,6 @@
 package com.davivienda.factoraje.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +14,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.davivienda.factoraje.domain.entities.DisbursementBatchModel;
+import com.davivienda.factoraje.dto.credit_facility.RestorableDisbursementBatchDTOResponse;
 
 import jakarta.persistence.LockModeType;
 
@@ -51,5 +53,28 @@ public interface DisbursementBatchRepository extends JpaRepository<DisbursementB
         ORDER BY b.createdAt DESC
     """)
     List<DisbursementBatchModel> findAllByPayerWithUsersOrderByCreatedAtDesc(@Param("payerId") UUID payerId);
+
+    /** Lotes liquidados del pagador que todavía no se han abonado al cupo. */
+    @Query("""
+        SELECT new com.davivienda.factoraje.dto.credit_facility.RestorableDisbursementBatchDTOResponse(
+            b.id, b.batchNumber, b.dueDate, b.disbursementDate, COUNT(t), SUM(d.nominalAmount), b.totalAmount)
+        FROM FinancingTransactionModel t
+        JOIN t.disbursementBatch b
+        JOIN t.document d
+        WHERE b.payer.id = :payerId
+          AND b.status = com.davivienda.factoraje.domain.enums.DisbursementBatchStatusEnum.SETTLED
+          AND NOT EXISTS (SELECT h.id FROM CreditFacilityHistoryModel h WHERE h.disbursementBatch = b)
+        GROUP BY b.id, b.batchNumber, b.dueDate, b.disbursementDate, b.totalAmount
+        ORDER BY b.dueDate, b.batchNumber
+    """)
+    List<RestorableDisbursementBatchDTOResponse> findRestorableByPayer(@Param("payerId") UUID payerId);
+
+    /** Valor nominal de los documentos del lote: lo que consumieron del cupo al cargarse. */
+    @Query("""
+        SELECT COALESCE(SUM(t.document.nominalAmount), 0)
+        FROM FinancingTransactionModel t
+        WHERE t.disbursementBatch.id = :batchId
+    """)
+    BigDecimal sumNominalAmount(@Param("batchId") UUID batchId);
 
 }

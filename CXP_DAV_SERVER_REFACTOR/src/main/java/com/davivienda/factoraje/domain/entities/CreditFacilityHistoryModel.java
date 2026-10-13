@@ -68,6 +68,11 @@ public class CreditFacilityHistoryModel {
     @JoinColumn(name = "executed_by_id", nullable = false)
     private UserModel executedBy; 
 
+    // Lote de desembolso que liquida un pago parcial; cada lote se abona una sola vez.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "disbursement_batch_id", unique = true)
+    private DisbursementBatchModel disbursementBatch;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private Instant createdAt;

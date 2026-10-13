@@ -50,6 +50,10 @@ public class EntityModel {
     @Column(name = "nit", nullable = false, length = 25, unique = true)
     private String nit;
 
+    /** Solo los pagadores tienen NIU; los registrados antes de V17 pueden no tenerlo. */
+    @Column(name = "niu", length = 25, unique = true)
+    private String niu;
+
     @NotBlank(message = "El nombre de la entidad no puede estar vacío")
     @Column(name = "name", nullable = false, length = 255)
     private String name;

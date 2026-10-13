@@ -2,50 +2,72 @@ import React, { useState, useEffect } from "react";
 import Icon from "@mdi/react";
 import { mdiCheckCircleOutline, mdiLoading, mdiClose, mdiFormatListChecks, mdiCurrencyUsd } from "@mdi/js";
 import Swal from "sweetalert2";
-import { formatAmountMask, formatMoney } from "../../../utils/format";
+import { creditFacilityService } from "../../../services/admin/creditFacilityService";
+import { formatDate, formatMoney } from "../../../utils/format";
+import { apiErrorMessage } from "../../../utils/errors";
 
-const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, currentConsumed }) => {
+const batchLabel = (batch) =>
+  `${batch.batchNumber} · vence ${formatDate(batch.dueDate)} · $ ${formatMoney(batch.nominalAmount)}`;
+
+const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, currentConsumed, creditFacilityId }) => {
   const [repaymentType, setRepaymentType] = useState("PARTIAL");
-  const [repaymentAmount, setRepaymentAmount] = useState("");
   const [referenceNumber, setReferenceNumber] = useState("");
+  const [batches, setBatches] = useState([]);
+  const [isLoadingBatches, setIsLoadingBatches] = useState(false);
+  const [batchesError, setBatchesError] = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState("");
 
   useEffect(() => {
-    if (isOpen) {
-      setRepaymentType("PARTIAL");
-      setRepaymentAmount("");
-      setReferenceNumber("");
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
+    setRepaymentType("PARTIAL");
+    setReferenceNumber("");
+    setSelectedBatchId("");
+    setBatches([]);
+    setBatchesError("");
+    if (!creditFacilityId) return;
 
-  useEffect(() => {
-    if (repaymentType === "FULL") {
-      const exactAmount = Number(currentConsumed).toFixed(2);
-      setRepaymentAmount(exactAmount);
-    } else {
-      setRepaymentAmount("");
-    }
-  }, [repaymentType, currentConsumed]);
+    let cancelled = false;
+    setIsLoadingBatches(true);
+    creditFacilityService
+      .getRestorableBatches(creditFacilityId)
+      .then((result) => {
+        if (!cancelled) setBatches(result);
+      })
+      .catch((error) => {
+        if (!cancelled) setBatchesError(apiErrorMessage(error, "No se pudieron cargar los lotes de desembolso."));
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingBatches(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, creditFacilityId]);
 
   if (!isOpen) return null;
 
-  const handleAmountChange = (e) => {
-    const rawValue = e.target.value.replace(/,/g, "");
-    if (/^\d*\.?\d{0,2}$/.test(rawValue)) {
-      setRepaymentAmount(rawValue);
-    }
-  };
+  const isPartial = repaymentType === "PARTIAL";
+  const selectedBatch = batches.find((batch) => batch.id === selectedBatchId);
+  const repaymentAmount = isPartial ? selectedBatch?.nominalAmount ?? "" : Number(currentConsumed).toFixed(2);
+  const canSubmit = !isProcessing && (!isPartial || Boolean(selectedBatch));
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (isPartial && !selectedBatch) {
+      Swal.fire("Atención", "Seleccione el lote de desembolso que liquida el pago parcial.", "warning");
+      return;
+    }
+
     const amount = Number(repaymentAmount);
 
     if (isNaN(amount) || amount <= 0) {
-      Swal.fire("Atención", "Por favor ingresa un monto válido mayor a 0.", "warning");
+      Swal.fire("Atención", "No hay consumo que restaurar.", "warning");
       return;
     }
 
     if (amount > currentConsumed) {
-      Swal.fire("Monto excedido", "El abono no puede ser mayor al consumo actual de la línea.", "warning");
+      Swal.fire("Monto excedido", "El abono no puede ser mayor al consumo actual del cupo.", "warning");
       return;
     }
 
@@ -54,7 +76,63 @@ const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, curr
       return;
     }
 
-    onConfirm({ amount, reference: referenceNumber, type: repaymentType });
+    onConfirm({
+      amount,
+      reference: referenceNumber,
+      type: repaymentType,
+      disbursementBatchId: isPartial ? selectedBatch.id : undefined,
+      batchNumber: isPartial ? selectedBatch.batchNumber : undefined,
+    });
+  };
+
+  const renderBatchSelector = () => {
+    if (isLoadingBatches) {
+      return (
+        <div className="flex items-center gap-2 text-xs text-slate-500 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <Icon path={mdiLoading} size={0.6} className="animate-spin" />
+          Cargando lotes desembolsados...
+        </div>
+      );
+    }
+    if (batchesError) {
+      return <p className="text-xs text-red-600 p-3 bg-red-50 rounded-xl border border-red-100">{batchesError}</p>;
+    }
+    if (batches.length === 0) {
+      return (
+        <p className="text-xs text-slate-500 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          No hay lotes desembolsados pendientes de abono para este pagador.
+        </p>
+      );
+    }
+    return (
+      <>
+        <select
+          value={selectedBatchId}
+          onChange={(e) => setSelectedBatchId(e.target.value)}
+          disabled={isProcessing}
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl text-sm p-3 text-slate-700 outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-all"
+        >
+          <option value="">Seleccione un lote...</option>
+          {batches.map((batch) => (
+            <option key={batch.id} value={batch.id}>
+              {batchLabel(batch)}
+            </option>
+          ))}
+        </select>
+        {selectedBatch && (
+          <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-500">
+            <dt>Documentos</dt>
+            <dd className="text-right font-semibold text-slate-700">{selectedBatch.documentCount}</dd>
+            <dt>Fecha de desembolso</dt>
+            <dd className="text-right font-semibold text-slate-700">{formatDate(selectedBatch.disbursementDate)}</dd>
+            <dt>Monto desembolsado</dt>
+            <dd className="text-right font-mono font-semibold text-slate-700">
+              $ {formatMoney(selectedBatch.disbursedAmount)}
+            </dd>
+          </dl>
+        )}
+      </>
+    );
   };
 
   return (
@@ -119,6 +197,13 @@ const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, curr
             </div>
           </div>
 
+          {isPartial && (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Lote de desembolso</label>
+              {renderBatchSelector()}
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Monto del Abono ($)</label>
             <div className="relative">
@@ -127,15 +212,17 @@ const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, curr
               </div>
               <input
                 type="text"
-                inputMode="decimal"
-                required
-                placeholder="0.00"
-                value={formatAmountMask(repaymentAmount)}
-                onChange={handleAmountChange}
-                disabled={repaymentType === "FULL" || isProcessing}
-                className={`w-full border rounded-xl text-sm py-3 pr-4 pl-8 font-mono text-slate-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-all ${repaymentType === "FULL" ? "bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed font-bold" : "bg-slate-50 border-slate-200 shadow-inner"}`}
+                readOnly
+                placeholder={isPartial ? "Seleccione un lote" : "0.00"}
+                value={repaymentAmount === "" ? "" : formatMoney(repaymentAmount)}
+                className="w-full border rounded-xl text-sm py-3 pr-4 pl-8 font-mono outline-none bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed font-bold"
               />
             </div>
+            {isPartial && (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Se restaura el valor nominal de los documentos del lote, que es lo que consumieron del cupo.
+              </p>
+            )}
           </div>
 
           <div>
@@ -164,7 +251,7 @@ const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, curr
             </button>
             <button
               type="submit"
-              disabled={isProcessing}
+              disabled={!canSubmit}
               className="w-full sm:w-auto px-5 py-3 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isProcessing ? (

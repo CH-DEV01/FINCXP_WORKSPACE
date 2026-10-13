@@ -1,9 +1,13 @@
 package com.davivienda.factoraje.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,9 +17,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.davivienda.factoraje.domain.entities.SystemParameterModel;
 import com.davivienda.factoraje.dto.parameter.ParameterDTORequest;
+import com.davivienda.factoraje.dto.parameter.ParameterDTOResponse;
 import com.davivienda.factoraje.infrastructure.config.SystemParameters;
 import com.davivienda.factoraje.repository.ParameterRepository;
 
@@ -50,6 +58,53 @@ class ParameterServiceImplTest {
         assertThat(logs.list).anyMatch(event -> event.getFormattedMessage().contains("MAILJET_API_SECRET"));
         assertThat(logs.list).noneMatch(event -> event.getFormattedMessage().contains("secreto-de-prueba"));
         verify(systemParameters).invalidate();
+    }
+
+    @Test
+    void readingParametersMasksSecretsButNotPendingOnes() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(parameterRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(
+                parameter("JWT_SECRET", "c2VjcmV0by1kZS1wcnVlYmEtZGUtMzItYnl0ZXMtbWluaW1v"),
+                parameter("BEARER_TOKEN", "token-del-sso"),
+                parameter("MAILJET_API_SECRET", "CONFIGURAR"),
+                parameter("IVA_RATE", "0.13"))));
+
+        List<ParameterDTOResponse> result = service.readAllParameters(pageable).getContent();
+
+        assertThat(result).extracting(ParameterDTOResponse::value)
+                .containsExactly(ParameterDTOResponse.MASK, ParameterDTOResponse.MASK, "CONFIGURAR", "0.13");
+        assertThat(result).extracting(ParameterDTOResponse::sensitive)
+                .containsExactly(true, true, true, false);
+    }
+
+    @Test
+    void updatingASecretReturnsItMasked() {
+        UUID id = UUID.randomUUID();
+        SystemParameterModel parameter = parameter("MAILJET_API_SECRET", "CONFIGURAR");
+        when(parameterRepository.findById(id)).thenReturn(Optional.of(parameter));
+        when(parameterRepository.saveAndFlush(parameter)).thenReturn(parameter);
+
+        ParameterDTOResponse response = service.updateParameter(id,
+                new ParameterDTORequest("MAILJET_API_SECRET", "secreto-de-prueba"));
+
+        assertThat(response.value()).isEqualTo(ParameterDTOResponse.MASK);
+        assertThat(parameter.getValue()).isEqualTo("secreto-de-prueba");
+    }
+
+    @Test
+    void theMaskIsNotSavedAsASecret() {
+        UUID id = UUID.randomUUID();
+        SystemParameterModel parameter = parameter("BEARER_TOKEN", "token-del-sso");
+        when(parameterRepository.findById(id)).thenReturn(Optional.of(parameter));
+
+        assertThatThrownBy(() -> service.updateParameter(id,
+                new ParameterDTORequest("BEARER_TOKEN", ParameterDTOResponse.MASK)))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(parameterRepository, never()).saveAndFlush(any());
+    }
+
+    private static SystemParameterModel parameter(String key, String value) {
+        return SystemParameterModel.builder().id(UUID.randomUUID()).key(key).value(value).build();
     }
 
     private static ListAppender<ILoggingEvent> attachLogs() {

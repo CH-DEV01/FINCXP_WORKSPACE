@@ -27,6 +27,7 @@ import com.davivienda.factoraje.dto.master_agreement.MasterAgreementDTORequest;
 import com.davivienda.factoraje.dto.user.UserDTORequest;
 import com.davivienda.factoraje.infrastructure.mail.MailNoticePublisher;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
+import com.davivienda.factoraje.repository.BankAccountRepository;
 import com.davivienda.factoraje.repository.BankHolidayCatRepository;
 import com.davivienda.factoraje.repository.DisbursementPolicyCatRepository;
 import com.davivienda.factoraje.repository.EntityRepository;
@@ -100,6 +101,7 @@ class OperatorChangeNoticeTest {
         when(agreements.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         new MasterAgreementServiceImpl(agreements, disbursements, payments, entities,
+                org.mockito.Mockito.mock(BankAccountRepository.class),
                 org.mockito.Mockito.mock(DisbursementPolicyService.class), mailNotices)
                 .createMasterAgreement(new MasterAgreementDTORequest(
                         AgreementTypeEnum.STANDARD, payerId, supplierId, paymentId, disbursementId,

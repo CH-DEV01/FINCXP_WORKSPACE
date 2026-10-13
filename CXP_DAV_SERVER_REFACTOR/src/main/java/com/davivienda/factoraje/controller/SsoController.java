@@ -35,11 +35,10 @@ public class SsoController {
             @RequestBody HandoffDTORequest request) {
 
         log.info("Endpoint /handoff activated");
-        log.info("Bearer Token received: {}", bearerTokenRequest);
 
         HandoffDTOResponse response = ssoService.processHandoff(request.getApp(), request.getOtc(), bearerTokenRequest);
 
-        log.info("response to return: {}", response);
+        log.info("Handoff respondido. success: {}", response.getSuccess());
         return ResponseEntity.ok(response);
 
     }
@@ -49,11 +48,10 @@ public class SsoController {
             @RequestBody SessionTokenDTORequest request) {
 
         log.info("Endpoint /activateSession activated");
-        log.info("sessionToken received: {}", request.getSessionToken());
 
         try {
             String jwt = ssoService.activateSession(request.getSessionToken());
-            log.info("JWT generado correctamente: {}", jwt);
+            log.info("JWT generado correctamente");
 
             McsSSODTOResponse response = new McsSSODTOResponse();
             response.setJwt(jwt);

@@ -1,5 +1,7 @@
 package com.davivienda.factoraje.service.impl;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -58,7 +60,7 @@ public class SsoServiceImpl implements SsoService {
     @Override
     public HandoffDTOResponse processHandoff(String appCode, String otc, String bearerTokenRequest) {
 
-        log.info("[Handoff-Start] Iniciando proceso para AppCode: {} con OTC: {}", appCode, otc);
+        log.info("[Handoff-Start] Iniciando proceso para AppCode: {}", appCode);
 
         try {
             // 1. CARGA DE PARÁMETROS (Configuración)
@@ -77,13 +79,13 @@ public class SsoServiceImpl implements SsoService {
             log.info("url para petición: {}", payDaviviendaUrl.getValue());
 
             // 2. VALIDACIONES DE SEGURIDAD
-            if (bearerTokenRequest == null || !bearerTokenRequest.equals("Bearer " + myBearerToken.getValue())) {
+            if (!secretEquals("Bearer " + myBearerToken.getValue(), bearerTokenRequest)) {
                 log.warn("[Handoff-Business] Intento de acceso no autorizado. Token inválido.");
                 throw new BusinessException("No autorizado: Bearer Token inválido");
             }
 
-            if (myAppCode.getValue() == null || !myAppCode.getValue().equals(appCode)) {
-                log.warn("[Handoff-Business] AppCode no coincide. Recibido: {}, Esperado: {}", appCode, myAppCode);
+            if (myAppCode.getValue() == null || !secretEquals(myAppCode.getValue(), appCode)) {
+                log.warn("[Handoff-Business] AppCode no coincide.");
                 throw new BusinessException("Código de aplicación incorrecto");
             }
 
@@ -94,10 +96,6 @@ public class SsoServiceImpl implements SsoService {
             headers.set("Accept", "application/json");
 
             String jsonBody = "{\"otc\":\"" + otc + "\"}";
-            log.info("[DEBUG] JSON Body exacto: {}", jsonBody);
-            log.info("[DEBUG] Content-Length: {} bytes",
-                    jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
-
             HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
 
             log.info("[Handoff-External] Consultando validación en Davivienda...");
@@ -136,7 +134,7 @@ public class SsoServiceImpl implements SsoService {
             pendingSession.setExpiresAt(LocalDateTime.now().plusMinutes(5));
 
             pendingSessionRepository.save(pendingSession);
-            log.info("[Handoff-Success] Sesión creada para el E-mail: {}. Token generado: {}", email, sessionToken);
+            log.info("[Handoff-Success] Sesión creada para el E-mail: {}", email);
 
             // 7. CONSTRUCCIÓN DE RESPUESTA
             HandoffDTOResponse handoffResponse = new HandoffDTOResponse();
@@ -165,6 +163,16 @@ public class SsoServiceImpl implements SsoService {
             log.error("[Handoff-Critical-Error] Error no controlado en el proceso", e);
             throw new RuntimeException("Error interno del sistema: " + e.getMessage());
         }
+    }
+
+    /** Compara en tiempo constante para no revelar cuántos caracteres coinciden. */
+    static boolean secretEquals(String expected, String received) {
+        if (expected == null || received == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                received.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override

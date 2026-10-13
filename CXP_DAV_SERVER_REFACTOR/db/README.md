@@ -22,6 +22,10 @@ En producción no hay Flyway: el DBA ejecuta los scripts de `db/prod/` (ver
 | `V13__url_de_mailjet.sql` | Endpoint de Mailjet (`https://api.mailjet.com/v3/send`), editable desde Gestión de parámetros. |
 | `V14__secreto_jwt.sql` | Llave de firma de los JWT. El primer valor es `CONFIGURAR`. |
 | `V15__valor_por_defecto_jwt_secret.sql` | Sustituye ese marcador por la llave por defecto. No pisa una llave que el ambiente ya haya cambiado. |
+| `V16__abonos_por_lote_de_desembolso.sql` | El historial del cupo guarda el lote de desembolso del pago parcial (`disbursement_batch_id`); un índice único impide abonar dos veces el mismo lote. |
+| `V17__niu_de_pagadores.sql` | Vuelve a agregar `entities.niu`, único. Obligatorio al registrar pagadores y proveedores desde sus modales; la carga de documentos no lo pide, así que el proveedor creado desde el archivo lo recibe después al editarlo. |
+| `V18__recarga_de_documentos_inactivados.sql` | Los índices únicos de doble fondeo (`uq_documents_*`) excluyen los documentos `INACTIVATED_BY_PAYER`, que así se pueden volver a cargar. Los de cuarentena siguen contando. |
+| `V19__jwt_secret_sin_valor_por_defecto.sql` | `JWT_SECRET` vuelve a `CONFIGURAR` si tenía la llave por defecto de V15, que está en el código fuente. La API no arranca hasta que el ambiente coloque su propia llave. |
 
 ## Desarrollo y QA
 
@@ -35,9 +39,14 @@ En producción no hay Flyway: el DBA ejecuta los scripts de `db/prod/` (ver
    | `DB_PASSWORD` | `postgres` |
    | `FLYWAY_ENABLED` | `true` |
 
-3. Al arrancar, Flyway ejecuta todas las migraciones. `JWT_SECRET` queda con una
-   llave por defecto y la API arranca. Cada ambiente puede reemplazarla; el cambio
-   invalida las sesiones ya emitidas.
+3. Al arrancar, Flyway ejecuta todas las migraciones. `JWT_SECRET` queda en
+   `CONFIGURAR` y la API se detiene con un error que lo indica. Colocar una llave
+   propia del ambiente y volver a arrancar:
+   ```sql
+   UPDATE system_parameters SET param_value = '<openssl rand -base64 32>', updated_at = now()
+   WHERE param_key = 'JWT_SECRET';
+   ```
+   Cambiar la llave invalida las sesiones ya emitidas.
 4. Revisar en `system_parameters` los valores propios del ambiente, sobre todo
    `CORS_ALLOWED_ORIGINS` y `JWT_SECRET`, y el calendario de `bank_holidays_cat`.
 
@@ -56,7 +65,7 @@ y la API no arrancaría.
 ### Instalación inicial
 
 `db/prod/instalacion_inicial.sql` lo ejecuta el DBA una sola vez, sobre una base
-PostgreSQL 16 vacía. Deja la base igual que las migraciones V1 a V15 (mismas tablas,
+PostgreSQL 16 vacía. Deja la base igual que las migraciones V1 a V19 (mismas tablas,
 restricciones, índices e identificadores de catálogo) y, en una sola transacción, crea:
 
 | Qué | Para qué |

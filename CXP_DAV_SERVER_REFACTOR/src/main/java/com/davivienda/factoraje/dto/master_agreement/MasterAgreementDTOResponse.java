@@ -18,11 +18,17 @@ public record MasterAgreementDTOResponse(
         UUID paymentPolicyId,
         Integer paymentPolicyDays,
         UUID disbursementPolicyId,
-        String disbursementPolicyName
+        String disbursementPolicyName,
+        String supplierAccountNumber
 
 ) {
 
     public static MasterAgreementDTOResponse fromEntity(MasterAgreementModel model) {
+        return fromEntity(model, null);
+    }
+
+    /** {@code supplierAccountNumber}: cuenta principal del proveedor, si se consultó. */
+    public static MasterAgreementDTOResponse fromEntity(MasterAgreementModel model, String supplierAccountNumber) {
 
         return new MasterAgreementDTOResponse(
                 model.getId(),
@@ -36,7 +42,8 @@ public record MasterAgreementDTOResponse(
                 model.getPaymentPolicy().getId(),
                 model.getPaymentPolicy().getDaysCount(),
                 model.getDisbursementPolicy().getId(),
-                model.getDisbursementPolicy().getName()
+                model.getDisbursementPolicy().getName(),
+                supplierAccountNumber
             );
     }
 

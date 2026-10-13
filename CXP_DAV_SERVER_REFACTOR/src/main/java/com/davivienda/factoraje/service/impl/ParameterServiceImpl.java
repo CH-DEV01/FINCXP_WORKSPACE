@@ -51,6 +51,11 @@ public class ParameterServiceImpl implements ParameterService {
             throw new IllegalArgumentException("La clave de un parámetro no se puede modificar.");
         }
 
+        boolean sensitive = SystemParameterKey.isSensitive(parameter.getKey());
+        if (sensitive && request.value() != null && ParameterDTOResponse.MASK.equals(request.value().trim())) {
+            throw new IllegalArgumentException("Ingrese el nuevo valor de " + parameter.getKey() + ".");
+        }
+
         String value = SystemParameterKey.find(parameter.getKey())
                 .map(key -> key.normalize(request.value()))
                 .orElseGet(() -> {
@@ -64,7 +69,7 @@ public class ParameterServiceImpl implements ParameterService {
         SystemParameterModel parameterUpdated = parameterRepository.saveAndFlush(parameter);
         systemParameters.invalidate();
 
-        if (SystemParameterKey.find(parameter.getKey()).map(SystemParameterKey::sensitive).orElse(false)) {
+        if (sensitive) {
             log.info("Parameter {} successfully updated", parameter.getKey());
         } else {
             log.info("Parameter {} successfully updated to {}", parameter.getKey(), value);

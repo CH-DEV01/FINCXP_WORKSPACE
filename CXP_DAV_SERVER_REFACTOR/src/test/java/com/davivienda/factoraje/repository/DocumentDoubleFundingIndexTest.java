@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,8 @@ class DocumentDoubleFundingIndexTest {
     @Autowired
     private DocumentRepository documentRepository;
     @Autowired
+    private DisbursementBatchRepository disbursementBatchRepository;
+    @Autowired
     private EntityManager entityManager;
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -66,7 +69,7 @@ class DocumentDoubleFundingIndexTest {
     }
 
     @Test
-    void uploadTemplateNoLongerUsesSupplierNiuNorOperatorAndEntitiesHaveNoNiu() {
+    void uploadTemplateNoLongerUsesSupplierNiuNorOperatorAndOnlyPayersMayHaveNiu() {
         assertThat(jdbcTemplate.queryForList(
                 "SELECT logical_dto_field FROM excel_template_columns WHERE is_active", String.class))
                 .contains("supplierNit", "supplierName", "supplierAccountNumber")
@@ -74,9 +77,14 @@ class DocumentDoubleFundingIndexTest {
                         "operatorMiddleName", "operatorFirstLastName", "operatorSecondLastName");
 
         assertThat(jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM information_schema.columns WHERE table_name = 'entities' AND column_name = 'niu'",
+                "SELECT is_nullable FROM information_schema.columns WHERE table_name = 'entities' AND column_name = 'niu'",
+                String.class))
+                .isEqualTo("YES");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM information_schema.table_constraints"
+                        + " WHERE table_name = 'entities' AND constraint_name = 'uk_entities_niu' AND constraint_type = 'UNIQUE'",
                 Integer.class))
-                .isZero();
+                .isEqualTo(1);
     }
 
     @Test
@@ -131,6 +139,54 @@ class DocumentDoubleFundingIndexTest {
         assertThatThrownBy(() -> documentRepository.saveAndFlush(paper("F-100", LocalDate.of(2026, 7, 15))))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("uq_documents_paper_number_year");
+    }
+
+    @Test
+    void aDocumentInactivatedByThePayerCanBeUploadedAgain() {
+        DocumentModel inactivated = digital("AB12CD34-0000-4000-8000-000000000001", "DTE-03-ABCD1234-000000000000001",
+                "A".repeat(40));
+        inactivated.setStatus(DocumentStatusEnum.INACTIVATED_BY_PAYER);
+        documentRepository.saveAndFlush(inactivated);
+        DocumentModel inactivatedPaper = paper("F-200", LocalDate.of(2026, 3, 1));
+        inactivatedPaper.setStatus(DocumentStatusEnum.INACTIVATED_BY_PAYER);
+        documentRepository.saveAndFlush(inactivatedPaper);
+
+        assertThat(documentRepository.findExistingGenerationCodes(List.of("AB12CD34-0000-4000-8000-000000000001"))).isEmpty();
+        assertThat(documentRepository.findExistingControlNumbers(List.of("DTE-03-ABCD1234-000000000000001"))).isEmpty();
+        assertThat(documentRepository.findExistingReceivedStamps(List.of("A".repeat(40)))).isEmpty();
+
+        documentRepository.saveAndFlush(digital("AB12CD34-0000-4000-8000-000000000001", "DTE-03-ABCD1234-000000000000001",
+                "A".repeat(40)));
+        documentRepository.saveAndFlush(paper("F-200", LocalDate.of(2026, 3, 1)));
+
+        assertThat(documentRepository.findExistingGenerationCodes(List.of("AB12CD34-0000-4000-8000-000000000001")))
+                .containsExactly("AB12CD34-0000-4000-8000-000000000001");
+    }
+
+    @Test
+    void aQuarantinedDocumentStillBlocksTheUpload() {
+        DocumentModel quarantined = digital("AB12CD34-0000-4000-8000-000000000001", "DTE-03-ABCD1234-000000000000001",
+                "A".repeat(40));
+        quarantined.setStatus(DocumentStatusEnum.IN_QUARANTINE);
+        documentRepository.saveAndFlush(quarantined);
+
+        assertThat(documentRepository.findExistingControlNumbers(List.of("DTE-03-ABCD1234-000000000000001"))).hasSize(1);
+        assertThatThrownBy(() -> documentRepository.saveAndFlush(digital("AB12CD34-0000-4000-8000-000000000001",
+                "DTE-03-ABCD1234-000000000000001", "A".repeat(40))))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void eachDisbursementBatchIsRepaidToTheCreditFacilityOnlyOnce() {
+        assertThat(disbursementBatchRepository.findRestorableByPayer(UUID.randomUUID())).isEmpty();
+        assertThat(disbursementBatchRepository.sumNominalAmount(UUID.randomUUID())).isEqualByComparingTo("0");
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT indexdef FROM pg_indexes WHERE indexname = 'uk_credit_facility_histories_disbursement_batch'",
+                String.class))
+                .contains("UNIQUE")
+                .contains("(disbursement_batch_id)")
+                .contains("WHERE (disbursement_batch_id IS NOT NULL)");
     }
 
     private DocumentModel digital(String generationCode, String controlNumber, String receivedStamp) {

@@ -1,6 +1,7 @@
 export const DEFAULT_FORM_VALUES = {
   name: "",
   nit: "",
+  niu: "",
   accountNumber: "",
   creditFacilityNumber: "",
   approvedAmount: "",
@@ -47,6 +48,7 @@ const fractionToPercentInput = (value, decimals = 4) =>
 export const toPayerFormValues = (payer) => ({
   name: payer.name || "",
   nit: payer.nit || "",
+  niu: payer.niu || "",
   accountNumber: payer.accountNumber || "",
   creditFacilityNumber: payer.creditFacilityNumber || "",
   approvedAmount: payer.facilityLimitAmount != null ? String(payer.facilityLimitAmount) : "",

@@ -13,7 +13,9 @@ import com.davivienda.factoraje.domain.entities.CreditFacilityHistoryModel;
 @Repository 
 public interface CreditFacilityHistoryRepository extends JpaRepository<CreditFacilityHistoryModel, UUID> {
 
-    @EntityGraph(attributePaths = "executedBy")
+    @EntityGraph(attributePaths = { "executedBy", "disbursementBatch" })
     Page<CreditFacilityHistoryModel> findByCreditFacilityId(UUID creditFacilityId, Pageable pageable);
+
+    boolean existsByDisbursementBatchId(UUID disbursementBatchId);
     
 }

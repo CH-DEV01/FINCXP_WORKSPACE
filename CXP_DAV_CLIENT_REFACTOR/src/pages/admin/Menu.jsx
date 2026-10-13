@@ -52,7 +52,7 @@ const menuItems = [
     id: "payer-credit-line-management",
     icon: FaCreditCard,
     title: "Gestion de cupos de credito",
-    description: "Administre el flujo operativo de las líneas de crédito.",
+    description: "Administre el flujo operativo de los cupos de crédito.",
   },
   {
     id: "disbursement-terminal",

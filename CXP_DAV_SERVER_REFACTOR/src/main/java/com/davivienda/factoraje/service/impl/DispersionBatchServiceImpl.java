@@ -1,12 +1,18 @@
 package com.davivienda.factoraje.service.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DispersionBatchServiceImpl implements DispersionBatchService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter ZIP_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final UserRepository userRepository;
     private final EntityRepository entityRepository;
@@ -64,17 +71,63 @@ public class DispersionBatchServiceImpl implements DispersionBatchService {
     public Letter generateBatch(UUID createdById, UUID payerId, LocalDate dueDate) {
 
         UserModel createdBy = findUser(createdById);
+        EntityModel payer = lockPayer(payerId);
+        return createBatch(createdBy, payer, mainAccount(payer), dueDate);
+    }
 
-        // Serializa la generación por pagador: una segunda petición simultánea espera y,
-        // al buscar los documentos sin lote, ya no encuentra los que tomó la primera.
-        EntityModel payer = entityRepository.findByIdForUpdate(payerId)
+    @Override
+    @Transactional
+    public Letter generateBatches(UUID createdById, UUID payerId, Collection<LocalDate> dueDates) {
+
+        List<LocalDate> sortedDueDates = dueDates.stream().distinct().sorted().toList();
+        if (sortedDueDates.isEmpty()) {
+            throw new IllegalArgumentException("Seleccione al menos un vencimiento.");
+        }
+
+        UserModel createdBy = findUser(createdById);
+        EntityModel payer = lockPayer(payerId);
+        String payerAccount = mainAccount(payer);
+
+        List<Letter> letters = new ArrayList<>(sortedDueDates.size());
+        for (LocalDate dueDate : sortedDueDates) {
+            letters.add(createBatch(createdBy, payer, payerAccount, dueDate));
+        }
+
+        log.info("{} lote(s) de dispersión generados en conjunto para el pagador {}.", letters.size(), payerId);
+        return new Letter("Solicitudes_Dispersion_" + ZIP_DATE_FMT.format(disbursementPolicyService.businessToday())
+                + ".zip", zip(letters));
+    }
+
+    /** Serializa la generación por pagador: una petición simultánea espera y ya no encuentra los documentos tomados. */
+    private EntityModel lockPayer(UUID payerId) {
+        return entityRepository.findByIdForUpdate(payerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pagador no encontrado con ID: " + payerId));
+    }
 
-        String payerAccount = bankAccountRepository.findFirstByEntityModelIdAndIsMainTrue(payerId)
+    private String mainAccount(EntityModel payer) {
+        return bankAccountRepository.findFirstByEntityModelIdAndIsMainTrue(payer.getId())
                 .map(BankAccountModel::getAccountNumber)
                 .orElseThrow(() -> new IllegalArgumentException("El pagador " + payer.getName()
                         + " no tiene una cuenta principal a la que cargar la dispersión."));
+    }
 
+    private static byte[] zip(List<Letter> letters) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(out)) {
+            for (Letter letter : letters) {
+                zip.putNextEntry(new ZipEntry(letter.fileName()));
+                zip.write(letter.content());
+                zip.closeEntry();
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo armar el ZIP de solicitudes de dispersión.", e);
+        }
+        return out.toByteArray();
+    }
+
+    private Letter createBatch(UserModel createdBy, EntityModel payer, String payerAccount, LocalDate dueDate) {
+
+        UUID payerId = payer.getId();
         List<DocumentModel> documents = dispersionDocuments.eligible(documentRepository.findWithoutDispersionBatchForUpdate(
                 payerId, dueDate, List.of(DocumentStatusEnum.IN_QUARANTINE, DocumentStatusEnum.APPROVED)));
         if (documents.isEmpty()) {

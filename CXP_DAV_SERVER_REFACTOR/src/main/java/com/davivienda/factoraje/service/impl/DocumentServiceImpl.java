@@ -5,9 +5,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -206,24 +208,43 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     @Transactional
     public void inactivateDocumentByPayer(UUID documentId) {
+        inactivateDocumentsByPayer(List.of(documentId));
+    }
+
+    @Override
+    @Transactional
+    public void inactivateDocumentsByPayer(List<UUID> documentIds) {
 
         UserModel currentUser = currentUserService.managed();
+        Set<UUID> ids = new LinkedHashSet<>(documentIds);
 
-        DocumentModel document = documentRepository.findByIdForUpdate(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado con ID: " + documentId));
+        List<DocumentModel> documents = documentRepository.findAllByIdForUpdate(ids);
+        if (documents.size() != ids.size()) {
+            Set<UUID> missing = new LinkedHashSet<>(ids);
+            documents.forEach(doc -> missing.remove(doc.getId()));
+            throw new ResourceNotFoundException("Documento no encontrado con ID: " + joined(missing));
+        }
 
-        MasterAgreementModel agreement = document.getMasterAgreement();
-        if (currentUser.getEntity() == null
-                || !currentUser.getEntity().getId().equals(agreement.getPayer().getId())) {
+        UUID payerId = currentUser.getEntity() != null ? currentUser.getEntity().getId() : null;
+        if (documents.stream().anyMatch(doc -> !doc.getMasterAgreement().getPayer().getId().equals(payerId))) {
             throw new UnauthorizedAccessException("El documento no pertenece al pagador del usuario.");
         }
 
-        if (document.getStatus() != DocumentStatusEnum.APPROVED) {
-            throw new IllegalArgumentException("Solo se pueden inactivar documentos en estado Cargado.");
+        List<String> notLoaded = documents.stream()
+                .filter(doc -> doc.getStatus() != DocumentStatusEnum.APPROVED)
+                .map(DocumentServiceImpl::displayNumber)
+                .toList();
+        if (!notLoaded.isEmpty()) {
+            throw new IllegalArgumentException("Solo se pueden inactivar documentos en estado Cargado. "
+                    + "Ya no están Cargados: " + String.join(", ", notLoaded) + ".");
         }
 
-        inactivate(List.of(document), DocumentStatusEnum.INACTIVATED_BY_PAYER, currentUser);
-        log.info("Documento {} inactivado manualmente por el usuario {}.", documentId, currentUser.getId());
+        inactivate(documents, DocumentStatusEnum.INACTIVATED_BY_PAYER, currentUser);
+        log.info("{} documento(s) inactivado(s) manualmente por el usuario {}.", documents.size(), currentUser.getId());
+    }
+
+    private static String joined(Set<UUID> ids) {
+        return String.join(", ", ids.stream().map(UUID::toString).toList());
     }
 
     @Override

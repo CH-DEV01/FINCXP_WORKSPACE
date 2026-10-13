@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FaAngleDoubleLeft } from "react-icons/fa";
 import { entityService } from "../../services/admin/entityService.js";
 import usePayerSummary from "../../hooks/usePayerSummary.js";
 import PayerDirectory from "../../components/payer/PayerDirectory.jsx";
@@ -6,8 +7,13 @@ import PayerSummaryCard from "../../components/payer/PayerSummaryCard.jsx";
 import PayerDocumentHistory from "../../components/payer/PayerDocumentHistory.jsx";
 import { showError } from "../../utils/errors.js";
 
+const DIRECTORY_HIDDEN_KEY = "operatorDocumentLog.directoryHidden";
+
 /** Bitácora de documentos del operador bancario: consulta, en solo lectura, la de cualquier pagador. */
 const OperatorDocumentLog = () => {
+  const [isDirectoryHidden, setIsDirectoryHidden] = useState(
+    () => localStorage.getItem(DIRECTORY_HIDDEN_KEY) === "true",
+  );
   const [payers, setPayers] = useState([]);
   const [isLoadingPayers, setIsLoadingPayers] = useState(true);
   const [selectedPayer, setSelectedPayer] = useState(null);
@@ -37,6 +43,13 @@ const OperatorDocumentLog = () => {
     };
   }, []);
 
+  const toggleDirectory = () => {
+    setIsDirectoryHidden((hidden) => {
+      localStorage.setItem(DIRECTORY_HIDDEN_KEY, String(!hidden));
+      return !hidden;
+    });
+  };
+
   return (
     <div className="flex flex-col w-full lg:h-[calc(100dvh-5.5rem)] min-h-0 gap-3 sm:gap-4">
       <div className="shrink-0 space-y-1">
@@ -49,13 +62,50 @@ const OperatorDocumentLog = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row flex-1 min-h-0 gap-4">
-        <aside className="lg:w-64 xl:w-72 shrink-0 flex flex-col min-h-0 shadow-2xl bg-gradient-to-r from-red-600 to-red-800 bg-red-800 text-white p-4 rounded-xl font-montserrat">
-          <PayerDirectory
-            payers={payers}
-            isLoading={isLoadingPayers}
-            selectedPayerId={selectedPayerId}
-            onSelect={setSelectedPayer}
-          />
+        <aside
+          className={`relative shrink-0 flex flex-col min-h-0 overflow-hidden shadow-2xl bg-gradient-to-r from-red-600 to-red-800 bg-red-800 text-white rounded-xl font-montserrat transition-all duration-300 ease-in-out ${
+            isDirectoryHidden ? "max-h-14 lg:max-h-none lg:w-12" : "max-h-[80vh] lg:max-h-none lg:w-64 xl:w-72"
+          }`}
+        >
+          <button
+            type="button"
+            onClick={toggleDirectory}
+            aria-expanded={!isDirectoryHidden}
+            aria-controls="payer-directory"
+            title={isDirectoryHidden ? "Mostrar directorio de pagadores" : "Ocultar directorio de pagadores"}
+            aria-label={isDirectoryHidden ? "Mostrar directorio de pagadores" : "Ocultar directorio de pagadores"}
+            className="absolute top-3 right-2.5 z-10 p-1.5 rounded-md text-red-100 hover:text-white hover:bg-red-900/50 transition-colors cursor-pointer"
+          >
+            <FaAngleDoubleLeft
+              className={`transition-transform duration-300 ${
+                isDirectoryHidden ? "-rotate-90 lg:rotate-180" : "rotate-90 lg:rotate-0"
+              }`}
+            />
+          </button>
+
+          <span
+            aria-hidden="true"
+            className={`absolute left-4 top-4 lg:left-1/2 lg:top-14 lg:-translate-x-1/2 lg:[writing-mode:vertical-rl] lg:rotate-180 text-xs font-bold uppercase tracking-wider text-red-100 whitespace-nowrap transition-opacity duration-200 ${
+              isDirectoryHidden ? "opacity-100 delay-150" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            Directorio de pagadores
+          </span>
+
+          <div
+            id="payer-directory"
+            inert={isDirectoryHidden}
+            className={`flex flex-col flex-1 min-h-0 p-4 lg:w-64 xl:w-72 transition-opacity duration-200 ${
+              isDirectoryHidden ? "opacity-0" : "opacity-100 delay-150"
+            }`}
+          >
+            <PayerDirectory
+              payers={payers}
+              isLoading={isLoadingPayers}
+              selectedPayerId={selectedPayerId}
+              onSelect={setSelectedPayer}
+            />
+          </div>
         </aside>
 
         <div className="flex-1 min-w-0 min-h-0 flex flex-col gap-3 sm:gap-4">

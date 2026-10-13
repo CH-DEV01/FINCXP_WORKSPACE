@@ -24,7 +24,7 @@ con el mismo número y descripción: `Vn__descripcion.sql`.
 
 Los scripts se ejecutan en orden de número, empezando por el siguiente a la versión
 de `instalacion_inicial.sql` con la que se instaló la base. La versión actual del
-script incluye hasta V15.
+script incluye hasta V19.
 
 ```bash
 psql -h <host> -U <usuario> -d <base> -f V12__descripcion.sql
@@ -39,3 +39,7 @@ psql -h <host> -U <usuario> -d <base> -f V12__descripcion.sql
 | `V13__url_de_mailjet.sql` | Endpoint de Mailjet. El valor inicial es `https://api.mailjet.com/v3/send`. |
 | `V14__secreto_jwt.sql` | Llave de firma JWT. El primer valor es `CONFIGURAR`. |
 | `V15__valor_por_defecto_jwt_secret.sql` | Sustituye `CONFIGURAR` por la llave por defecto. No pisa una llave ya cambiada. |
+| `V16__abonos_por_lote_de_desembolso.sql` | El historial del cupo guarda el lote de desembolso de cada pago parcial; cada lote se abona una sola vez. |
+| `V17__niu_de_pagadores.sql` | NIU de pagadores y proveedores (`entities.niu`), único. Las entidades existentes y los proveedores creados desde la carga quedan sin NIU hasta que se capture al editarlos. |
+| `V18__recarga_de_documentos_inactivados.sql` | Los índices de doble fondeo excluyen los documentos inactivados por el pagador, que así se pueden volver a cargar. |
+| `V19__jwt_secret_sin_valor_por_defecto.sql` | `JWT_SECRET` vuelve a `CONFIGURAR` si tenía la llave por defecto. Después, colocar la llave propia del ambiente con el `UPDATE` que indica el script, antes de arrancar la API. |

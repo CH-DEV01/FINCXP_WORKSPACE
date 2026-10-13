@@ -16,7 +16,8 @@ public record CreditFacilityHistoryDTOResponse(
         UUID operatorId,
         String operator,
         RepaymentTypeEnum type,
-        String reference) {
+        String reference,
+        String disbursementBatchNumber) {
 
     public static CreditFacilityHistoryDTOResponse fromEntity(CreditFacilityHistoryModel model) {
 
@@ -32,7 +33,8 @@ public record CreditFacilityHistoryDTOResponse(
                 model.getExecutedBy().getId(),
                 fullName,
                 model.getRepaymentType(),
-                model.getReferenceNumber());
+                model.getReferenceNumber(),
+                model.getDisbursementBatch() != null ? model.getDisbursementBatch().getBatchNumber() : null);
     }
 
 }

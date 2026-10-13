@@ -27,11 +27,18 @@ const accountNumber = z
   .max(50, { message: "Máximo 50 dígitos" })
   .regex(/^\d+$/, { message: "Solo números" });
 
+const niu = z
+  .string()
+  .trim()
+  .min(1, required)
+  .max(25, { message: "Máximo 25 dígitos" })
+  .regex(/^\d+$/, { message: "Solo números" });
+
 // En edición el resto de campos se muestran bloqueados y no se validan
-export const payerUpdateSchema = z.object({ ...editableFields, accountNumber });
+export const payerUpdateSchema = z.object({ ...editableFields, niu, accountNumber });
 
 // La cuenta solo se modifica si ya existe; sin cuenta se muestra bloqueada
-export const payerUpdateWithoutAccountSchema = z.object(editableFields);
+export const payerUpdateWithoutAccountSchema = z.object({ ...editableFields, niu });
 
 export const payerSchema = z
   .object({
@@ -40,8 +47,14 @@ export const payerSchema = z
       .string()
       .min(1, required)
       .regex(/^\d{4}-\d{6}-\d{3}-\d$/, { message: "Formato 0000-000000-000-0" }),
+    niu,
     accountNumber,
-    creditFacilityNumber: z.string().trim().min(1, required).max(255, { message: "Máximo 255 caracteres" }),
+    creditFacilityNumber: z
+      .string()
+      .trim()
+      .min(1, required)
+      .max(255, { message: "Máximo 255 dígitos" })
+      .regex(/^\d+$/, { message: "Solo números" }),
     approvedAmount: z
       .string()
       .min(1, required)

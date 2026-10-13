@@ -10,15 +10,21 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -198,6 +204,54 @@ class DispersionBatchServiceImplTest {
     }
 
     @Test
+    void generatesOneBatchPerSelectedDueDateAndZipsTheirLetters() throws IOException {
+        LocalDate laterDueDate = DUE_DATE.plusDays(1);
+        DocumentModel first = document(DocumentStatusEnum.IN_QUARANTINE, tPlusOne, "100.00", olderUploader, 1);
+        DocumentModel second = document(DocumentStatusEnum.IN_QUARANTINE, tPlusOne, "200.00", olderUploader, 2);
+        DocumentModel third = document(DocumentStatusEnum.IN_QUARANTINE, tPlusOne, "300.00", olderUploader, 3);
+        third.setDueDate(laterDueDate);
+        when(documentRepository.findWithoutDispersionBatchForUpdate(eq(payer.getId()), eq(DUE_DATE), any()))
+                .thenReturn(List.of(first, second));
+        when(documentRepository.findWithoutDispersionBatchForUpdate(eq(payer.getId()), eq(laterDueDate), any()))
+                .thenReturn(List.of(third));
+
+        Letter zip = service.generateBatches(admin.getId(), payer.getId(), List.of(laterDueDate, DUE_DATE, DUE_DATE));
+
+        ArgumentCaptor<DispersionBatchModel> batchCaptor = ArgumentCaptor.forClass(DispersionBatchModel.class);
+        verify(dispersionBatchRepository, times(2)).save(batchCaptor.capture());
+        List<DispersionBatchModel> batches = batchCaptor.getAllValues();
+        assertThat(batches).extracting(DispersionBatchModel::getDueDate).containsExactly(DUE_DATE, laterDueDate);
+        assertThat(batches).extracting(DispersionBatchModel::getDocumentCount).containsExactly(2, 1);
+        assertThat(List.of(first, second, third))
+                .allSatisfy(doc -> assertThat(doc.getStatus()).isEqualTo(DocumentStatusEnum.REQUESTED_FOR_DISPERSION));
+
+        assertThat(zip.fileName()).isEqualTo("Solicitudes_Dispersion_20261002.zip");
+        assertThat(zipEntries(zip.content())).containsExactly(
+                "Solicitud_Dispersion_" + batches.get(0).getBatchNumber() + ".pdf",
+                "Solicitud_Dispersion_" + batches.get(1).getBatchNumber() + ".pdf");
+    }
+
+    @Test
+    void failsWhenASelectedDueDateNoLongerHasDocumentsToDisperse() {
+        LocalDate laterDueDate = DUE_DATE.plusDays(1);
+        when(documentRepository.findWithoutDispersionBatchForUpdate(eq(payer.getId()), eq(DUE_DATE), any()))
+                .thenReturn(List.of(document(DocumentStatusEnum.IN_QUARANTINE, tPlusOne, "100.00", olderUploader, 1)));
+        when(documentRepository.findWithoutDispersionBatchForUpdate(eq(payer.getId()), eq(laterDueDate), any()))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.generateBatches(admin.getId(), payer.getId(), List.of(DUE_DATE, laterDueDate)))
+                .isInstanceOf(DocumentNotAvailableException.class)
+                .hasMessageContaining("ya no tiene documentos por dispersar");
+    }
+
+    @Test
+    void rejectsAnEmptySelection() {
+        assertThatThrownBy(() -> service.generateBatches(admin.getId(), payer.getId(), List.of()))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(dispersionBatchRepository, never()).save(any());
+    }
+
+    @Test
     void confirmingTheBatchLeavesItsDocumentsDispersed() {
         DispersionBatchModel batch = batch(DispersionBatchStatusEnum.CREATED);
         DocumentModel first = document(DocumentStatusEnum.REQUESTED_FOR_DISPERSION, tPlusOne, "100.00", olderUploader, 1);
@@ -261,6 +315,16 @@ class DispersionBatchServiceImplTest {
                 .status(status)
                 .createdBy(admin)
                 .build();
+    }
+
+    private static List<String> zipEntries(byte[] content) throws IOException {
+        List<String> names = new ArrayList<>();
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(content))) {
+            for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                names.add(entry.getName());
+            }
+        }
+        return names;
     }
 
     private static BankAccountModel account(EntityModel owner, String number) {

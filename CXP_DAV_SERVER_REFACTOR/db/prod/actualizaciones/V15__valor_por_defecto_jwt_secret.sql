@@ -27,8 +27,12 @@ BEGIN
     IF valor IS NULL THEN
         RAISE EXCEPTION 'La base no está en la versión V14; aplique antes las actualizaciones anteriores.';
     END IF;
-    IF valor = 'G9UuPSmEz8a18PARiE8Rs9QKvDrdUOJjjNe3duoQqUw=' THEN
-        RAISE EXCEPTION 'La actualización V15 ya está aplicada: JWT_SECRET ya tiene el valor por defecto.';
+    -- V19 devuelve JWT_SECRET a CONFIGURAR; en una base posterior a V15 no se vuelve a colocar la llave.
+    IF valor = 'G9UuPSmEz8a18PARiE8Rs9QKvDrdUOJjjNe3duoQqUw='
+       OR EXISTS (SELECT 1 FROM information_schema.columns
+                  WHERE table_schema = 'public' AND table_name = 'credit_facility_histories'
+                    AND column_name = 'disbursement_batch_id') THEN
+        RAISE EXCEPTION 'La actualización V15 ya está aplicada: la base ya está en la versión V15 o posterior.';
     END IF;
 END $$;
 

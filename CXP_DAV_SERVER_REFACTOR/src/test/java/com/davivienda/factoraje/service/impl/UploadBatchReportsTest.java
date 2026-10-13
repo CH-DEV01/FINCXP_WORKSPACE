@@ -43,6 +43,19 @@ class UploadBatchReportsTest {
     }
 
     @Test
+    void receiptShowsTheControlNumberForDteAndTheDocumentNumberForPaper() throws Exception {
+        List<InvoiceRecordDTO> invoices = List.of(
+                dte(4, "FAC-IGNORADO", "DTE-03-ABCD1234-000000000000123"),
+                invoice(5, "FAC-PAPEL", "06140202021022", "Servicios Cuscatlan", "50.00"));
+
+        String text = text(reports.receipt("carga.xlsx", "AEROMAN S.A. DE C.V", "Ana Operadora", invoices, Map.of()));
+
+        assertThat(rowsStartingWith(text, "1 DTE-03-ABCD1234-000000000000123 ")).hasSize(1);
+        assertThat(rowsStartingWith(text, "2 FAC-PAPEL")).hasSize(1);
+        assertThat(text).doesNotContain("FAC-IGNORADO");
+    }
+
+    @Test
     void validationRejectionShowsErrorTypeAndUploaderAndNumbersInconsistencies() throws Exception {
         List<BatchValidationError> errors = List.of(
                 new BatchValidationError(5, "Monto", BatchErrorType.VALUE_NOT_ALLOWED,
@@ -89,6 +102,12 @@ class UploadBatchReportsTest {
     private static InvoiceRecordDTO invoice(int row, String number, String nit, String name, String amount) {
         return new InvoiceRecordDTO(row, LocalDate.of(2026, 8, 4), new BigDecimal(amount), number, null, null, null,
                 "PAPER", "FCI", nit, name, "100200300400", "P30", "T_PLUS_1");
+    }
+
+    private static InvoiceRecordDTO dte(int row, String number, String controlNumber) {
+        return new InvoiceRecordDTO(row, LocalDate.of(2026, 8, 4), new BigDecimal("100.00"), number,
+                "3F2504E0-4F89-11D3-9A0C-0305E82C3301", "2026ABCDEF0123456789", controlNumber,
+                "DIGITAL", "CCF", "06140101011011", "Distribuidora", "100200300400", "P30", "T_PLUS_1");
     }
 
     private static String text(byte[] pdf) throws Exception {

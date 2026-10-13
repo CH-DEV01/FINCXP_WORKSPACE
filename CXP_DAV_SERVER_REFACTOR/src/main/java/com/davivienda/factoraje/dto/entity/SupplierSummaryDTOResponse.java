@@ -12,6 +12,7 @@ public record SupplierSummaryDTOResponse(
         String code,
         String name,
         String nit,
+        String niu,
         GeneralStatusEnum status,
         UUID bankAccountId,
         String accountNumber
@@ -24,6 +25,7 @@ public record SupplierSummaryDTOResponse(
                 supplier.getCode(),
                 supplier.getName(),
                 supplier.getNit(),
+                supplier.getNiu(),
                 supplier.getStatus(),
                 account != null ? account.getId() : null,
                 account != null ? account.getAccountNumber() : null);

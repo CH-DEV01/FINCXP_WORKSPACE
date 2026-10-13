@@ -23,6 +23,10 @@ public interface EntityRepository extends JpaRepository<EntityModel, UUID> {
 
     boolean existsByName(String name);
 
+    boolean existsByNiu(String niu);
+
+    boolean existsByNiuAndIdNot(String niu, UUID id);
+
     @Query("SELECT e FROM EntityModel e WHERE e.entityType.code = :typeCode")
     Page<EntityModel> findAllByEntityTypeCode(
             @Param("typeCode") String typeCode, 
@@ -34,7 +38,8 @@ public interface EntityRepository extends JpaRepository<EntityModel, UUID> {
         SELECT e FROM EntityModel e
         WHERE e.entityType.code = :typeCode
         AND (LOWER(e.name) LIKE :pattern ESCAPE '!'
-            OR LOWER(e.nit) LIKE :pattern ESCAPE '!')
+            OR LOWER(e.nit) LIKE :pattern ESCAPE '!'
+            OR e.niu LIKE :pattern ESCAPE '!')
     """)
     Page<EntityModel> searchByEntityTypeCode(
             @Param("typeCode") String typeCode,

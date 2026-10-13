@@ -64,6 +64,14 @@ const DocumentUploadCenter = ({ payerId, payerName, isLineFull = false, onUpload
     setIsModalOpen(false);
   };
 
+  const clearUpload = () => {
+    setSelectedFile(null);
+    setAcceptedTermVersion(null);
+    setUploadStatus("");
+    setUploadStatusType("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleUpload = async () => {
     if (!selectedFile) {
       setUploadStatus("Por favor selecciona un archivo primero");
@@ -100,10 +108,11 @@ const DocumentUploadCenter = ({ payerId, payerName, isLineFull = false, onUpload
       });
     } catch (error) {
       console.error("Error al subir archivo:", error);
-      setUploadStatusType("error");
 
       if (error.response?.data instanceof Blob && error.response.data.type === "application/pdf") {
         downloadBlob(error.response.data, `Reporte_Errores_${baseName(selectedFile)}.pdf`);
+        clearUpload();
+        setIsModalOpen(false);
 
         Swal.fire({
           title: "Carga rechazada por inconsistencias",
@@ -112,26 +121,26 @@ const DocumentUploadCenter = ({ payerId, payerName, isLineFull = false, onUpload
           confirmButtonColor: "#dc2626",
           confirmButtonText: "Revisar reporte",
         });
-
-        setUploadStatus("Carga rechazada. Revise el reporte de errores descargado.");
-      } else {
-        const errorMessage = await readApiErrorMessage(
-          error,
-          "Error de conexión al procesar el archivo. Intente nuevamente.",
-        );
-
-        Swal.fire({
-          title: "Error de Servidor",
-          text: errorMessage,
-          icon: "error",
-          confirmButtonColor: "#dc2626",
-        });
-
-        setUploadStatus("Fallo de comunicación con el servidor.");
+        return;
       }
 
+      const errorMessage = await readApiErrorMessage(
+        error,
+        "Error de conexión al procesar el archivo. Intente nuevamente.",
+      );
+
+      Swal.fire({
+        title: "Error de Servidor",
+        text: errorMessage,
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+      });
+
+      setUploadStatus("Fallo de comunicación con el servidor.");
+      setUploadStatusType("error");
       setAcceptedTermVersion(null);
       setIsModalOpen(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } finally {
       setIsUploading(false);
     }
@@ -210,9 +219,19 @@ const DocumentUploadCenter = ({ payerId, payerName, isLineFull = false, onUpload
                 </div>
 
                 {selectedFile && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-md flex justify-between items-center">
-                    <span className="font-medium text-red-900 truncate max-w-[70%] text-sm">{selectedFile.name}</span>
-                    <span className="text-red-700 text-xs font-bold">{(selectedFile.size / 1024).toFixed(2)} KB</span>
+                  <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-md flex justify-between items-center gap-3">
+                    <span className="font-medium text-red-900 truncate max-w-[60%] text-sm">{selectedFile.name}</span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-red-700 text-xs font-bold">{(selectedFile.size / 1024).toFixed(2)} KB</span>
+                      <button
+                        type="button"
+                        onClick={clearUpload}
+                        disabled={isUploading}
+                        className="text-xs font-semibold text-red-700 hover:text-red-900 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Eliminar archivo
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

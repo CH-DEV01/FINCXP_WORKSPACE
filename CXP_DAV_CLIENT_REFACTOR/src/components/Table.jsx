@@ -120,7 +120,7 @@ const Table = ({
                   {columns.map((col) => (
                     <td
                       key={col.accessor}
-                      data-label={col.header}
+                      data-label={col.label ?? col.header}
                       className="px-3 sm:px-6 py-3 sm:py-4 block md:table-cell text-right md:text-left 
                                border-b border-gray-100 md:border-none last:border-b-0
                                text-gray-700 whitespace-normal md:whitespace-nowrap break-words

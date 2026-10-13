@@ -27,14 +27,21 @@ import jakarta.persistence.LockModeType;
 @Repository
 public interface DocumentRepository extends JpaRepository<DocumentModel, UUID>, JpaSpecificationExecutor<DocumentModel> {
 
-        /** Los parámetros deben venir en mayúsculas; devuelve los valores en mayúsculas. */
-        @Query("SELECT UPPER(d.generationCode) FROM DocumentModel d WHERE UPPER(d.generationCode) IN :generationCodes")
+        /*
+         * Doble fondeo: los documentos inactivados por el pagador no cuentan, se pueden volver a
+         * cargar (igual que en los índices uq_documents_*). Los parámetros deben venir en
+         * mayúsculas; devuelven los valores en mayúsculas.
+         */
+        @Query("SELECT UPPER(d.generationCode) FROM DocumentModel d WHERE UPPER(d.generationCode) IN :generationCodes"
+                        + " AND d.status <> com.davivienda.factoraje.domain.enums.DocumentStatusEnum.INACTIVATED_BY_PAYER")
         Set<String> findExistingGenerationCodes(@Param("generationCodes") List<String> generationCodes);
 
-        @Query("SELECT UPPER(d.controlNumber) FROM DocumentModel d WHERE UPPER(d.controlNumber) IN :controlNumbers")
+        @Query("SELECT UPPER(d.controlNumber) FROM DocumentModel d WHERE UPPER(d.controlNumber) IN :controlNumbers"
+                        + " AND d.status <> com.davivienda.factoraje.domain.enums.DocumentStatusEnum.INACTIVATED_BY_PAYER")
         Set<String> findExistingControlNumbers(@Param("controlNumbers") List<String> controlNumbers);
 
-        @Query("SELECT UPPER(d.receivedStamp) FROM DocumentModel d WHERE UPPER(d.receivedStamp) IN :receivedStamps")
+        @Query("SELECT UPPER(d.receivedStamp) FROM DocumentModel d WHERE UPPER(d.receivedStamp) IN :receivedStamps"
+                        + " AND d.status <> com.davivienda.factoraje.domain.enums.DocumentStatusEnum.INACTIVATED_BY_PAYER")
         Set<String> findExistingReceivedStamps(@Param("receivedStamps") List<String> receivedStamps);
 
         /**
@@ -58,7 +65,8 @@ public interface DocumentRepository extends JpaRepository<DocumentModel, UUID>, 
         @Query("SELECT d.documentNumber FROM DocumentModel d " +
                         "WHERE d.masterAgreement.supplier.nit = :nit " +
                         "AND d.documentNumber IN :documentNumbers " +
-                        "AND EXTRACT(YEAR FROM d.issueDate) = :year")
+                        "AND EXTRACT(YEAR FROM d.issueDate) = :year " +
+                        "AND d.status <> com.davivienda.factoraje.domain.enums.DocumentStatusEnum.INACTIVATED_BY_PAYER")
         Set<String> findExistingPhysicalDocuments(
                         @Param("nit") String nit,
                         @Param("documentNumbers") List<String> documentNumbers,

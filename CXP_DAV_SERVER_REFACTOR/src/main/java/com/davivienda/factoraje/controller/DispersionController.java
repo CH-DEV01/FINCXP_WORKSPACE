@@ -25,6 +25,7 @@ import com.davivienda.factoraje.dto.dispersion.DispersionDocumentDTOResponse;
 import com.davivienda.factoraje.dto.dispersion.DispersionPayerDTOResponse;
 import com.davivienda.factoraje.dto.dispersion.DispersionRequestDTOResponse;
 import com.davivienda.factoraje.dto.dispersion.GenerateDispersionBatchRequestDTO;
+import com.davivienda.factoraje.dto.dispersion.GenerateDispersionBatchesRequestDTO;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.service.DispersionBatchService;
 import com.davivienda.factoraje.service.DispersionQueryService;
@@ -96,6 +97,21 @@ public class DispersionController {
 
         return pdfResponse(dispersionBatchService.generateBatch(
                 currentUser.id(), request.payerId(), request.dueDate()));
+    }
+
+    @PostMapping(value = "/generate-batches", produces = "application/zip")
+    public ResponseEntity<byte[]> generatePendingBatches(
+            @Valid @RequestBody GenerateDispersionBatchesRequestDTO request) {
+
+        log.info("Generando {} lote(s) de dispersión del pagador {}", request.dueDates().size(), request.payerId());
+
+        DispersionBatchService.Letter zip = dispersionBatchService.generateBatches(
+                currentUser.id(), request.payerId(), request.dueDates());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(zip.fileName()).build().toString())
+                .body(zip.content());
     }
 
     @PostMapping("/batches/{batchId}/confirm")

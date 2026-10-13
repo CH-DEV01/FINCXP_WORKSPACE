@@ -45,6 +45,12 @@ public interface DocumentService {
     void inactivateDocumentByPayer(UUID documentId);
 
     /**
+     * Pasa a Inactivo varios documentos Cargados del pagador del usuario autenticado.
+     * Es todo o nada: si alguno no existe, no es del pagador o ya no está Cargado, no se inactiva ninguno.
+     */
+    void inactivateDocumentsByPayer(List<UUID> documentIds);
+
+    /**
      * Pasa a cuarentena documentos Cargados que ya no son financiables y libera su
      * monto del cupo del pagador. Debe llamarse con los documentos ya bloqueados.
      */

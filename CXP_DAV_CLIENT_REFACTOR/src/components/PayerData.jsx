@@ -22,7 +22,7 @@ const PayerData = ({ payer }) => {
       <div className="flex flex-col space-y-4">
         <DataItem label="Nombre" value={payer?.name || "Sin seleccionar"} />
         <DataItem label="NIT" value={payer?.nit || "-"} />
-        <DataItem label="Código" value={payer?.code || "-"} />
+        <DataItem label="NIU" value={payer?.niu || "-"} />
       </div>
     </div>
   );

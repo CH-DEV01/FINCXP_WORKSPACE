@@ -2,7 +2,9 @@ package com.davivienda.factoraje.service.impl;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +15,7 @@ import org.springframework.util.StringUtils;
 
 import com.davivienda.factoraje.domain.catalogs.DisbursementPolicyCat;
 import com.davivienda.factoraje.domain.catalogs.PaymentPolicyCat;
+import com.davivienda.factoraje.domain.entities.BankAccountModel;
 import com.davivienda.factoraje.domain.entities.EntityModel;
 import com.davivienda.factoraje.domain.entities.MasterAgreementModel;
 import com.davivienda.factoraje.domain.enums.GeneralStatusEnum;
@@ -24,6 +27,7 @@ import com.davivienda.factoraje.infrastructure.exception.ResourceNotFoundExcepti
 import com.davivienda.factoraje.infrastructure.mail.AuditText;
 import com.davivienda.factoraje.infrastructure.mail.MailNoticePublisher;
 import com.davivienda.factoraje.infrastructure.util.PageRequests;
+import com.davivienda.factoraje.repository.BankAccountRepository;
 import com.davivienda.factoraje.repository.DisbursementPolicyCatRepository;
 import com.davivienda.factoraje.repository.EntityRepository;
 import com.davivienda.factoraje.repository.MasterAgreementRepository;
@@ -43,6 +47,7 @@ public class MasterAgreementServiceImpl implements MasterAgreementService {
     private final DisbursementPolicyCatRepository disbursementPolicyCatRepository;
     private final PaymentPolicyCatRepository paymentPolicyCatRepository;
     private final EntityRepository entityRepository;
+    private final BankAccountRepository bankAccountRepository;
     private final DisbursementPolicyService disbursementPolicyService;
     private final MailNoticePublisher mailNotices;
 
@@ -132,7 +137,21 @@ public class MasterAgreementServiceImpl implements MasterAgreementService {
                     ? masterAgreementRepository.search(search.trim(), pageable)
                     : masterAgreementRepository.findAll(pageable);
         }
-        return agreements.map(MasterAgreementDTOResponse::fromEntity);
+        if (!agreements.hasContent()) {
+            return agreements.map(MasterAgreementDTOResponse::fromEntity);
+        }
+
+        List<UUID> supplierIds = agreements.getContent().stream()
+                .map(agreement -> agreement.getSupplier().getId())
+                .distinct()
+                .toList();
+        Map<UUID, String> accountBySupplier = bankAccountRepository.findAllByEntityModelIdInAndIsMainTrue(supplierIds)
+                .stream()
+                .collect(Collectors.toMap(account -> account.getEntityModel().getId(),
+                        BankAccountModel::getAccountNumber, (a, b) -> a));
+
+        return agreements.map(agreement -> MasterAgreementDTOResponse.fromEntity(agreement,
+                accountBySupplier.get(agreement.getSupplier().getId())));
     }
 
     @Override

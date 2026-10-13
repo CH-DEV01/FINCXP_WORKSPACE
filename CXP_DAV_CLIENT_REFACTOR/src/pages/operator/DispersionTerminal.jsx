@@ -31,6 +31,8 @@ const DispersionTerminal = () => {
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [downloadingKey, setDownloadingKey] = useState(null);
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [selectedDueDates, setSelectedDueDates] = useState(() => new Set());
   const openKeyRef = useRef(null);
 
   const closeModal = () => {
@@ -106,6 +108,69 @@ const DispersionTerminal = () => {
     }
   };
 
+  const toggleDueDate = (dueDate) =>
+    setSelectedDueDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(dueDate)) next.delete(dueDate);
+      else next.add(dueDate);
+      return next;
+    });
+
+  const toggleAllDueDates = (dueDates, checked) =>
+    setSelectedDueDates((prev) => {
+      const next = new Set(prev);
+      dueDates.forEach((dueDate) => (checked ? next.add(dueDate) : next.delete(dueDate)));
+      return next;
+    });
+
+  const clearSelection = () => setSelectedDueDates(new Set());
+
+  const handleSelectPayer = (payerId) => {
+    clearSelection();
+    setSelectedPayerId(payerId);
+  };
+
+  const handleGenerateSelected = async () => {
+    if (!selectedPayerId) return;
+    const pending = requests.filter((r) => r.status === "INGRESADO" && selectedDueDates.has(r.dueDate));
+    if (pending.length === 0) return;
+    const documentCount = pending.reduce((sum, r) => sum + Number(r.documentCount || 0), 0);
+    const total = pending.reduce((sum, r) => sum + Number(r.totalAmount || 0), 0);
+
+    const confirm = await Swal.fire({
+      title: "¿Generar los lotes seleccionados?",
+      html: `Se generarán <b>${escapeHtml(pending.length)}</b> lote(s), uno por vencimiento, con <b>${escapeHtml(documentCount)}</b> documento(s) del pagador <b>${escapeHtml(currentPayer.name)}</b> por <b>$${escapeHtml(formatMoney(total))}</b>.<br/><br/>Las solicitudes pasarán a <b>En proceso</b> y se descargará un ZIP con la carta de cada lote.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#94a3b8",
+      confirmButtonText: "Sí, generar",
+      cancelButtonText: "Cancelar",
+    });
+    if (!confirm.isConfirmed) return;
+
+    setIsGeneratingAll(true);
+    try {
+      const zip = await dispersionService.generateBatches({
+        payerId: selectedPayerId,
+        dueDates: pending.map((r) => r.dueDate),
+      });
+      downloadBlob(zip, `Solicitudes_Dispersion_${safeFileSegment(currentPayer.name, "Pagador")}_${todayIso()}.zip`);
+      await Swal.fire(
+        "¡Lotes generados!",
+        "Se descargaron las solicitudes de dispersión. Confirme cada lote cuando el core bancario lo procese.",
+        "success",
+      );
+    } catch (error) {
+      console.error("Error generando los lotes de dispersión:", error);
+      showError(await readApiErrorMessage(error, "No se pudieron generar los lotes de dispersión."));
+    } finally {
+      setIsGeneratingAll(false);
+      clearSelection();
+      loadData();
+    }
+  };
+
   const handleConfirm = async () => {
     const batch = batchDetail?.batch;
     if (!batch?.id) return;
@@ -172,7 +237,7 @@ const DispersionTerminal = () => {
         <DispersionPayerPanel
           payers={payers}
           selectedPayerId={selectedPayerId}
-          onSelectPayer={setSelectedPayerId}
+          onSelectPayer={handleSelectPayer}
           currentPayer={currentPayer}
           isLoading={isLoading}
         />
@@ -180,6 +245,12 @@ const DispersionTerminal = () => {
         <DispersionRequestsPanel
           requests={requests}
           isLoading={isLoadingRequests}
+          isGeneratingAll={isGeneratingAll}
+          onGenerateSelected={handleGenerateSelected}
+          selectedDueDates={selectedDueDates}
+          onToggleDueDate={toggleDueDate}
+          onToggleAllDueDates={toggleAllDueDates}
+          onClearSelection={clearSelection}
           downloadingKey={downloadingKey}
           onOpen={handleOpen}
           onDownload={handleDownload}

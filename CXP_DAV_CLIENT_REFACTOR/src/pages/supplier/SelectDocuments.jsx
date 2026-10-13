@@ -107,8 +107,15 @@ const SelectDocuments = () => {
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-stretch gap-3 sm:gap-4 rounded-lg w-full lg:h-[calc(100dvh-5.5rem)] lg:min-h-0 lg:overflow-hidden pb-3">
       <div className="w-full flex flex-col min-w-0 min-h-0 gap-3 sm:gap-4 lg:h-full">
-        <div className="flex w-full bg-gray-200 p-2 rounded-lg shrink-0">
+        <div className="flex flex-col w-full bg-gray-200 p-2 gap-2 rounded-lg shrink-0">
           <WelcomeBannerCard />
+          <SupplierData
+            supplierName={supplierName}
+            payerName={payerName}
+            paymentPolicy={paymentPolicyLabel}
+            disbursementPolicy={disbursementPolicyLabel}
+            availableDocuments={accountsPayable.length}
+          />
         </div>
 
         <div className="flex flex-col flex-1 min-h-0">
@@ -145,13 +152,6 @@ const SelectDocuments = () => {
 
       <div className="w-full rounded-lg flex flex-col bg-gray-200 p-2 gap-2 shrink-0 lg:h-full lg:min-h-0">
         <div className="space-y-2 lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
-          <SupplierData
-            supplierName={supplierName}
-            payerName={payerName}
-            paymentPolicy={paymentPolicyLabel}
-            disbursementPolicy={disbursementPolicyLabel}
-            availableDocuments={accountsPayable.length}
-          />
           <SelectionSummaryCard
             disbursementDate={disbursementDate}
             cutoffTime={cutoffTime}

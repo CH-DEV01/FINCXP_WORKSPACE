@@ -17,6 +17,12 @@ const updatePayer = async (id, payload) => {
   return response.data?.data;
 };
 
+/** Registra un proveedor activo con su cuenta bancaria principal: { name, nit, accountNumber }. */
+const registerSupplier = async (payload) => {
+  const response = await api.post("/v1/entities/suppliers", payload);
+  return response.data?.data;
+};
+
 /** Actualiza solo los atributos editables del proveedor: cuenta bancaria principal y estado. */
 const updateSupplier = async (id, payload) => {
   const response = await api.put(`/v1/entities/suppliers/${id}`, payload);
@@ -70,6 +76,7 @@ export const entityService = {
   getEntitiesForRole,
   getSuppliers,
   updatePayer,
+  registerSupplier,
   updateSupplier,
   getSupplierSummaries,
   getPayers,

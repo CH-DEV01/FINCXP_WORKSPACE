@@ -38,6 +38,7 @@ import com.davivienda.factoraje.infrastructure.exception.InactiveResourceExcepti
 import com.davivienda.factoraje.infrastructure.exception.ResourceNotFoundException;
 import com.davivienda.factoraje.infrastructure.util.BatchNumberGeneratorUtil;
 import com.davivienda.factoraje.infrastructure.util.FileNamingUtil;
+import com.davivienda.factoraje.infrastructure.util.IdentifierNormalizer;
 import com.davivienda.factoraje.repository.BankAccountRepository;
 import com.davivienda.factoraje.repository.CreditFacilityRepository;
 import com.davivienda.factoraje.repository.DisbursementPolicyCatRepository;
@@ -92,9 +93,9 @@ public class BatchPersistenceServiceImpl implements BatchPersistenceService {
             AcceptanceAuditDTORequest auditRequest) {
 
         CreditFacilityModel creditFacility = creditFacilityRepository.findByPayerIdForUpdate(payer.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("No se encontró una línea de crédito activa asignada a este Pagador."));
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró un cupo de crédito activo asignado a este Pagador."));
         InactiveResourceException.requireActive(creditFacility.getStatus(),
-                "La línea de crédito del pagador está inactiva; no se pueden cargar documentos.");
+                "El cupo de crédito del pagador está inactivo; no se pueden cargar documentos.");
 
         Map<String, MasterAgreementModel> resolvedAgreements = new HashMap<>();
         invoicesBySupplier.forEach((supplierNit, supplierInvoices) ->
@@ -162,7 +163,7 @@ public class BatchPersistenceServiceImpl implements BatchPersistenceService {
 
         log.info("Registrando cuenta bancaria principal para el proveedor {}", supplier.getId());
         bankAccountRepository.save(BankAccountModel.builder()
-                .accountNumber(accountNumber.trim())
+                .accountNumber(IdentifierNormalizer.requireAccountNumber(accountNumber))
                 .entityModel(supplier)
                 .isMain(true)
                 .status(GeneralStatusEnum.ACTIVE)
@@ -203,7 +204,7 @@ public class BatchPersistenceServiceImpl implements BatchPersistenceService {
 
         CreditFacilityModel globalCreditFacility = creditFacilityRepository
                 .findByPayerIdForUpdate(payerId)
-                .orElseThrow(() -> new ResourceNotFoundException("No se encontró una línea de crédito activa asignada a este Pagador."));
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró un cupo de crédito activo asignado a este Pagador."));
 
         BigDecimal thresholdLimit = globalCreditFacility.uploadLimitAmount(
                 systemParameters.getDecimal(SystemParameterKey.DEFAULT_CREDIT_THRESHOLD));

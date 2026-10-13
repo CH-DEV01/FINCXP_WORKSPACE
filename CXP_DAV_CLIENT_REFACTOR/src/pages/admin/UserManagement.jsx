@@ -113,7 +113,8 @@ const UserManagement = () => {
 
     try {
       // Si el nombre no cambió se conserva la separación original nombre/apellido.
-      const nameUnchanged = editingParam && data.name.trim() === editingParam.name;
+      const nameUnchanged =
+        editingParam && editingParam.lastName && data.name.trim() === editingParam.name;
       const nameParts = data.name.trim().split(/\s+/);
       const firstName = nameUnchanged ? editingParam.firstName : nameParts[0] || "";
       const lastName = nameUnchanged ? editingParam.lastName : nameParts.slice(1).join(" ");

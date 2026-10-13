@@ -39,7 +39,11 @@ class InstalacionInicialScriptTest {
             Path.of("db/prod/actualizaciones/V12__parametros_de_mailjet.sql"),
             Path.of("db/prod/actualizaciones/V13__url_de_mailjet.sql"),
             Path.of("db/prod/actualizaciones/V14__secreto_jwt.sql"),
-            Path.of("db/prod/actualizaciones/V15__valor_por_defecto_jwt_secret.sql"));
+            Path.of("db/prod/actualizaciones/V15__valor_por_defecto_jwt_secret.sql"),
+            Path.of("db/prod/actualizaciones/V16__abonos_por_lote_de_desembolso.sql"),
+            Path.of("db/prod/actualizaciones/V17__niu_de_pagadores.sql"),
+            Path.of("db/prod/actualizaciones/V18__recarga_de_documentos_inactivados.sql"),
+            Path.of("db/prod/actualizaciones/V19__jwt_secret_sin_valor_por_defecto.sql"));
 
     private static final List<String> SCHEMA_QUERIES = List.of(
             """

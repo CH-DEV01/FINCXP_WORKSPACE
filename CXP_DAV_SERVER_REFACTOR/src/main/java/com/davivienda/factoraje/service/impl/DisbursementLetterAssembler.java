@@ -51,7 +51,7 @@ public class DisbursementLetterAssembler {
 
         CreditFacilityModel creditFacility = creditFacilityRepository.findByPayerId(payer.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "No se encontró la línea de crédito del pagador con ID: " + payer.getId()));
+                        "No se encontró el cupo de crédito del pagador con ID: " + payer.getId()));
 
         return new ReportContext(payer.getName(), creditFacility.getCreditFacilityNumber());
     }

@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/sso/handoff", "/api/v1/sso/activateSession").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/sso/handoff", "/api/v1/sso/activateSession", "api/v1/auth/sso-login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/term-versions/active/supplier").hasRole(Roles.SUPPLIER)
@@ -69,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/documents/payer/*/history",
                                 "/api/v1/documents/payer/*/history/summary").hasAnyRole(Roles.PAYER, Roles.ADMIN)
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/documents/*/inactivate").hasRole(Roles.PAYER)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/documents/inactivate", "/api/v1/documents/*/inactivate").hasRole(Roles.PAYER)
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/payers/me/summary").hasRole(Roles.PAYER)
                         .requestMatchers(HttpMethod.GET, "/api/v1/payers/*/summary").hasRole(Roles.ADMIN)

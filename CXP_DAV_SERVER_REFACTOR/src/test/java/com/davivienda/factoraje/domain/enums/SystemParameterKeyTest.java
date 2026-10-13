@@ -44,11 +44,8 @@ class SystemParameterKeyTest {
     void jwtSecretAcceptsOnlyABase64KeyOfAtLeast32Bytes() {
         String key = Base64.getEncoder().encodeToString(new byte[32]);
 
-        assertThat(SystemParameterKey.JWT_SECRET.defaultValue())
-                .isEqualTo("G9UuPSmEz8a18PARiE8Rs9QKvDrdUOJjjNe3duoQqUw=");
+        assertThat(SystemParameterKey.JWT_SECRET.defaultValue()).isEqualTo(SystemParameterKey.UNCONFIGURED);
         assertThat(SystemParameterKey.JWT_SECRET.sensitive()).isTrue();
-        assertThat(SystemParameterKey.JWT_SECRET.normalize(SystemParameterKey.JWT_SECRET.defaultValue()))
-                .isEqualTo(SystemParameterKey.JWT_SECRET.defaultValue());
         assertThatThrownBy(() -> SystemParameterKey.JWT_SECRET.normalize("CONFIGURAR"))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(SystemParameterKey.JWT_SECRET.normalize(" " + key + " ")).isEqualTo(key);

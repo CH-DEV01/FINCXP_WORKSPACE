@@ -83,7 +83,7 @@ const SupplierData = ({ supplierName, paymentPolicy, disbursementPolicy, payerNa
         <h2 className="font-montserrat text-sm font-bold text-gray-900 break-words">{supplierName || "Proveedor"}</h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 sm:gap-y-4 pt-3 sm:pt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-4 gap-y-3 sm:gap-y-4 pt-3 sm:pt-4">
         <DataItem icon={<IconPayer />} label="Pagador" value={payerName || "N/A"} />
 
         <DataItem

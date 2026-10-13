@@ -41,14 +41,16 @@ const PayerCreditLineManager = () => {
         amount: repaymentPayload.amount,
         reference: repaymentPayload.reference,
         type: repaymentPayload.type,
+        disbursementBatchId: repaymentPayload.disbursementBatchId,
       };
 
       await creditFacilityService.restoreCreditFacility(apiPayload);
+      const batchText = repaymentPayload.batchNumber ? ` por el lote ${repaymentPayload.batchNumber}` : "";
 
       setIsModalOpen(false);
       Swal.fire({
         title: "¡Abono aplicado!",
-        text: `Se han restaurado $${formatMoney(repaymentPayload.amount)} al cupo de crédito.`,
+        text: `Se han restaurado $${formatMoney(repaymentPayload.amount)} al cupo de crédito${batchText}.`,
         icon: "success",
         confirmButtonColor: "#dc2626",
       });
@@ -89,6 +91,7 @@ const PayerCreditLineManager = () => {
         onConfirm={handleExecuteRepayment}
         isProcessing={isProcessingRepayment}
         currentConsumed={data.currentConsumed}
+        creditFacilityId={creditLineData?.id}
       />
     </div>
   );

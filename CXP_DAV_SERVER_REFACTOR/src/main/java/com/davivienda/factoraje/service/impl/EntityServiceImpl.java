@@ -32,6 +32,7 @@ import com.davivienda.factoraje.dto.entity.EntityDTOResponse;
 import com.davivienda.factoraje.dto.entity.PayerRegistrationDTORequest;
 import com.davivienda.factoraje.dto.entity.PayerSummaryDTOResponse;
 import com.davivienda.factoraje.dto.entity.PayerUpdateDTORequest;
+import com.davivienda.factoraje.dto.entity.SupplierRegistrationDTORequest;
 import com.davivienda.factoraje.dto.entity.SupplierSummaryDTOResponse;
 import com.davivienda.factoraje.dto.entity.SupplierUpdateDTORequest;
 import com.davivienda.factoraje.infrastructure.exception.ResourceAlreadyExistsException;
@@ -143,6 +144,10 @@ public class EntityServiceImpl implements EntityService {
     @Override
     @Transactional
     public EntityModel createSupplier(String rawNit, String rawName) {
+        return createSupplier(rawNit, rawName, null);
+    }
+
+    private EntityModel createSupplier(String rawNit, String rawName, String niu) {
         String nit = IdentifierNormalizer.requireNit(rawNit);
         String name = rawName != null ? rawName.trim() : null;
 
@@ -159,12 +164,13 @@ public class EntityServiceImpl implements EntityService {
 
         EntityModel supplier = entityRepository.save(EntityModel.builder()
                 .nit(nit)
+                .niu(niu)
                 .name(name)
                 .code(generateMnemonicCode(name))
                 .entityType(supplierType)
                 .status(GeneralStatusEnum.ACTIVE)
                 .build());
-        log.info("Supplier created from document upload with ID: {}", supplier.getId());
+        log.info("Supplier created with ID: {}", supplier.getId());
         return supplier;
     }
 
@@ -173,6 +179,7 @@ public class EntityServiceImpl implements EntityService {
     public PayerSummaryDTOResponse registerPayer(PayerRegistrationDTORequest request) {
 
         String nit = IdentifierNormalizer.requireNit(request.nit());
+        String niu = IdentifierNormalizer.requireNiu(request.niu());
         String name = request.name().trim();
         String accountNumber = IdentifierNormalizer.requireAccountNumber(request.accountNumber());
         String creditFacilityNumber = request.creditFacilityNumber().trim();
@@ -181,6 +188,9 @@ public class EntityServiceImpl implements EntityService {
 
         if (entityRepository.existsByNit(nit)) {
             throw new ResourceAlreadyExistsException("Ya existe una entidad con el NIT " + nit + ".");
+        }
+        if (entityRepository.existsByNiu(niu)) {
+            throw new ResourceAlreadyExistsException("Ya existe una entidad con el NIU " + niu + ".");
         }
         if (entityRepository.existsByName(name)) {
             throw new ResourceAlreadyExistsException("Ya existe una entidad con el nombre " + name + ".");
@@ -220,6 +230,7 @@ public class EntityServiceImpl implements EntityService {
         try {
             EntityModel payer = entityRepository.saveAndFlush(EntityModel.builder()
                     .nit(nit)
+                    .niu(niu)
                     .name(name)
                     .code(generateMnemonicCode(name))
                     .entityType(payerType)
@@ -271,7 +282,7 @@ public class EntityServiceImpl implements EntityService {
         } catch (DataIntegrityViolationException e) {
             log.error("Integrity violation when registering payer with NIT {}", nit, e);
             throw new ResourceAlreadyExistsException(
-                    "El NIT, el código o la cuenta bancaria del pagador ya está registrado.");
+                    "El NIT, el NIU, el código o la cuenta bancaria del pagador ya está registrado.");
         }
     }
 
@@ -294,6 +305,11 @@ public class EntityServiceImpl implements EntityService {
         ProductPricingTermModel pricing = productPricingTermRepository.findByCreditFacilityId(facility.getId())
                 .orElseGet(() -> ProductPricingTermModel.builder().creditFacility(facility).build());
 
+        String niu = IdentifierNormalizer.requireNiu(request.niu());
+        if (entityRepository.existsByNiuAndIdNot(niu, payerId)) {
+            throw new ResourceAlreadyExistsException("Ya existe una entidad con el NIU " + niu + ".");
+        }
+
         BankAccountModel account = bankAccountRepository.findFirstByEntityModelIdAndIsMainTrue(payerId).orElse(null);
         String previous = describePayer(payer, account, facility, pricing);
         String accountNumber = null;
@@ -309,6 +325,7 @@ public class EntityServiceImpl implements EntityService {
                     "El pagador no tiene una cuenta bancaria principal registrada; no se puede modificar.");
         }
 
+        payer.setNiu(niu);
         payer.setStatus(request.status());
 
         facility.setWarningThresholdPercentage(request.warningThresholdPercentage());
@@ -332,7 +349,7 @@ public class EntityServiceImpl implements EntityService {
         } catch (DataIntegrityViolationException e) {
             log.error("Integrity violation when updating payer {}", payerId, e);
             throw new ResourceAlreadyExistsException(
-                    "La cuenta bancaria " + accountNumber + " ya está registrada para otra entidad.");
+                    "El NIU " + niu + " o la cuenta bancaria " + accountNumber + " ya está registrado para otra entidad.");
         }
     }
 
@@ -356,6 +373,7 @@ public class EntityServiceImpl implements EntityService {
     private static String describePayer(EntityModel payer, BankAccountModel account,
             CreditFacilityModel facility, ProductPricingTermModel pricing) {
         StringBuilder text = new StringBuilder("Pagador ").append(AuditText.value(payer.getName()))
+                .append(", NIU ").append(AuditText.value(payer.getNiu()))
                 .append(", estado ").append(AuditText.status(payer.getStatus()));
         if (account != null) {
             text.append(", cuenta ").append(AuditText.value(account.getAccountNumber()));
@@ -374,11 +392,12 @@ public class EntityServiceImpl implements EntityService {
 
     private static String describeSupplier(EntityModel supplier, BankAccountModel account) {
         return "Proveedor " + AuditText.value(supplier.getName())
+                + ", NIU " + AuditText.value(supplier.getNiu())
                 + ", estado " + AuditText.status(supplier.getStatus())
                 + ", cuenta " + AuditText.value(account.getAccountNumber());
     }
 
-    /** Página de entidades del tipo ordenada por nombre; la búsqueda compara nombre y NIT. */
+    /** Página de entidades del tipo ordenada por nombre; la búsqueda compara nombre, NIT y NIU. */
     private Page<EntityModel> findEntitiesPage(String typeCode, String search, int page, int size) {
         Pageable pageable = PageRequests.of(page, size, Sort.by(Sort.Order.asc("name"), Sort.Order.asc("id")));
 
@@ -395,6 +414,41 @@ public class EntityServiceImpl implements EntityService {
 
     @Override
     @Transactional
+    public SupplierSummaryDTOResponse registerSupplier(SupplierRegistrationDTORequest request) {
+
+        String niu = IdentifierNormalizer.requireNiu(request.niu());
+        String accountNumber = IdentifierNormalizer.requireAccountNumber(request.accountNumber());
+        if (entityRepository.existsByNiu(niu)) {
+            throw new ResourceAlreadyExistsException("Ya existe una entidad con el NIU " + niu + ".");
+        }
+        if (bankAccountRepository.existsByAccountNumber(accountNumber)) {
+            throw new ResourceAlreadyExistsException(
+                    "La cuenta bancaria " + accountNumber + " ya está registrada para otra entidad.");
+        }
+
+        try {
+            EntityModel supplier = createSupplier(request.nit(), request.name(), niu);
+
+            BankAccountModel account = bankAccountRepository.saveAndFlush(BankAccountModel.builder()
+                    .accountNumber(accountNumber)
+                    .entityModel(supplier)
+                    .isMain(true)
+                    .status(GeneralStatusEnum.ACTIVE)
+                    .build());
+
+            log.info("Supplier {} registered with main bank account {}", supplier.getId(), account.getId());
+
+            mailNotices.operatorChanged("Proveedores", MailNoticePublisher.NO_RECORD, describeSupplier(supplier, account));
+            return SupplierSummaryDTOResponse.from(supplier, account);
+        } catch (DataIntegrityViolationException e) {
+            log.error("Integrity violation when registering supplier", e);
+            throw new ResourceAlreadyExistsException(
+                    "El NIT, el NIU, el código o la cuenta bancaria del proveedor ya está registrado.");
+        }
+    }
+
+    @Override
+    @Transactional
     public SupplierSummaryDTOResponse updateSupplier(UUID supplierId, SupplierUpdateDTORequest request) {
 
         log.info("Updating supplier {}", supplierId);
@@ -405,6 +459,7 @@ public class EntityServiceImpl implements EntityService {
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró el proveedor especificado."));
 
         String accountNumber = IdentifierNormalizer.requireAccountNumber(request.accountNumber());
+        String niu = supplierNiu(supplier, request.niu());
 
         BankAccountModel account = bankAccountRepository.findFirstByEntityModelIdAndIsMainTrue(supplierId)
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -417,6 +472,7 @@ public class EntityServiceImpl implements EntityService {
 
         String previous = describeSupplier(supplier, account);
         account.setAccountNumber(accountNumber);
+        supplier.setNiu(niu);
         supplier.setStatus(request.status());
 
         try {
@@ -430,8 +486,16 @@ public class EntityServiceImpl implements EntityService {
         } catch (DataIntegrityViolationException e) {
             log.error("Integrity violation when updating supplier {}", supplierId, e);
             throw new ResourceAlreadyExistsException(
-                    "La cuenta bancaria " + accountNumber + " ya está registrada para otra entidad.");
+                    "El NIU o la cuenta bancaria " + accountNumber + " ya está registrado para otra entidad.");
         }
+    }
+
+    private String supplierNiu(EntityModel supplier, String rawNiu) {
+        String niu = IdentifierNormalizer.requireNiu(rawNiu);
+        if (entityRepository.existsByNiuAndIdNot(niu, supplier.getId())) {
+            throw new ResourceAlreadyExistsException("Ya existe una entidad con el NIU " + niu + ".");
+        }
+        return niu;
     }
 
     @Override

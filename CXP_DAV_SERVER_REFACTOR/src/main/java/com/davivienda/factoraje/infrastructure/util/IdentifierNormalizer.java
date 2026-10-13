@@ -43,6 +43,11 @@ public final class IdentifierNormalizer {
                 "El DUI debe tener exactamente 9 dígitos.");
     }
 
+    public static String requireNiu(String value) {
+        return requireMatch(withoutSeparators(value), NIU_PATTERN, "El NIU es obligatorio.",
+                "El NIU solo puede contener números (máximo 25).");
+    }
+
     public static String requireAccountNumber(String value) {
         return requireMatch(withoutSeparators(value), ACCOUNT_PATTERN, "La cuenta bancaria es obligatoria.",
                 "La cuenta bancaria solo puede contener números (máximo 50).");
@@ -55,6 +60,7 @@ public final class IdentifierNormalizer {
 
     private static final Pattern NIT_PATTERN = Pattern.compile("^\\d{14}$");
     private static final Pattern DUI_PATTERN = Pattern.compile("^\\d{9}$");
+    private static final Pattern NIU_PATTERN = Pattern.compile("^\\d{1,25}$");
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^\\d{1,50}$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 

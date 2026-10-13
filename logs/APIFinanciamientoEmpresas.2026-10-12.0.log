@@ -1,0 +1,148 @@
+2026-10-12 14:48:06 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 6954 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
+2026-10-12 14:48:06 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
+2026-10-12 14:48:06 INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-10-12 14:48:06 INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-10-12 14:48:06 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-12 14:48:06 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 88 ms. Found 28 JPA repository interfaces.
+2026-10-12 14:48:06 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-10-12 14:48:06 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-10-12 14:48:06 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-10-12 14:48:06 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-10-12 14:48:06 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 846 ms
+2026-10-12 14:48:06 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-10-12 14:48:07 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6ae943bb
+2026-10-12 14:48:07 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-10-12 14:48:07 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
+2026-10-12 14:48:07 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-12 14:48:07 INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.2.Final
+2026-10-12 14:48:07 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-10-12 14:48:07 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-12 14:48:07 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-12 14:48:07 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-12 14:48:07 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-12 14:48:08 INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-10-12 14:48:08 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
+2026-10-12 14:48:08 INFO  c.d.f.controller.SsoController - SsoService initialized
+2026-10-12 14:48:08 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-10-12 14:48:08 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-12 14:48:08 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@7aef2aca, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6b2ac1d1, org.springframework.security.web.context.SecurityContextHolderFilter@2d109e26, org.springframework.security.web.header.HeaderWriterFilter@585d3b78, org.springframework.web.filter.CorsFilter@66633d25, org.springframework.security.web.authentication.logout.LogoutFilter@207ff0ed, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@50da36d0, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@316029e8, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@467098e3, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@55cf23dd, org.springframework.security.web.session.SessionManagementFilter@386387c0, org.springframework.security.web.access.ExceptionTranslationFilter@4ef68f8b, org.springframework.security.web.access.intercept.AuthorizationFilter@29571066]
+2026-10-12 14:48:09 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-10-12 14:48:09 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-10-12 14:48:09 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 3.2 seconds (process running for 3.429)
+2026-10-12 14:50:42 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-12 14:50:42 INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-10-12 14:50:42 INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-10-12 14:54:16 INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2026-10-12 14:54:16 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-10-12 14:54:16 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-10-12 14:54:16 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-10-12 14:54:16 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 6954 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
+2026-10-12 14:54:16 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
+2026-10-12 14:54:16 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-12 14:54:16 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 24 ms. Found 28 JPA repository interfaces.
+2026-10-12 14:54:16 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-10-12 14:54:16 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-10-12 14:54:16 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-10-12 14:54:16 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-10-12 14:54:16 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 169 ms
+2026-10-12 14:54:16 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2026-10-12 14:54:16 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@65b8ddd8
+2026-10-12 14:54:16 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2026-10-12 14:54:16 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
+2026-10-12 14:54:16 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-12 14:54:16 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-10-12 14:54:16 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-12 14:54:16 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-12 14:54:16 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-12 14:54:16 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-12 14:54:16 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
+2026-10-12 14:54:16 INFO  c.d.f.controller.SsoController - SsoService initialized
+2026-10-12 14:54:16 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-10-12 14:54:16 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-12 14:54:16 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@33a4765e, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@3f1e4cd6, org.springframework.security.web.context.SecurityContextHolderFilter@3356d2e3, org.springframework.security.web.header.HeaderWriterFilter@183dc4f0, org.springframework.web.filter.CorsFilter@43bcc0e6, org.springframework.security.web.authentication.logout.LogoutFilter@11af4fee, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@662400d1, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@43590385, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@3535555a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@b2443e3, org.springframework.security.web.session.SessionManagementFilter@4d2d9a4c, org.springframework.security.web.access.ExceptionTranslationFilter@43e9834, org.springframework.security.web.access.intercept.AuthorizationFilter@204d03b9]
+2026-10-12 14:54:16 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-10-12 14:54:16 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-10-12 14:54:16 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 0.703 seconds (process running for 371.225)
+2026-10-12 14:54:16 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+2026-10-12 14:54:42 INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2026-10-12 14:54:42 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-10-12 14:54:42 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2026-10-12 14:54:42 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2026-10-12 14:54:42 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 6954 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
+2026-10-12 14:54:42 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
+2026-10-12 14:54:42 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-12 14:54:42 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 84 ms. Found 28 JPA repository interfaces.
+2026-10-12 14:54:42 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-10-12 14:54:42 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-10-12 14:54:42 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-10-12 14:54:43 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-10-12 14:54:43 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 288 ms
+2026-10-12 14:54:43 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Starting...
+2026-10-12 14:54:43 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@6a29d083
+2026-10-12 14:54:43 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Start completed.
+2026-10-12 14:54:43 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
+2026-10-12 14:54:43 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-12 14:54:43 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-10-12 14:54:43 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-12 14:54:43 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-12 14:54:43 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-12 14:54:43 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-12 14:54:43 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
+2026-10-12 14:54:43 INFO  c.d.f.controller.SsoController - SsoService initialized
+2026-10-12 14:54:43 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-10-12 14:54:43 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-12 14:54:43 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@196513b, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@3ca7e552, org.springframework.security.web.context.SecurityContextHolderFilter@3b09e231, org.springframework.security.web.header.HeaderWriterFilter@5c55c4af, org.springframework.web.filter.CorsFilter@529bb275, org.springframework.security.web.authentication.logout.LogoutFilter@20502807, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@1db28fcd, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@596f44c3, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2bed93fd, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@15cd1d64, org.springframework.security.web.session.SessionManagementFilter@afe033, org.springframework.security.web.access.ExceptionTranslationFilter@e2d8526, org.springframework.security.web.access.intercept.AuthorizationFilter@53b28476]
+2026-10-12 14:54:43 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-10-12 14:54:43 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-10-12 14:54:43 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 0.782 seconds (process running for 397.871)
+2026-10-12 14:54:43 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+2026-10-12 14:54:59 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-12 14:54:59 INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-10-12 14:54:59 INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-10-12 14:57:29 INFO  c.d.f.service.impl.EntityServiceImpl - Obteniendo catálogo de entidades de tipo Pagador
+2026-10-12 14:57:29 INFO  c.d.f.c.CreditFacilityController - Consultando cupo de crédito para el pagador con ID: baf5736c-7a70-4221-ae0d-d314a18ee878
+2026-10-12 15:04:07 INFO  c.d.f.c.RegisterDocumentBatchController - Iniciando carga de documentos del pagador baf5736c-7a70-4221-ae0d-d314a18ee878 por el usuario 5adc90b5-30ff-493b-a58a-c147cec5162a
+2026-10-12 15:04:07 INFO  c.g.p.x.impl.StreamingWorkbookReader - Created sst cache file
+2026-10-12 15:04:08 WARN  c.d.f.s.i.RegisterDocumentBatchServiceImpl - La validación previa falló con 26 errores. Generando PDF de rechazo. No se tocó la Base de Datos.
+2026-10-12 15:04:08 ERROR c.d.f.i.config.SystemParameters - Valor inválido en el parámetro MAILJET_API_KEY. Se usa el valor por defecto.
+2026-10-12 15:04:08 WARN  c.d.f.i.mail.MailNoticeListener - Correo no enviado (UploadFailed): Mailjet no está configurado.
+2026-10-12 15:05:53 INFO  c.d.f.c.RegisterDocumentBatchController - Iniciando carga de documentos del pagador baf5736c-7a70-4221-ae0d-d314a18ee878 por el usuario 5adc90b5-30ff-493b-a58a-c147cec5162a
+2026-10-12 15:05:53 INFO  c.g.p.x.impl.StreamingWorkbookReader - Created sst cache file
+2026-10-12 15:05:53 WARN  c.d.f.s.i.RegisterDocumentBatchServiceImpl - La validación previa falló con 26 errores. Generando PDF de rechazo. No se tocó la Base de Datos.
+2026-10-12 15:05:53 ERROR c.d.f.i.config.SystemParameters - Valor inválido en el parámetro MAILJET_API_KEY. Se usa el valor por defecto.
+2026-10-12 15:05:53 WARN  c.d.f.i.mail.MailNoticeListener - Correo no enviado (UploadFailed): Mailjet no está configurado.
+2026-10-12 15:29:24 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=7m10s651ms).
+2026-10-12 15:45:52 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m28s141ms).
+2026-10-12 16:01:50 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m28s88ms).
+2026-10-12 16:17:48 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m28s565ms).
+2026-10-12 16:21:57 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=4m8s977ms).
+2026-10-12 16:36:41 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=13m44s125ms).
+2026-10-12 16:49:42 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=12m30s845ms).
+2026-10-12 17:57:49 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=4m6s10ms).
+2026-10-12 17:59:57 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=2m7s735ms).
+2026-10-12 18:15:38 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m40s728ms).
+2026-10-12 18:23:18 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=7m40s647ms).
+2026-10-12 18:38:16 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=13m50s381ms).
+2026-10-12 19:20:40 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=41m54s384ms).
+2026-10-12 19:24:18 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=3m7s749ms).
+2026-10-12 19:40:14 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s745ms).
+2026-10-12 19:56:39 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s672ms).
+2026-10-12 20:12:35 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s739ms).
+2026-10-12 20:15:44 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=2m39s180ms).
+2026-10-12 20:25:10 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=8m25s227ms).
+2026-10-12 20:40:39 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m28s913ms).
+2026-10-12 20:41:34 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=54s895ms).
+2026-10-12 20:57:30 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s776ms).
+2026-10-12 21:13:56 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s791ms).
+2026-10-12 21:25:57 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=12m1s160ms).
+2026-10-12 21:42:23 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s633ms).
+2026-10-12 21:58:23 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=16m139ms).
+2026-10-12 21:59:18 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=54s870ms).
+2026-10-12 22:15:13 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s858ms).
+2026-10-12 22:16:08 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=54s866ms).
+2026-10-12 22:26:53 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=10m44s786ms).
+2026-10-12 22:43:19 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s786ms).
+2026-10-12 22:59:45 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s872ms).
+2026-10-12 23:15:41 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=15m55s713ms).
+2026-10-12 23:28:00 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=12m19s646ms).
+2026-10-12 23:44:30 WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=16m147ms).

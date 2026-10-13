@@ -42,9 +42,9 @@ const getHistorySummaryByPayer = async (payerId) => {
   return response.data?.data ?? [];
 };
 
-/** El pagador pasa a Inactivo un documento Cargado, sea financiable o no. */
-const inactivateDocument = async (documentId) => {
-  const response = await api.patch(`/v1/documents/${documentId}/inactivate`);
+/** El pagador pasa a Inactivo documentos Cargados, sean financiables o no. Todos o ninguno. */
+const inactivateDocuments = async (documentIds) => {
+  const response = await api.patch("/v1/documents/inactivate", { documentIds });
   return response.data?.data;
 };
 
@@ -53,5 +53,5 @@ export const documentService = {
   getHistoryBySupplier,
   getHistoryByPayer,
   getHistorySummaryByPayer,
-  inactivateDocument,
+  inactivateDocuments,
 };

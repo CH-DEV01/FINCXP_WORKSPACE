@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,6 +31,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.davivienda.factoraje.controller.DocumentController;
 import com.davivienda.factoraje.controller.HolidayController;
 import com.davivienda.factoraje.controller.ParameterController;
 import com.davivienda.factoraje.controller.PayerController;
@@ -41,7 +43,9 @@ import com.davivienda.factoraje.dto.payer.PayerSummaryDTOResponse;
 import com.davivienda.factoraje.dto.supplier.SupplierBankAccountDTOResponse;
 import com.davivienda.factoraje.dto.upload_resource.ResourceFile;
 import com.davivienda.factoraje.dto.upload_resource.UploadResourcesDTOResponse;
+import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.infrastructure.security.JwtService;
+import com.davivienda.factoraje.service.DocumentService;
 import com.davivienda.factoraje.service.HolidayService;
 import com.davivienda.factoraje.service.ParameterService;
 import com.davivienda.factoraje.service.PayerSummaryService;
@@ -52,7 +56,7 @@ import com.davivienda.factoraje.service.UserService;
 import io.jsonwebtoken.MalformedJwtException;
 
 @WebMvcTest(controllers = { UserController.class, ParameterController.class, HolidayController.class,
-        UploadResourceController.class, PayerController.class, SupplierController.class })
+        UploadResourceController.class, PayerController.class, SupplierController.class, DocumentController.class })
 @Import(SecurityConfig.class)
 class SecurityConfigTest {
 
@@ -79,11 +83,35 @@ class SecurityConfigTest {
     private PayerSummaryService payerSummaryService;
     @MockBean
     private SupplierBankAccountService supplierBankAccountService;
+    @MockBean
+    private DocumentService documentService;
+    @MockBean
+    private CurrentUserService currentUserService;
+
+    @Test
+    void onlyPayerCanInactivateSeveralDocumentsAtOnce() throws Exception {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        String body = "{\"documentIds\":[\"" + first + "\",\"" + second + "\"]}";
+
+        mockMvc.perform(patch("/api/v1/documents/inactivate").header(HttpHeaders.AUTHORIZATION, bearer(Roles.PAYER))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Los documentos pasaron a estado Inactivo."));
+        verify(documentService).inactivateDocumentsByPayer(List.of(first, second));
+
+        mockMvc.perform(patch("/api/v1/documents/inactivate").header(HttpHeaders.AUTHORIZATION, bearer(Roles.ADMIN))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/v1/documents/inactivate").header(HttpHeaders.AUTHORIZATION, bearer(Roles.PAYER))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"documentIds\":[]}"))
+                .andExpect(status().isBadRequest());
+    }
 
     @Test
     void onlyPayerCanReadItsOwnSummary() throws Exception {
         when(payerSummaryService.getOwnSummary())
-                .thenReturn(new PayerSummaryDTOResponse(null, "AEROMAN", "06142711011200", "P-01", null));
+                .thenReturn(new PayerSummaryDTOResponse(null, "AEROMAN", "06142711011200", "P-01", "1234567890", null));
 
         mockMvc.perform(get("/api/v1/payers/me/summary").header(HttpHeaders.AUTHORIZATION, bearer(Roles.PAYER)))
                 .andExpect(status().isOk())
@@ -98,7 +126,7 @@ class SecurityConfigTest {
     void onlyAdminCanReadAnyPayerSummary() throws Exception {
         UUID payerId = UUID.randomUUID();
         when(payerSummaryService.getSummary(payerId))
-                .thenReturn(new PayerSummaryDTOResponse(payerId, "AEROMAN", "06142711011200", "P-01", null));
+                .thenReturn(new PayerSummaryDTOResponse(payerId, "AEROMAN", "06142711011200", "P-01", "1234567890", null));
 
         mockMvc.perform(get("/api/v1/payers/" + payerId + "/summary").header(HttpHeaders.AUTHORIZATION, bearer(Roles.ADMIN)))
                 .andExpect(status().isOk())

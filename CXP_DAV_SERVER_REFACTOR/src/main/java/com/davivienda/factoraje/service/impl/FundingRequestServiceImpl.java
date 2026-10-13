@@ -97,11 +97,11 @@ public class FundingRequestServiceImpl implements FundingRequestService {
 
         CreditFacilityModel creditFacility = creditFacilityRepository
                 .findByPayerId(masterAgreement.getPayer().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("No se encontró la línea de crédito del pagador del convenio."));
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el cupo de crédito del pagador del convenio."));
 
         ProductPricingTermModel productPricing = productPricingTermRepository
                 .findByCreditFacilityId(creditFacility.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el tarifario de la línea de crédito del convenio."));
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el tarifario del cupo de crédito del convenio."));
 
         InactiveResourceException.requireActive(masterAgreement.getStatus(),
                 "El convenio está inactivo; sus documentos no pueden financiarse.");
@@ -110,7 +110,7 @@ public class FundingRequestServiceImpl implements FundingRequestService {
         InactiveResourceException.requireActive(masterAgreement.getPayer().getStatus(),
                 "El pagador " + masterAgreement.getPayer().getName() + " está inactivo; sus documentos no pueden financiarse.");
         InactiveResourceException.requireActive(creditFacility.getStatus(),
-                "La línea de crédito del pagador está inactiva; no se pueden financiar documentos.");
+                "El cupo de crédito del pagador está inactivo; no se pueden financiar documentos.");
         InactiveResourceException.requireActive(productPricing.getStatus(),
                 "El tarifario del pagador está inactivo; no se pueden financiar documentos.");
 

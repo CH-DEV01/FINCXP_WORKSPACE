@@ -24,6 +24,11 @@ public record PayerRegistrationDTORequest(
         @Size(max = 25, message = "El NIT no puede superar 25 caracteres.")
         String nit,
 
+        @NotBlank(message = "El NIU es obligatorio.")
+        @Size(max = 25, message = "El NIU no puede superar 25 dígitos.")
+        @Pattern(regexp = "[\\d\\s-]+", message = "El NIU solo puede contener números.")
+        String niu,
+
         @NotBlank(message = "La cuenta bancaria es obligatoria.")
         @Size(max = 50, message = "La cuenta bancaria no puede superar 50 caracteres.")
         @Pattern(regexp = "[\\d\\s-]+", message = "La cuenta bancaria solo puede contener números.")
@@ -31,6 +36,7 @@ public record PayerRegistrationDTORequest(
 
         @NotBlank(message = "El número de cupo es obligatorio.")
         @Size(max = 255, message = "El número de cupo no puede superar 255 caracteres.")
+        @Pattern(regexp = "\\d+", message = "El número de cupo solo puede contener números.")
         String creditFacilityNumber,
 
         @NotNull(message = "El monto aprobado del cupo es obligatorio.")

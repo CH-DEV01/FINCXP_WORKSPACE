@@ -12,7 +12,8 @@ public record EntityDTOResponse(
         String nit,
         String status,
         String entityTypeId,
-        String entityTypeName
+        String entityTypeName,
+        String niu
 
 ) {
 
@@ -24,7 +25,8 @@ public record EntityDTOResponse(
                 model.getNit(),
                 model.getStatus().name(),
                 model.getEntityType().getId().toString(),
-                model.getEntityType().getName());
+                model.getEntityType().getName(),
+                model.getNiu());
     }   
 
 }

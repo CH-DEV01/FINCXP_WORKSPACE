@@ -57,13 +57,11 @@ const accountValue = ({ accountNumber, isLoadingAccount, accountError }) => {
   return accountNumber || "Sin cuenta registrada";
 };
 
-const SummaryItem = ({ icon, label, value, wrapValue = false }) => (
-  <div className="flex items-center gap-3 min-w-0">
+const SummaryItem = ({ icon, label, value }) => (
+  <div className="flex flex-col items-center text-center gap-1 min-w-0 px-2">
     <div className="shrink-0">{icon}</div>
-    <div className="min-w-0">
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className={`text-sm font-bold text-gray-900 ${wrapValue ? "break-all" : "truncate"}`}>{value}</p>
-    </div>
+    <p className="text-xs font-medium text-gray-500">{label}</p>
+    <p className="text-sm font-bold text-gray-900 break-all">{value}</p>
   </div>
 );
 
@@ -96,32 +94,27 @@ const SelectionSummaryCard = ({
 
   return (
     <div className="bg-white rounded-lg shadow-lg font-montserrat w-full p-4 sm:px-6">
-      <div className="grid grid-cols-2 gap-4 sm:divide-x sm:divide-gray-200">
+      <div className="grid grid-cols-3 divide-x divide-gray-200">
         <SummaryItem icon={<IconCalendarCheck />} label="Fecha de desembolso" value={formattedDate} />
-        <div className="sm:pl-4">
-          <SummaryItem icon={<IconChecklist />} label="Documentos seleccionados" value={selectedCount} />
-        </div>
+        <SummaryItem icon={<IconChecklist />} label="Documentos seleccionados" value={selectedCount} />
+        <SummaryItem
+          icon={<IconBank />}
+          label="Cuenta de abono"
+          value={accountValue({ accountNumber, isLoadingAccount, accountError })}
+        />
       </div>
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <div className="flex justify-center">
-          <SummaryItem
-            icon={<IconBank />}
-            label="Cuenta de abono"
-            value={accountValue({ accountNumber, isLoadingAccount, accountError })}
-            wrapValue
-          />
-        </div>
-        {isAccountMissing && (
+      {isAccountMissing && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
           <p
             role="alert"
-            className="mt-2 text-center text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2"
+            className="text-center text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2"
           >
             {accountError
               ? "No se pudo verificar su cuenta de abono. Recargue la página para intentarlo de nuevo."
               : "No tiene una cuenta de abono registrada. Comuníquese con el banco para registrarla antes de solicitar el desembolso."}
           </p>
-        )}
-      </div>
+        </div>
+      )}
       {formattedCutoff && (
         <p className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
           Solicitudes después de las {formattedCutoff} se consideran recibidas el siguiente día hábil.

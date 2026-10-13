@@ -23,6 +23,7 @@ import com.davivienda.factoraje.dto.entity.EntityDTOResponse;
 import com.davivienda.factoraje.dto.entity.PayerRegistrationDTORequest;
 import com.davivienda.factoraje.dto.entity.PayerSummaryDTOResponse;
 import com.davivienda.factoraje.dto.entity.PayerUpdateDTORequest;
+import com.davivienda.factoraje.dto.entity.SupplierRegistrationDTORequest;
 import com.davivienda.factoraje.dto.entity.SupplierSummaryDTOResponse;
 import com.davivienda.factoraje.dto.entity.SupplierUpdateDTORequest;
 import com.davivienda.factoraje.infrastructure.util.PageRequests;
@@ -105,6 +106,24 @@ public class EntityController {
         return ResponseEntity.ok(ApiResponse.success(
                 PageResponse.from(entityService.getSupplierSummaries(search, page, size)),
                 "Resumen de proveedores obtenido exitosamente"));
+    }
+
+    @PostMapping("/suppliers")
+    public ResponseEntity<ApiResponse<SupplierSummaryDTOResponse>> registerSupplier(
+            @Valid @RequestBody SupplierRegistrationDTORequest request) {
+
+        log.info("Registering a new supplier with its main bank account");
+
+        SupplierSummaryDTOResponse response = entityService.registerSupplier(request);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path("/api/v1/entities/{id}")
+                .buildAndExpand(response.id())
+                .toUri();
+
+        return ResponseEntity.created(location)
+                .body(ApiResponse.success(response, "Proveedor registrado correctamente."));
     }
 
     @PutMapping("/suppliers/{id}")

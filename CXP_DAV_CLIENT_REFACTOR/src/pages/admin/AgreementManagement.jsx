@@ -37,6 +37,16 @@ const columns = [
     render: (val) => <span className="font-semibold text-slate-700 text-xs">{val}</span>,
   },
   {
+    header: "Cuenta del proveedor",
+    accessor: "supplierAccountNumber",
+    render: (val) =>
+      val ? (
+        <span className="font-mono text-xs">{val}</span>
+      ) : (
+        <span className="text-xs text-gray-400">Sin registrar</span>
+      ),
+  },
+  {
     header: "Politica de pago",
     accessor: "paymentPolicyDays",
     render: (val) => <span className="text-xs">{val}</span>,

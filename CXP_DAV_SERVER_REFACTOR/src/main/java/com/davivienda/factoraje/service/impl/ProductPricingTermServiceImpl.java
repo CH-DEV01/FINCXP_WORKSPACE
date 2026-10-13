@@ -31,9 +31,9 @@ public class ProductPricingTermServiceImpl implements ProductPricingTermService 
 
     private void validateUniqueness(ProductPricingTermDTORequest entity) {
         if (productPricingTermRepository.existsByCreditFacilityId(entity.creditFacilityId())) {
-            log.warn("La línea de crédito indicada ya tiene un tarifario registrado.");
+            log.warn("El cupo de crédito indicado ya tiene un tarifario registrado.");
             throw new ResourceAlreadyExistsException(
-                    "La línea de crédito indicada ya tiene un tarifario registrado.");
+                    "El cupo de crédito indicado ya tiene un tarifario registrado.");
         }
     }
 
@@ -46,7 +46,7 @@ public class ProductPricingTermServiceImpl implements ProductPricingTermService 
 
         CreditFacilityModel creditFacility = creditFacilityRepository.findById(request.creditFacilityId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "No se encontró la línea de crédito con ID: " + request.creditFacilityId()));
+                        "No se encontró el cupo de crédito con ID: " + request.creditFacilityId()));
 
         ProductPricingTermModel productPricingTerm = ProductPricingTermModel.builder()
                 .creditFacility(creditFacility)
@@ -58,7 +58,7 @@ public class ProductPricingTermServiceImpl implements ProductPricingTermService 
 
         ProductPricingTermModel savedProductPricingTerm = productPricingTermRepository.save(productPricingTerm);
         log.info("Product pricing term created successfully with ID: {}", savedProductPricingTerm.getId());
-        String payerName = creditFacility.getPayer() != null ? creditFacility.getPayer().getName() : "la línea de crédito";
+        String payerName = creditFacility.getPayer() != null ? creditFacility.getPayer().getName() : "el cupo de crédito";
         mailNotices.operatorChanged("Acuerdos", MailNoticePublisher.NO_RECORD,
                 "Condición de precio de " + payerName
                         + ": tasa de interés " + AuditText.value(productPricingTerm.getInterestRate())

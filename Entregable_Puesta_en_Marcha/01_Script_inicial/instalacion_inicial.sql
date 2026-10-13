@@ -889,7 +889,7 @@ INSERT INTO public.system_parameters (id, created_at, param_key, updated_at, par
     ('d1200000-0000-4000-8000-000000000004', now(), 'MAILJET_FROM_NAME', now(), 'CONFIGURAR'),
     ('d1200000-0000-4000-8000-000000000005', now(), 'APP_LOGIN_URL', now(), 'CONFIGURAR'),
     ('d1300000-0000-4000-8000-000000000001', now(), 'MAILJET_API_URL', now(), 'https://api.mailjet.com/v3/send'),
-    ('d1400000-0000-4000-8000-000000000001', now(), 'JWT_SECRET', now(), 'G9UuPSmEz8a18PARiE8Rs9QKvDrdUOJjjNe3duoQqUw=');
+    ('d1400000-0000-4000-8000-000000000001', now(), 'JWT_SECRET', now(), 'CONFIGURAR');
 
 -- -----------------------------------------------------------------------------
 -- 4. ENTIDAD BANCO Y USUARIOS MADRE

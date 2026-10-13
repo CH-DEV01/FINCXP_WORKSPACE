@@ -88,7 +88,7 @@ const UploadFilePageAdmin = () => {
                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                   ></path>
                 </svg>
-                Estado de la Línea
+                Estado del Cupo
               </h4>
 
               <div className="space-y-3">
@@ -110,7 +110,7 @@ const UploadFilePageAdmin = () => {
 
               <div className="mt-4 pt-3 border-t border-red-700/50">
                 <div className="flex justify-between text-[10px] font-bold text-red-200 mb-1.5 uppercase tracking-wider">
-                  <span>Ocupación</span>
+                  <span>Utilización</span>
                   <span>{creditMetrics.utilizationRate}%</span>
                 </div>
                 <div className="w-full bg-red-950/80 h-2.5 rounded-full overflow-hidden shadow-inner">

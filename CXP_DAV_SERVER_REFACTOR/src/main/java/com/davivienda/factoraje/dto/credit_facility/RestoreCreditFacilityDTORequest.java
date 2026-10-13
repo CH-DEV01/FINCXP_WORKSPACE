@@ -9,19 +9,26 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * @param amount             obligatorio en la liquidación total; en el pago parcial se ignora y se
+ *                           abona el valor nominal de los documentos del lote.
+ * @param disbursementBatchId lote de desembolso que liquida el pago parcial.
+ */
 public record RestoreCreditFacilityDTORequest(
 
         @NotNull(message = "El ID del cupo de crédito es obligatorio")
         UUID creditFacilityId,
 
-        @NotNull(message = "El monto es obligatorio") 
-        @DecimalMin(value = "0.01", message = "El monto a abonar debe ser mayor a cero") BigDecimal amount,
+        @DecimalMin(value = "0.01", message = "El monto a abonar debe ser mayor a cero")
+        BigDecimal amount,
 
-        @NotBlank(message = "La referencia es obligatoria") 
+        @NotBlank(message = "La referencia es obligatoria")
         String reference,
 
-        @NotNull(message = "El tipo de abono es obligatorio") 
-        RepaymentTypeEnum type // "PARTIAL" o "FULL"
+        @NotNull(message = "El tipo de abono es obligatorio")
+        RepaymentTypeEnum type, // "PARTIAL" o "FULL"
+
+        UUID disbursementBatchId
 
 ) {
 

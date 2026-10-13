@@ -102,7 +102,7 @@ const CreditLineDetailCard = ({ data, onRegisterRepayment }) => {
 
       <div className="mt-6 sm:mt-8">
         <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs sm:text-sm font-bold text-slate-500 mb-2">
-          <span>Porcentaje de ocupación del cupo</span>
+          <span>Porcentaje de utilización del cupo</span>
           <span className={isCritical ? "text-red-600" : "text-slate-700"}>{formatPercent(data.utilizationRate)}</span>
         </div>
         <div className="relative w-full bg-slate-100 h-2.5 sm:h-3 rounded-full overflow-hidden">
@@ -117,7 +117,7 @@ const CreditLineDetailCard = ({ data, onRegisterRepayment }) => {
           />
         </div>
         <p className="text-[10px] sm:text-xs text-slate-400 mt-1.5">
-          Umbral de alerta: {formatPercent(data.warningThreshold)} de ocupación
+          Umbral de alerta: {formatPercent(data.warningThreshold)} de utilización
         </p>
       </div>
 
@@ -149,7 +149,7 @@ const CreditLineDetailCard = ({ data, onRegisterRepayment }) => {
             </span>
             <p className="text-[11px] text-slate-500 mt-1">
               {isCritical
-                ? `La ocupación alcanzó el umbral de ${formatPercent(data.warningThreshold)}`
+                ? `La utilización alcanzó el umbral de ${formatPercent(data.warningThreshold)}`
                 : `Por debajo del umbral de ${formatPercent(data.warningThreshold)}`}
             </p>
           </div>
