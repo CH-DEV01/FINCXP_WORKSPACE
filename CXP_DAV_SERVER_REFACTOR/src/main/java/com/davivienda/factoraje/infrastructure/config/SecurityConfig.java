@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/sso/handoff", "/api/v1/sso/activateSession", "api/v1/auth/sso-login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/term-versions/active/supplier").hasRole(Roles.SUPPLIER)
                         .requestMatchers(HttpMethod.GET, "/api/v1/term-versions/active/payer").hasAnyRole(Roles.PAYER, Roles.ADMIN)

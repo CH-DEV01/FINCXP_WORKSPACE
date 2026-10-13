@@ -103,6 +103,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(SessionExpiredException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSessionExpired(SessionExpiredException ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(UnauthorizedAccessException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
         return ResponseEntity

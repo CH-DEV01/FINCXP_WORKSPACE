@@ -6,24 +6,28 @@ import com.davivienda.financiamiento.domain.entities.SystemParameterModel;
 import com.davivienda.financiamiento.repository.ParameterRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+
+import java.net.URI;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 @RestController
 @Slf4j
 public class SsoController {
+
+        private static final URI APP_HOME = URI.create("/financiamientocuentasporpagar/");
 
         @Autowired
         private RestTemplate restTemplate;
@@ -36,12 +40,14 @@ public class SsoController {
 
         }
 
+        /**
+         * Canjea el sessionToken con la API y reenvía al navegador la cookie HttpOnly
+         * que la API arma con el JWT. El token no pasa por JavaScript.
+         */
         @PostMapping("/start-session")
-        @ResponseBody
-        public String startSession(
+        public ResponseEntity<Void> startSession(
                         @RequestParam("sessionToken") String sessionToken,
-                        HttpServletRequest request,
-                        HttpServletResponse httpResponse) {
+                        HttpServletRequest request) {
 
                 log.info("[start-session] Solicitud recibida - IP: {}, sessionToken recibido: {}",
                                 request.getRemoteAddr(), sessionToken != null ? "presente" : "ausente");
@@ -65,12 +71,19 @@ public class SsoController {
                                 requestEntity,
                                 StartSessionResponseDTO.class);
 
-                String jwt = response.getBody().getJwt();
+                HttpHeaders redirect = new HttpHeaders();
+                redirect.setLocation(APP_HOME);
 
-                return "<html><body><script>" +
-                                "localStorage.setItem('jwt_token', '" + jwt + "');" +
-                                "window.location.href = '/financiamientocuentasporpagar/';" +
-                                "</script></body></html>";
+                List<String> cookies = response.getHeaders().getOrEmpty(HttpHeaders.SET_COOKIE);
+                if (cookies.isEmpty()) {
+                        // Sin cookie, el cliente web no encuentra sesión y vuelve al portal.
+                        log.warn("[start-session] La API no activó la sesión: {}",
+                                        response.getBody() != null ? response.getBody().getMessage() : "sin respuesta");
+                } else {
+                        redirect.put(HttpHeaders.SET_COOKIE, cookies);
+                }
+
+                return new ResponseEntity<>(redirect, HttpStatus.FOUND);
 
         }
 

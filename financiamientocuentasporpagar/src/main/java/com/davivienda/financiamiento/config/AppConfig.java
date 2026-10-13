@@ -43,9 +43,11 @@ public class AppConfig {
             .setResponseTimeout(Timeout.ofMilliseconds(readTimeout))
             .build();
 
+        // Sin almacén de cookies: el cliente es compartido y mezclaría las sesiones de los usuarios.
         CloseableHttpClient httpClient = HttpClients.custom()
             .setConnectionManager(connectionManager)
             .setDefaultRequestConfig(requestConfig)
+            .disableCookieManagement()
             .build();
 
         return new RestTemplate(new HttpComponentsClientHttpRequestFactory(httpClient));

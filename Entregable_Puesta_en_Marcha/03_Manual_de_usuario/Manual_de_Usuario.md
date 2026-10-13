@@ -90,7 +90,8 @@ Al entrar, cada rol llega a su pantalla inicial:
 **Reglas**
 
 - El usuario debe estar registrado y **activo**, y su entidad también. Si el correo del portal no existe en la plataforma: *"Usuario no registrado en el sistema local."* Si el usuario está inactivo: *"El usuario se encuentra inactivo."*
-- La sesión dura **24 horas** (parámetro `JWT_EXPIRATION_MINUTES`). Además se cierra si no hay actividad durante **15 minutos** (parámetro `SESSION_IDLE_TIMEOUT_MINUTES`). Al cerrarse, el navegador vuelve al portal.
+- La sesión dura como máximo **24 horas** (parámetro `JWT_EXPIRATION_MINUTES`). Además se cierra si no hay actividad durante **15 minutos** (parámetro `SESSION_IDLE_TIMEOUT_MINUTES`). Al cerrarse, el navegador vuelve al portal.
+- Al cerrar sesión con el botón de salida, la sesión también se cierra en las demás pestañas y equipos donde el usuario la tenga abierta.
 
 ### 3.2 Barra superior
 
@@ -679,9 +680,9 @@ Desde la tarjeta **"Bitácora de dispersiones"** se consultan los lotes de dispe
 | `UPLOAD_MAX_FILE_SIZE_MB` | Entero de 1 a 50 | `5` | Tamaño máximo del archivo de carga, en MB. |
 | `UPLOAD_MAX_ROWS` | Entero de 1 a 100000 | `5000` | Cantidad máxima de registros por archivo. |
 | `CORS_ALLOWED_ORIGINS` | Lista de orígenes `https://dominio[:puerto]` separados por comas | `http://localhost:5173,https://devpay.davivienda.com.sv` | Direcciones desde las que el navegador puede usar la API. Debe incluir la URL del cliente del ambiente. |
-| `JWT_EXPIRATION_MINUTES` | Entero de 5 a 10080 | `1440` | Duración de la sesión, en minutos. Aplica a los inicios de sesión posteriores al cambio. |
+| `JWT_EXPIRATION_MINUTES` | Entero de 5 a 10080 | `1440` | Duración máxima de la sesión, en minutos, contada desde el ingreso. Aunque el usuario siga trabajando, al cumplirse debe ingresar de nuevo desde el portal. |
 | `JWT_SECRET` | Base64 de al menos 32 bytes | `CONFIGURAR` | Llave con la que se firman las sesiones. La coloca el DBA al instalar; sin ella la API no arranca. No acepta `CONFIGURAR` desde esta pantalla. Cambiarla invalida las sesiones ya emitidas. |
-| `SESSION_IDLE_TIMEOUT_MINUTES` | Entero de 1 a 480 | `15` | Minutos sin actividad antes de cerrar la sesión. |
+| `SESSION_IDLE_TIMEOUT_MINUTES` | Entero de 1 a 480 | `15` | Minutos sin actividad antes de cerrar la sesión. También es la duración de cada token: la aplicación lo renueva mientras haya actividad. |
 | `MAILJET_API_KEY` | Texto | `CONFIGURAR` | Llave de Mailjet. Mientras valga `CONFIGURAR`, no se envían correos. |
 | `MAILJET_API_SECRET` | Texto | `CONFIGURAR` | Secreto de Mailjet. Misma regla que la llave. |
 | `MAILJET_FROM_EMAIL` | Correo | `CONFIGURAR` | Remitente de los correos. |

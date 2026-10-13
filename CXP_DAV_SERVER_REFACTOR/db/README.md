@@ -26,6 +26,7 @@ En producción no hay Flyway: el DBA ejecuta los scripts de `db/prod/` (ver
 | `V17__niu_de_pagadores.sql` | Vuelve a agregar `entities.niu`, único. Obligatorio al registrar pagadores y proveedores desde sus modales; la carga de documentos no lo pide, así que el proveedor creado desde el archivo lo recibe después al editarlo. |
 | `V18__recarga_de_documentos_inactivados.sql` | Los índices únicos de doble fondeo (`uq_documents_*`) excluyen los documentos `INACTIVATED_BY_PAYER`, que así se pueden volver a cargar. Los de cuarentena siguen contando. |
 | `V19__jwt_secret_sin_valor_por_defecto.sql` | `JWT_SECRET` vuelve a `CONFIGURAR` si tenía la llave por defecto de V15, que está en el código fuente. La API no arranca hasta que el ambiente coloque su propia llave. |
+| `V20__revocacion_de_sesiones.sql` | `users.sessions_revoked_at`: al cerrar sesión se guarda el momento y la API rechaza los JWT emitidos antes. |
 
 ## Desarrollo y QA
 
@@ -65,7 +66,7 @@ y la API no arrancaría.
 ### Instalación inicial
 
 `db/prod/instalacion_inicial.sql` lo ejecuta el DBA una sola vez, sobre una base
-PostgreSQL 16 vacía. Deja la base igual que las migraciones V1 a V19 (mismas tablas,
+PostgreSQL 16 vacía. Deja la base igual que las migraciones V1 a V20 (mismas tablas,
 restricciones, índices e identificadores de catálogo) y, en una sola transacción, crea:
 
 | Qué | Para qué |

@@ -16,5 +16,6 @@ public record UserProfileResponseDTO(
     List<String> permissions,
     List<MenuDTO> menus,
     List<RouteDTO> routes,
-    int idleTimeoutMinutes
+    int idleTimeoutMinutes,
+    SessionDTO session
 ) {}

@@ -14,7 +14,7 @@
 --        - Administrador del sistema (rol SYSTEM_ADMIN): administra los parámetros.
 --          Este rol solo se asigna directamente en la base de datos.
 --
--- Equivale a las migraciones V1 a V19 de src/main/resources/db/migration, con los
+-- Equivale a las migraciones V1 a V20 de src/main/resources/db/migration, con los
 -- mismos identificadores, más los datos propios de producción. Los cambios
 -- posteriores se entregan en db/prod/actualizaciones/.
 --
@@ -484,6 +484,7 @@ CREATE TABLE public.users (
     updated_at timestamp(6) with time zone NOT NULL,
     entity_id uuid NOT NULL,
     role_id uuid NOT NULL,
+    sessions_revoked_at timestamp(6) with time zone,
     CONSTRAINT users_status_check CHECK (((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[])))
 );
 

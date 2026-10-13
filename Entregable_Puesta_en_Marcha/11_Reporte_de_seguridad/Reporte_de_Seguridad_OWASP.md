@@ -100,6 +100,12 @@ Ver el detalle en la sección 4.
 - **Evidencia:** el token se guarda en `localStorage`, y al cerrar sesión no se invalida en el servidor: sigue siendo válido hasta que expira.
 - **Mitigación actual:** no se encontró XSS. `react-markdown` no interpreta HTML y no hay `dangerouslySetInnerHTML`.
 - **Recomendación:** mantener corta la duración del token (`JWT_EXPIRATION_MINUTES`). A mediano plazo, moverlo a una cookie `HttpOnly; Secure; SameSite` o llevar una lista de tokens revocados.
+- **Estado:** corregido (versión V20).
+  - El JWT viaja en la cookie `FIN_CXP_SESSION` (`HttpOnly; Secure; SameSite=Strict`, limitada a la ruta de la API). La arma la API; en el ingreso por SSO el portal reenvía el `Set-Cookie` de `activateSession` y redirige. JavaScript ya no puede leer el token y el navegador solo guarda su vigencia.
+  - CSRF: `SameSite=Strict` evita que otro sitio envíe la cookie, y la API rechaza con 403 las peticiones de un origen que no esté en `CORS_ALLOWED_ORIGINS`, incluidos otros subdominios del banco.
+  - Al cerrar sesión, por el botón o por inactividad, la API borra la cookie, guarda el momento en `users.sessions_revoked_at` y rechaza los tokens emitidos antes, en todas las pestañas y equipos del usuario.
+  - Cada token dura lo que la inactividad permitida (`SESSION_IDLE_TIMEOUT_MINUTES`). El cliente lo renueva solo si hubo actividad, sin pasar de la duración máxima de la sesión (`JWT_EXPIRATION_MINUTES`).
+  - Pendiente: una política CSP, que limitaría lo que un XSS podría hacer dentro de una sesión abierta.
 
 ### H9. Archivos que no deberían estar versionados — Baja
 

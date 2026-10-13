@@ -6,6 +6,7 @@ import com.davivienda.factoraje.domain.enums.GeneralStatusEnum;
 import com.davivienda.factoraje.domain.enums.SystemParameterKey;
 import com.davivienda.factoraje.dto.auth.MenuDTO;
 import com.davivienda.factoraje.dto.auth.RouteDTO;
+import com.davivienda.factoraje.dto.auth.SessionDTO;
 import com.davivienda.factoraje.dto.auth.UserProfileResponseDTO;
 import com.davivienda.factoraje.infrastructure.config.SystemParameters;
 import com.davivienda.factoraje.infrastructure.exception.ResourceNotFoundException;
@@ -19,6 +20,7 @@ import com.davivienda.factoraje.repository.UserRepository;
 import com.davivienda.factoraje.service.AuthService;
 import lombok.RequiredArgsConstructor;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -59,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserProfileResponseDTO getCurrentUserProfile() {
+    public UserProfileResponseDTO getCurrentUserProfile(String token) {
         UserModel user = currentUserService.get();
 
         // Ruta base, rutas y menús del rol, administrados en roles_cat, role_routes y role_menus
@@ -85,7 +87,25 @@ public class AuthServiceImpl implements AuthService {
                 List.of(),
                 menus,
                 routes,
-                systemParameters.getInt(SystemParameterKey.SESSION_IDLE_TIMEOUT_MINUTES)
+                systemParameters.getInt(SystemParameterKey.SESSION_IDLE_TIMEOUT_MINUTES),
+                jwtService.sessionOf(token)
             );
+    }
+
+    @Override
+    public String refreshSession(String token) {
+        return jwtService.refreshToken(currentUserService.get(), token);
+    }
+
+    @Override
+    public SessionDTO sessionOf(String token) {
+        return jwtService.sessionOf(token);
+    }
+
+    @Override
+    @Transactional
+    public void logout() {
+        currentUserService.find()
+                .ifPresent(user -> userRepository.revokeSessions(user.getId(), Instant.now()));
     }
 }

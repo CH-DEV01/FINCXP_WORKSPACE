@@ -87,6 +87,10 @@ public class UserModel implements UserDetails {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    /** Los JWT emitidos antes de este momento ya no se aceptan: el usuario cerró sesión. */
+    @Column(name = "sessions_revoked_at")
+    private Instant sessionsRevokedAt;
+
     /** "Nombre Apellido", omitiendo las partes vacías. */
     public String fullName() {
         return Stream.of(this.firstName, this.lastName)

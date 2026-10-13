@@ -1,10 +1,10 @@
 package com.davivienda.financiamiento.domain.dto;
 
+/** El JWT no viene en el cuerpo: la API lo envía en la cookie de sesión (Set-Cookie). */
 public class StartSessionResponseDTO {
 
     private Boolean success;
     private String message;
-    private String jwt;
 
     public StartSessionResponseDTO() {}
 
@@ -22,13 +22,5 @@ public class StartSessionResponseDTO {
 
     public void setMessage(String message) {
         this.message = message;
-    }
-
-    public String getJwt() {
-        return jwt;
-    }
-
-    public void setJwt(String jwt) {
-        this.jwt = jwt;
     }
 }

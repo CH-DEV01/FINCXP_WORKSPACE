@@ -1,16 +1,22 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import api, { SESSION_EXPIRED_EVENT, markSessionEnded } from "../services/api"; // Asegúrate de que este 'api' inyecte el JWT en los headers
-import { API_BASE_URL, PORTAL_URL } from "../constants/apiConstants";
+import api, { SESSION_EXPIRED_EVENT, markSessionActive, markSessionEnded } from "../services/api";
+import { API_BASE_URL, API_URL, PORTAL_URL } from "../constants/apiConstants";
 
-const TOKEN_KEY = "jwt_token";
+// Solo la vigencia del token ({ issuedAt, expiresAt }); el JWT está en una cookie HttpOnly.
+// Compartida entre pestañas: si desaparece, la sesión se cerró en otra.
+const SESSION_KEY = "session";
+// Versiones anteriores guardaban aquí el JWT.
+const LEGACY_TOKEN_KEY = "jwt_token";
 // Compartida entre pestañas: trabajar en una mantiene viva la sesión de las demás.
 const LAST_ACTIVITY_KEY = "last_activity";
 const DEFAULT_IDLE_TIMEOUT_MINUTES = 15;
 const IDLE_CHECK_INTERVAL_MS = 15_000;
 const ACTIVITY_WRITE_INTERVAL_MS = 5_000;
 const ACTIVITY_EVENTS = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "wheel"];
+const REFRESH_MARGIN_MS = 60_000;
+const LOGOUT_TIMEOUT_MS = 3_000;
 
 const SESSION_END_MESSAGES = {
   expired: "Su sesión expiró. Ingrese nuevamente desde el portal.",
@@ -18,21 +24,37 @@ const SESSION_END_MESSAGES = {
   otherTab: "La sesión se cerró en otra pestaña.",
 };
 
-/** Momento de expiración del JWT en milisegundos, o null si no se puede leer. */
-const tokenExpiresAt = (token) => {
+const readSession = () => {
   try {
-    const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    const { exp } = JSON.parse(atob(payload));
-    return typeof exp === "number" ? exp * 1000 : null;
+    const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+    return typeof session?.issuedAt === "number" && typeof session?.expiresAt === "number" ? session : null;
   } catch {
     return null;
   }
 };
 
+const storeSession = ({ issuedAt, expiresAt }) =>
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ issuedAt, expiresAt }));
+
+/** Momento en que conviene renovar el token, antes de que venza. */
+const refreshAt = ({ issuedAt, expiresAt }) =>
+  expiresAt - Math.min(REFRESH_MARGIN_MS, (expiresAt - issuedAt) / 4);
+
 const clearStoredSession = () => {
-  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(LAST_ACTIVITY_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
   sessionStorage.clear();
+};
+
+// Revoca la sesión en la API y borra la cookie. Usa axios directo: el interceptor de
+// `api` no resuelve las respuestas 401.
+const revokeSession = async () => {
+  try {
+    await axios.post(`${API_URL}/v1/auth/logout`, null, { withCredentials: true, timeout: LOGOUT_TIMEOUT_MS });
+  } catch {
+    // La sesión se cierra en el navegador aunque la API no responda.
+  }
 };
 
 const AuthContext = createContext();
@@ -42,35 +64,29 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const endingRef = useRef(false);
 
-  const fetchUserProfile = useCallback(async (token) => {
+  const fetchUserProfile = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.get("/v1/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUser(response.data?.data);
+      const response = await api.get("/v1/auth/me");
+      const profile = response.data?.data;
+      storeSession(profile.session);
+      markSessionActive();
+      setUser(profile);
     } catch (error) {
-      console.error("Error validando sesión:", error);
       setUser(null);
-      localStorage.removeItem(TOKEN_KEY);
+      if (error?.response?.status === 401) {
+        localStorage.removeItem(SESSION_KEY);
+      } else {
+        console.error("Error validando sesión:", error);
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem(TOKEN_KEY);
-      const expiresAt = token ? tokenExpiresAt(token) : null;
-
-      if (token && (expiresAt === null || expiresAt > Date.now())) {
-        await fetchUserProfile(token);
-      } else {
-        if (token) clearStoredSession();
-        setIsLoading(false);
-      }
-    };
-    initAuth();
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    fetchUserProfile();
   }, [fetchUserProfile]);
 
   // El usuario se mantiene en el estado hasta redirigir: sin él, las rutas protegidas
@@ -80,6 +96,8 @@ export const AuthProvider = ({ children }) => {
     endingRef.current = true;
     markSessionEnded();
     clearStoredSession();
+    // La pestaña que cerró la sesión ya la revocó.
+    if (reason !== "otherTab") await revokeSession();
 
     await Swal.fire({
       icon: "info",
@@ -99,14 +117,56 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
   }, [endSession]);
 
+  // El token dura lo que la inactividad permitida: se renueva antes de vencer solo si
+  // hubo actividad desde que se emitió. La API rechaza la renovación al llegar a la
+  // duración máxima de la sesión, y el interceptor de 401 cierra la sesión.
   useEffect(() => {
     if (!user) return undefined;
 
-    const expiresAt = tokenExpiresAt(localStorage.getItem(TOKEN_KEY) || "");
-    if (expiresAt === null) return undefined;
+    let timer;
+    let cancelled = false;
 
-    const timer = setTimeout(() => endSession("expired"), Math.max(0, expiresAt - Date.now()));
-    return () => clearTimeout(timer);
+    const schedule = (at, action) => {
+      clearTimeout(timer);
+      timer = setTimeout(action, Math.max(0, at - Date.now()));
+    };
+
+    const check = async () => {
+      if (cancelled) return;
+      const session = readSession();
+      if (!session) return;
+
+      const now = Date.now();
+      if (session.expiresAt <= now) {
+        endSession("expired");
+        return;
+      }
+      // Aún no toca renovar, o ya lo renovó otra pestaña.
+      if (refreshAt(session) > now) {
+        schedule(refreshAt(session), check);
+        return;
+      }
+      const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY));
+      if (!(lastActivity > session.issuedAt)) {
+        schedule(session.expiresAt, () => endSession("idle"));
+        return;
+      }
+
+      try {
+        const response = await api.post("/v1/auth/refresh");
+        if (cancelled) return;
+        storeSession(response.data.data);
+        check();
+      } catch {
+        if (!cancelled) schedule(session.expiresAt, () => endSession("expired"));
+      }
+    };
+
+    check();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [user, endSession]);
 
   useEffect(() => {
@@ -143,7 +203,7 @@ export const AuthProvider = ({ children }) => {
     if (!user) return undefined;
 
     const onStorage = (event) => {
-      if ((event.key === TOKEN_KEY || event.key === null) && !localStorage.getItem(TOKEN_KEY)) {
+      if ((event.key === SESSION_KEY || event.key === null) && !localStorage.getItem(SESSION_KEY)) {
         endSession("otherTab");
       }
     };
@@ -151,20 +211,16 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener("storage", onStorage);
   }, [user, endSession]);
 
+  // Ingreso de desarrollo: la API responde con la cookie de sesión.
   const login = useCallback(
     async (payload) => {
       setIsLoading(true);
       try {
         const response = await axios.post("/api/v1/auth/sso-login", payload, {
           baseURL: API_BASE_URL,
+          withCredentials: true,
         });
-
-        // Extraemos el JWT del response de Spring Boot
-        const jwt = response.data.data;
-        localStorage.setItem(TOKEN_KEY, jwt);
-
-        // Una vez tenemos el token, traemos el perfil completo (ruta, menús, etc)
-        await fetchUserProfile(jwt);
+        await fetchUserProfile();
         return response;
       } finally {
         setIsLoading(false);
@@ -173,9 +229,10 @@ export const AuthProvider = ({ children }) => {
     [fetchUserProfile],
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     endingRef.current = true;
     markSessionEnded();
+    await revokeSession();
     clearStoredSession();
     window.location.replace(PORTAL_URL);
   }, []);

@@ -1,5 +1,6 @@
 package com.davivienda.factoraje.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -8,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -62,5 +64,10 @@ public interface UserRepository extends JpaRepository<UserModel, UUID> {
                           AND r.name = :roleName
                         """)
         List<UserModel> findActiveByRoleName(@Param("roleName") String roleName);
+
+        /** Sin pasar por la entidad, para no tocar updated_at. */
+        @Modifying
+        @Query("UPDATE UserModel u SET u.sessionsRevokedAt = :revokedAt WHERE u.id = :id")
+        int revokeSessions(@Param("id") UUID id, @Param("revokedAt") Instant revokedAt);
 
 }

@@ -1,6 +1,7 @@
 package com.davivienda.factoraje.infrastructure.security;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
@@ -34,11 +35,16 @@ public class CurrentUserService {
      * otra entidad usar {@link #managed()}.
      */
     public UserModel get() {
+        return find().orElseThrow(() -> new UnauthorizedAccessException("No hay un usuario autenticado."));
+    }
+
+    /** Usuario del token, si la petición trae uno válido. */
+    public Optional<UserModel> find() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserModel user)) {
-            throw new UnauthorizedAccessException("No hay un usuario autenticado.");
+        if (authentication != null && authentication.getPrincipal() instanceof UserModel user) {
+            return Optional.of(user);
         }
-        return user;
+        return Optional.empty();
     }
 
     /** Usuario autenticado leído en la transacción actual. */
