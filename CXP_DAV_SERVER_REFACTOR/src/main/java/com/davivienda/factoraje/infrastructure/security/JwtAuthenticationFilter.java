@@ -24,7 +24,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final SessionCookies sessionCookies;
 
     @Override
     protected void doFilterInternal(
@@ -33,7 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        final String jwt = sessionCookies.read(request).orElse(null);
+        final String jwt = BearerTokens.read(request).orElse(null);
 
         if (jwt == null) {
             filterChain.doFilter(request, response);

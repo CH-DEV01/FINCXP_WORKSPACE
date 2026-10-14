@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import com.davivienda.factoraje.domain.entities.UserModel;
 import com.davivienda.factoraje.domain.enums.SystemParameterKey;
-import com.davivienda.factoraje.dto.auth.SessionDTO;
 import com.davivienda.factoraje.infrastructure.config.SystemParameters;
 import com.davivienda.factoraje.infrastructure.exception.SessionExpiredException;
 
@@ -96,11 +95,6 @@ public class JwtService {
     private static Date authTime(Claims claims) {
         Number seconds = claims.get(AUTH_TIME_CLAIM, Number.class);
         return seconds != null ? new Date(seconds.longValue() * 1000) : claims.getIssuedAt();
-    }
-
-    public SessionDTO sessionOf(String token) {
-        Claims claims = parse(token);
-        return new SessionDTO(claims.getIssuedAt().getTime(), claims.getExpiration().getTime());
     }
 
     public String extractUsername(String token) {

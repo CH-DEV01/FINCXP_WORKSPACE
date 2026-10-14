@@ -3642,3 +3642,188 @@ You may wish to exclude one of them to ensure predictable runtime behavior
 2026-10-13 16:58:57 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
 2026-10-13 16:58:57 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
 2026-10-13 16:58:57 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-10-13 19:15:10 WARN  o.s.b.t.j.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer - 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/Users/ch/.m2/repository/org/json/json/20140107/json-20140107.jar!/org/json/JSONObject.class
+	jar:file:/Users/ch/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2026-10-13 19:15:10 INFO  c.d.f.r.DocumentDoubleFundingIndexTest - Starting DocumentDoubleFundingIndexTest using Java 21.0.8 with PID 70743 (started by ch in /Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR)
+2026-10-13 19:15:10 INFO  c.d.f.r.DocumentDoubleFundingIndexTest - No active profile set, falling back to 1 default profile: "default"
+2026-10-13 19:15:11 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-13 19:15:11 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 58 ms. Found 28 JPA repository interfaces.
+2026-10-13 19:15:11 INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://localhost:54574/test (PostgreSQL 16.9)
+2026-10-13 19:15:11 INFO  o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbValidate - Successfully validated 20 migrations (execution time 00:00.012s)
+2026-10-13 19:15:11 INFO  o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - esquema inicial"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - datos de referencia"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - montos calculados con todos los decimales"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - estado inactivado por pagador"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - lotes de dispersion"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - alta de usuarios proveedor fuera de la carga"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - eliminar niu de entidades"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - eliminar rol operator"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "9 - recursos de carga"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "10 - manual de carga pdf"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "11 - bitacora de documentos operador"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "12 - parametros de mailjet"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "13 - url de mailjet"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "14 - secreto jwt"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "15 - valor por defecto jwt secret"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "16 - abonos por lote de desembolso"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "17 - niu de pagadores"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "18 - recarga de documentos inactivados"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "19 - jwt secret sin valor por defecto"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "20 - revocacion de sesiones"
+2026-10-13 19:15:11 INFO  o.f.core.internal.command.DbMigrate - Successfully applied 20 migrations to schema "public", now at version v20 (execution time 00:00.098s)
+2026-10-13 19:15:11 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-13 19:15:11 INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.2.Final
+2026-10-13 19:15:11 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-10-13 19:15:11 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-10-13 19:15:11 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4d5ea776
+2026-10-13 19:15:11 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-10-13 19:15:11 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-13 19:15:11 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-13 19:15:12 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-13 19:15:12 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-13 19:15:12 INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-10-13 19:15:12 INFO  c.d.f.r.DocumentDoubleFundingIndexTest - Started DocumentDoubleFundingIndexTest in 2.227 seconds (process running for 4.093)
+2026-10-13 19:15:13 WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Error: 0, SQLState: 23505
+2026-10-13 19:15:13 ERROR o.h.e.jdbc.spi.SqlExceptionHelper - ERROR: duplicate key value violates unique constraint "uq_documents_generation_code"
+  Detail: Key (upper(generation_code::text))=(AB12CD34-0000-4000-8000-000000000001) already exists.
+2026-10-13 19:15:13 WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Error: 0, SQLState: 23505
+2026-10-13 19:15:13 ERROR o.h.e.jdbc.spi.SqlExceptionHelper - ERROR: duplicate key value violates unique constraint "uq_documents_control_number"
+  Detail: Key (upper(control_number::text))=(DTE-03-ABCD1234-000000000000001) already exists.
+2026-10-13 19:15:13 WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Error: 0, SQLState: 23505
+2026-10-13 19:15:13 ERROR o.h.e.jdbc.spi.SqlExceptionHelper - ERROR: duplicate key value violates unique constraint "uq_documents_received_stamp"
+  Detail: Key (upper(received_stamp::text))=(AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA) already exists.
+2026-10-13 19:15:13 WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Error: 0, SQLState: 23505
+2026-10-13 19:15:13 ERROR o.h.e.jdbc.spi.SqlExceptionHelper - ERROR: duplicate key value violates unique constraint "uq_documents_control_number"
+  Detail: Key (upper(control_number::text))=(DTE-03-ABCD1234-000000000000001) already exists.
+2026-10-13 19:15:13 WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Error: 0, SQLState: 23505
+2026-10-13 19:15:13 ERROR o.h.e.jdbc.spi.SqlExceptionHelper - ERROR: duplicate key value violates unique constraint "uq_documents_paper_number_year"
+  Detail: Key (master_agreement_id, document_number, EXTRACT(year FROM issue_date))=(96b0dcae-0475-4457-a50f-f4e9dd669e5d, F-100, 2026) already exists.
+2026-10-13 19:15:13 INFO  tc.postgres:16.9 - Creating container for image: postgres:16.9
+2026-10-13 19:15:13 INFO  tc.postgres:16.9 - Container postgres:16.9 is starting: e2421b831931c940669da983189d3b2fcd5ac24486b54686b13f8af9f5195325
+2026-10-13 19:15:14 INFO  tc.postgres:16.9 - Container postgres:16.9 started in PT0.677182S
+2026-10-13 19:15:14 INFO  tc.postgres:16.9 - Container is started (JDBC URL: jdbc:postgresql://localhost:54593/test?loggerLevel=OFF)
+2026-10-13 19:15:14 INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://localhost:54593/flyway_ref (PostgreSQL 16.9)
+2026-10-13 19:15:14 INFO  o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbValidate - Successfully validated 20 migrations (execution time 00:00.003s)
+2026-10-13 19:15:14 INFO  o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - esquema inicial"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - datos de referencia"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - montos calculados con todos los decimales"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - estado inactivado por pagador"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - lotes de dispersion"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - alta de usuarios proveedor fuera de la carga"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - eliminar niu de entidades"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - eliminar rol operator"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "9 - recursos de carga"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "10 - manual de carga pdf"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "11 - bitacora de documentos operador"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "12 - parametros de mailjet"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "13 - url de mailjet"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "14 - secreto jwt"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "15 - valor por defecto jwt secret"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "16 - abonos por lote de desembolso"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "17 - niu de pagadores"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "18 - recarga de documentos inactivados"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "19 - jwt secret sin valor por defecto"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "20 - revocacion de sesiones"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Successfully applied 20 migrations to schema "public", now at version v20 (execution time 00:00.079s)
+2026-10-13 19:15:14 INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://localhost:54593/actualizacion (PostgreSQL 16.9)
+2026-10-13 19:15:14 INFO  o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbValidate - Successfully validated 20 migrations (execution time 00:00.003s)
+2026-10-13 19:15:14 INFO  o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Current version of schema "public": << Empty Schema >>
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "1 - esquema inicial"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "2 - datos de referencia"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "3 - montos calculados con todos los decimales"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "4 - estado inactivado por pagador"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "5 - lotes de dispersion"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "6 - alta de usuarios proveedor fuera de la carga"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "7 - eliminar niu de entidades"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Migrating schema "public" to version "8 - eliminar rol operator"
+2026-10-13 19:15:14 INFO  o.f.core.internal.command.DbMigrate - Successfully applied 8 migrations to schema "public", now at version v8 (execution time 00:00.060s)
+2026-10-13 19:15:17 INFO  c.d.f.service.impl.UserServiceImpl - Starting the creation of a new user
+2026-10-13 19:15:17 INFO  c.d.f.service.impl.UserServiceImpl - Searching for entity with identifier: 1302fa96-0f93-4976-a4e1-63972952fde8
+2026-10-13 19:15:17 INFO  c.d.f.service.impl.UserServiceImpl - User created successfully with ID: null, role PAYER by 000000000
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.HolidayServiceImpl - Holiday null registered for 2026-12-25
+2026-10-13 19:15:17 INFO  c.d.f.s.i.MasterAgreementServiceImpl - Creando convenio marco
+2026-10-13 19:15:17 INFO  c.d.f.s.i.MasterAgreementServiceImpl - Convenio marco creado con ID: null
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Cupo null liberado por inactivación de 2 documento(s): consumo $5000.00 -> $3000.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - 2 documento(s) inactivado(s) manualmente por el usuario d15e1750-d5c3-4085-a753-d2d6fd52b559.
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Cupo null liberado por inactivación de 1 documento(s): consumo $5000.00 -> $4000.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - 1 documento(s) inactivado(s) manualmente por el usuario d3079ead-c67b-4087-8000-57b060d8ee6e.
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Cupo null liberado por inactivación de 1 documento(s): consumo $5000.00 -> $4000.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - 1 documento(s) inactivado(s) manualmente por el usuario cf698537-a542-46da-a9dc-6f7d7e6d594f.
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Fetching financeable documents for master agreement ID: cfbb885a-79a2-4220-866f-00d98b24d682
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - Cupo null liberado por inactivación de 1 documento(s): consumo $5000.00 -> $4000.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.DocumentServiceImpl - 1 documento(s) del convenio cfbb885a-79a2-4220-866f-00d98b24d682 pasaron a cuarentena por no ser financiables.
+2026-10-13 19:15:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-F26DF6 creado: pagador 3a26f5c5-692b-4807-b7f5-aebbdd720409, vencimiento 2026-09-20, 1 documento(s), total 100.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-ABC123 confirmado por el usuario 02035468-d6b0-48b7-99f5-b748132f340b: 2 documento(s) dispersados.
+2026-10-13 19:15:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-190A97 creado: pagador 68943978-3df4-49d3-86d0-6f51f2d5de8e, vencimiento 2026-10-05, 2 documento(s), total 17347.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-E6CE23 creado: pagador 2733f553-13a7-4f65-9c4b-a41fab81a4f7, vencimiento 2026-10-05, 2 documento(s), total 300.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-18940C creado: pagador 2733f553-13a7-4f65-9c4b-a41fab81a4f7, vencimiento 2026-10-06, 1 documento(s), total 300.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - 2 lote(s) de dispersión generados en conjunto para el pagador 2733f553-13a7-4f65-9c4b-a41fab81a4f7.
+2026-10-13 19:15:17 INFO  c.d.f.s.i.DispersionBatchServiceImpl - Lote de dispersión DSP-20261002-3AF109 creado: pagador ea81f85d-2353-43c1-ac06-90e366799899, vencimiento 2026-10-05, 1 documento(s), total 100.00.
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.ParameterServiceImpl - Starting update for parameter with ID: 7314e684-4a6f-4e14-8291-4d85a4017e73
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.ParameterServiceImpl - Parameter MAILJET_API_SECRET successfully updated
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.ParameterServiceImpl - Reading all parameters
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.ParameterServiceImpl - Starting update for parameter with ID: 8443800e-71f2-48f4-8814-883ec8edab3d
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.ParameterServiceImpl - Starting update for parameter with ID: 71de76d5-33ce-4831-8400-242130ec2459
+2026-10-13 19:15:17 INFO  c.d.f.s.impl.ParameterServiceImpl - Parameter MAILJET_API_SECRET successfully updated
+2026-10-13 19:15:17 ERROR c.d.f.service.impl.FundingCalculator - División por cero evitada: la base no puede ser cero.
+2026-10-13 19:15:17 INFO  c.d.f.service.impl.FundingCalculator - [CALCULO] Totales | nominal 3500.55 | monto a financiar 3440.491071731711441470 | interés 60.058928268288558530 | comisión con IVA 9.719387277642084823 | a desembolsar 3430.771684454069356647
+2026-10-13 19:15:18 INFO  c.d.f.s.i.UploadResourceServiceImpl - Recurso de carga TEMPLATE reemplazado por el usuario null (3345 bytes)
+2026-10-13 19:15:18 INFO  c.d.f.s.i.UploadResourceServiceImpl - Recurso de carga MANUAL reemplazado por el usuario null (813 bytes)
+2026-10-13 19:15:18 INFO  c.d.f.s.i.UploadResourceServiceImpl - Recurso de carga TEMPLATE reemplazado por el usuario null (3328 bytes)
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Updating supplier fdbc5220-0f5c-415a-b36c-50c7cdf4476a
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Registering payer with NIT 06140101901011
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Payer null registered with credit facility null and pricing term null
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Supplier created with ID: null
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Updating supplier 52c016bf-0356-46dd-9251-1b986771b605
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Supplier 52c016bf-0356-46dd-9251-1b986771b605 updated
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Registering payer with NIT 06140101901011
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Updating payer 6f02aba1-92b3-4290-9070-5986d9f875a1
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Updating payer ad2ad4b1-8639-41f4-80cd-4f4bdae71a98
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Payer ad2ad4b1-8639-41f4-80cd-4f4bdae71a98 updated
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Supplier created with ID: null
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Supplier null registered with main bank account null
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Registering payer with NIT 06140101901011
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Updating payer 5777c542-295c-4df9-9478-9415cc94bf4d
+2026-10-13 19:15:18 INFO  c.d.f.service.impl.EntityServiceImpl - Updating supplier 19bc98a4-c70e-481a-983d-1a423417d116
+2026-10-13 19:15:18 INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.davivienda.factoraje.infrastructure.config.SecurityConfigTest]: SecurityConfigTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-13 19:15:18 INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.davivienda.factoraje.FactorajeApplication for test class com.davivienda.factoraje.infrastructure.config.SecurityConfigTest
+2026-10-13 19:15:18 INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2026-10-13 19:15:18 WARN  o.s.b.t.j.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer - 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/Users/ch/.m2/repository/org/json/json/20140107/json-20140107.jar!/org/json/JSONObject.class
+	jar:file:/Users/ch/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2026-10-13 19:15:18 INFO  c.d.f.i.config.SecurityConfigTest - Starting SecurityConfigTest using Java 21.0.8 with PID 70743 (started by ch in /Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR)
+2026-10-13 19:15:18 INFO  c.d.f.i.config.SecurityConfigTest - No active profile set, falling back to 1 default profile: "default"
+2026-10-13 19:15:18 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-10-13 19:15:18 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@548d884f, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@38228a4, org.springframework.security.web.context.SecurityContextHolderFilter@48227f92, org.springframework.security.web.header.HeaderWriterFilter@307670cb, org.springframework.web.filter.CorsFilter@2ab655fc, org.springframework.security.web.authentication.logout.LogoutFilter@413ba79b, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@91aa787, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@1a6dca5e, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2d12248c, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6b469ad0, org.springframework.security.web.session.SessionManagementFilter@597fa24f, org.springframework.security.web.access.ExceptionTranslationFilter@172ed66d, org.springframework.security.web.access.intercept.AuthorizationFilter@32ccb288]
+2026-10-13 19:15:18 INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-10-13 19:15:18 INFO  o.s.t.w.s.TestDispatcherServlet - Initializing Servlet ''
+2026-10-13 19:15:18 INFO  o.s.t.w.s.TestDispatcherServlet - Completed initialization in 1 ms
+2026-10-13 19:15:18 INFO  c.d.f.i.config.SecurityConfigTest - Started SecurityConfigTest in 0.518 seconds (process running for 9.943)
+2026-10-13 19:15:18 INFO  c.d.f.controller.DocumentController - Inactivación manual de 2 documento(s).
+2026-10-13 19:15:18 INFO  c.d.f.controller.DocumentController - Inactivación manual de 1 documento(s).
+2026-10-13 19:15:19 WARN  c.d.f.i.mail.MailNoticeListener - Correo no enviado (OperatorChange): Mailjet no está configurado.
+2026-10-13 19:15:19 WARN  c.d.f.i.mail.MailNoticeListener - APP_LOGIN_URL no está configurada; no se envió el correo a los proveedores de Pagador Demo.
+2026-10-13 19:15:19 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-10-13 19:15:19 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-10-13 19:15:19 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

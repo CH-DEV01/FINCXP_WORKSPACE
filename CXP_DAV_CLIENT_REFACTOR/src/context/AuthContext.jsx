@@ -1,16 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import api, { SESSION_EXPIRED_EVENT, markSessionActive, markSessionEnded } from "../services/api";
+import api, { SESSION_EXPIRED_EVENT, TOKEN_KEY, markSessionEnded } from "../services/api";
 import { API_BASE_URL, API_URL, PORTAL_URL } from "../constants/apiConstants";
 
-// Solo la vigencia del token ({ issuedAt, expiresAt }); el JWT está en una cookie HttpOnly.
-// Compartida entre pestañas: si desaparece, la sesión se cerró en otra.
-const SESSION_KEY = "session";
-// Versiones anteriores guardaban aquí el JWT.
-const LEGACY_TOKEN_KEY = "jwt_token";
 // Compartida entre pestañas: trabajar en una mantiene viva la sesión de las demás.
 const LAST_ACTIVITY_KEY = "last_activity";
+// La versión con cookie guardaba aquí la vigencia del token.
+const LEGACY_SESSION_KEY = "session";
 const DEFAULT_IDLE_TIMEOUT_MINUTES = 15;
 const IDLE_CHECK_INTERVAL_MS = 15_000;
 const ACTIVITY_WRITE_INTERVAL_MS = 5_000;
@@ -24,34 +21,42 @@ const SESSION_END_MESSAGES = {
   otherTab: "La sesión se cerró en otra pestaña.",
 };
 
-const readSession = () => {
+/** Vigencia del JWT ({ issuedAt, expiresAt } en milisegundos), o null si no se puede leer. */
+const sessionOf = (token) => {
   try {
-    const session = JSON.parse(localStorage.getItem(SESSION_KEY));
-    return typeof session?.issuedAt === "number" && typeof session?.expiresAt === "number" ? session : null;
+    const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const { iat, exp } = JSON.parse(atob(payload));
+    return typeof iat === "number" && typeof exp === "number" ? { issuedAt: iat * 1000, expiresAt: exp * 1000 } : null;
   } catch {
     return null;
   }
 };
 
-const storeSession = ({ issuedAt, expiresAt }) =>
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ issuedAt, expiresAt }));
+const readSession = () => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? sessionOf(token) : null;
+};
 
 /** Momento en que conviene renovar el token, antes de que venza. */
 const refreshAt = ({ issuedAt, expiresAt }) =>
   expiresAt - Math.min(REFRESH_MARGIN_MS, (expiresAt - issuedAt) / 4);
 
 const clearStoredSession = () => {
-  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(LAST_ACTIVITY_KEY);
-  localStorage.removeItem(LEGACY_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_SESSION_KEY);
   sessionStorage.clear();
 };
 
-// Revoca la sesión en la API y borra la cookie. Usa axios directo: el interceptor de
+// Revoca en la API todos los tokens del usuario. Usa axios directo: el interceptor de
 // `api` no resuelve las respuestas 401.
-const revokeSession = async () => {
+const revokeSession = async (token) => {
+  if (!token) return;
   try {
-    await axios.post(`${API_URL}/v1/auth/logout`, null, { withCredentials: true, timeout: LOGOUT_TIMEOUT_MS });
+    await axios.post(`${API_URL}/v1/auth/logout`, null, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: LOGOUT_TIMEOUT_MS,
+    });
   } catch {
     // La sesión se cierra en el navegador aunque la API no responda.
   }
@@ -68,25 +73,25 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const response = await api.get("/v1/auth/me");
-      const profile = response.data?.data;
-      storeSession(profile.session);
-      markSessionActive();
-      setUser(profile);
+      setUser(response.data?.data);
     } catch (error) {
+      console.error("Error validando sesión:", error);
       setUser(null);
-      if (error?.response?.status === 401) {
-        localStorage.removeItem(SESSION_KEY);
-      } else {
-        console.error("Error validando sesión:", error);
-      }
+      localStorage.removeItem(TOKEN_KEY);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.removeItem(LEGACY_TOKEN_KEY);
-    fetchUserProfile();
+    localStorage.removeItem(LEGACY_SESSION_KEY);
+    const session = readSession();
+    if (session && session.expiresAt > Date.now()) {
+      fetchUserProfile();
+    } else {
+      clearStoredSession();
+      setIsLoading(false);
+    }
   }, [fetchUserProfile]);
 
   // El usuario se mantiene en el estado hasta redirigir: sin él, las rutas protegidas
@@ -95,9 +100,10 @@ export const AuthProvider = ({ children }) => {
     if (endingRef.current) return;
     endingRef.current = true;
     markSessionEnded();
+    const token = localStorage.getItem(TOKEN_KEY);
     clearStoredSession();
     // La pestaña que cerró la sesión ya la revocó.
-    if (reason !== "otherTab") await revokeSession();
+    if (reason !== "otherTab") await revokeSession(token);
 
     await Swal.fire({
       icon: "info",
@@ -155,7 +161,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const response = await api.post("/v1/auth/refresh");
         if (cancelled) return;
-        storeSession(response.data.data);
+        localStorage.setItem(TOKEN_KEY, response.data.data);
         check();
       } catch {
         if (!cancelled) schedule(session.expiresAt, () => endSession("expired"));
@@ -203,7 +209,7 @@ export const AuthProvider = ({ children }) => {
     if (!user) return undefined;
 
     const onStorage = (event) => {
-      if ((event.key === SESSION_KEY || event.key === null) && !localStorage.getItem(SESSION_KEY)) {
+      if ((event.key === TOKEN_KEY || event.key === null) && !localStorage.getItem(TOKEN_KEY)) {
         endSession("otherTab");
       }
     };
@@ -211,15 +217,14 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener("storage", onStorage);
   }, [user, endSession]);
 
-  // Ingreso de desarrollo: la API responde con la cookie de sesión.
   const login = useCallback(
     async (payload) => {
       setIsLoading(true);
       try {
         const response = await axios.post("/api/v1/auth/sso-login", payload, {
           baseURL: API_BASE_URL,
-          withCredentials: true,
         });
+        localStorage.setItem(TOKEN_KEY, response.data.data);
         await fetchUserProfile();
         return response;
       } finally {
@@ -232,8 +237,9 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     endingRef.current = true;
     markSessionEnded();
-    await revokeSession();
+    const token = localStorage.getItem(TOKEN_KEY);
     clearStoredSession();
+    await revokeSession(token);
     window.location.replace(PORTAL_URL);
   }, []);
 

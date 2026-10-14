@@ -45,10 +45,8 @@ import com.davivienda.factoraje.dto.upload_resource.ResourceFile;
 import com.davivienda.factoraje.dto.upload_resource.UploadResourcesDTOResponse;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.infrastructure.security.JwtService;
-import com.davivienda.factoraje.infrastructure.security.SessionCookies;
 import com.davivienda.factoraje.domain.enums.SystemParameterKey;
 
-import jakarta.servlet.http.Cookie;
 import com.davivienda.factoraje.service.DocumentService;
 import com.davivienda.factoraje.service.HolidayService;
 import com.davivienda.factoraje.service.ParameterService;
@@ -61,7 +59,7 @@ import io.jsonwebtoken.MalformedJwtException;
 
 @WebMvcTest(controllers = { UserController.class, ParameterController.class, HolidayController.class,
         UploadResourceController.class, PayerController.class, SupplierController.class, DocumentController.class })
-@Import({ SecurityConfig.class, SessionCookies.class })
+@Import(SecurityConfig.class)
 class SecurityConfigTest {
 
     private static final String PDF = "%PDF-1.4";
@@ -247,26 +245,18 @@ class SecurityConfigTest {
     }
 
     @Test
-    void theSessionCookieAuthenticatesTheRequest() throws Exception {
-        when(holidayService.getHolidays()).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/v1/holidays").cookie(sessionCookie(Roles.ADMIN)))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void anotherOriginCannotUseTheSessionCookie() throws Exception {
+    void anotherOriginIsRejected() throws Exception {
         when(systemParameters.getList(SystemParameterKey.CORS_ALLOWED_ORIGINS))
                 .thenReturn(List.of("https://pay.davivienda.com.sv"));
         String body = "{\"documentIds\":[\"" + UUID.randomUUID() + "\"]}";
 
-        mockMvc.perform(patch("/api/v1/documents/inactivate").cookie(sessionCookie(Roles.PAYER))
+        mockMvc.perform(patch("/api/v1/documents/inactivate").header(HttpHeaders.AUTHORIZATION, bearer(Roles.PAYER))
                         .header(HttpHeaders.ORIGIN, "https://otro.davivienda.com.sv")
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isForbidden());
         verifyNoInteractions(documentService);
 
-        mockMvc.perform(patch("/api/v1/documents/inactivate").cookie(sessionCookie(Roles.PAYER))
+        mockMvc.perform(patch("/api/v1/documents/inactivate").header(HttpHeaders.AUTHORIZATION, bearer(Roles.PAYER))
                         .header(HttpHeaders.ORIGIN, "https://pay.davivienda.com.sv")
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
@@ -280,10 +270,6 @@ class SecurityConfigTest {
 
     private String bearer(String role) {
         return "Bearer " + token(role);
-    }
-
-    private Cookie sessionCookie(String role) {
-        return new Cookie(SessionCookies.NAME, token(role));
     }
 
     private String token(String role) {

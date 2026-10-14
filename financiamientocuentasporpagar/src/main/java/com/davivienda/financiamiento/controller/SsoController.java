@@ -8,14 +8,12 @@ import com.davivienda.financiamiento.repository.ParameterRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
-import java.net.URI;
-import java.util.List;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,7 +25,10 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class SsoController {
 
-        private static final URI APP_HOME = URI.create("/financiamientocuentasporpagar/");
+        private static final String APP_HOME = "/financiamientocuentasporpagar/";
+
+        // El JWT se escribe dentro de un <script>: solo se aceptan caracteres Base64URL y puntos.
+        private static final Pattern JWT_FORMAT = Pattern.compile("[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+");
 
         @Autowired
         private RestTemplate restTemplate;
@@ -40,12 +41,9 @@ public class SsoController {
 
         }
 
-        /**
-         * Canjea el sessionToken con la API y reenvía al navegador la cookie HttpOnly
-         * que la API arma con el JWT. El token no pasa por JavaScript.
-         */
-        @PostMapping("/start-session")
-        public ResponseEntity<Void> startSession(
+        /** Canjea el sessionToken con la API y guarda el JWT en el navegador antes de abrir la aplicación. */
+        @PostMapping(value = "/start-session", produces = MediaType.TEXT_HTML_VALUE)
+        public String startSession(
                         @RequestParam("sessionToken") String sessionToken,
                         HttpServletRequest request) {
 
@@ -71,29 +69,27 @@ public class SsoController {
                                 requestEntity,
                                 StartSessionResponseDTO.class);
 
-                log.info("[SSO-TRACE][start-session][{}] Respuesta de la API ({}): status={}, headers={}, "
-                                + "success={}, message='{}'",
-                                sessionToken, uriParameter.getValue(), response.getStatusCode(), response.getHeaders(),
-                                response.getBody() != null ? response.getBody().getSuccess() : null,
-                                response.getBody() != null ? response.getBody().getMessage() : null);
+                StartSessionResponseDTO result = response.getBody();
+                String jwt = result != null ? result.getJwt() : null;
+                log.info("[SSO-TRACE][start-session][{}] Respuesta de la API: status={}, success={}, message='{}', jwt={}",
+                                sessionToken, response.getStatusCode(),
+                                result != null ? result.getSuccess() : null,
+                                result != null ? result.getMessage() : null, jwt);
 
-                HttpHeaders redirect = new HttpHeaders();
-                redirect.setLocation(APP_HOME);
-
-                List<String> cookies = response.getHeaders().getOrEmpty(HttpHeaders.SET_COOKIE);
-                if (cookies.isEmpty()) {
-                        // Sin cookie, el cliente web no encuentra sesión y vuelve al portal.
+                if (jwt == null || !JWT_FORMAT.matcher(jwt).matches()) {
+                        // Sin token, el cliente web no encuentra sesión y vuelve al portal.
                         log.warn("[start-session] La API no activó la sesión: {}",
-                                        response.getBody() != null ? response.getBody().getMessage() : "sin respuesta");
-                } else {
-                        redirect.put(HttpHeaders.SET_COOKIE, cookies);
+                                        result != null ? result.getMessage() : "sin respuesta");
+                        return redirectPage("");
                 }
 
-                log.info("[SSO-TRACE][start-session][{}] Redirección al frontend: status={}, Location={}, "
-                                + "Set-Cookie reenviados={}, headers={}",
-                                sessionToken, HttpStatus.FOUND.value(), redirect.getLocation(), cookies.size(), redirect);
-                return new ResponseEntity<>(redirect, HttpStatus.FOUND);
+                return redirectPage("localStorage.setItem('jwt_token', '" + jwt + "');");
+        }
 
+        private static String redirectPage(String script) {
+                return "<html><body><script>" + script
+                                + "window.location.replace('" + APP_HOME + "');"
+                                + "</script></body></html>";
         }
 
 }
