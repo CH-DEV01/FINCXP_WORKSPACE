@@ -9,3 +9,6 @@ target/
 
 # Entregables
 /Entregable_Puesta_en_Marcha/
+
+# Scripts de base de datos de la API
+/CXP_DAV_SERVER_REFACTOR/db/
