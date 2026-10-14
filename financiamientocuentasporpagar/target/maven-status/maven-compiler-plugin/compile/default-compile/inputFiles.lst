@@ -1,8 +1,0 @@
-/Users/ch/Documents/FINCXP_WORKSPACE/financiamientocuentasporpagar/src/main/java/com/davivienda/financiamiento/FinanciamientoApplication.java
-/Users/ch/Documents/FINCXP_WORKSPACE/financiamientocuentasporpagar/src/main/java/com/davivienda/financiamiento/config/AppConfig.java
-/Users/ch/Documents/FINCXP_WORKSPACE/financiamientocuentasporpagar/src/main/java/com/davivienda/financiamiento/controller/SpaErrorController.java
-/Users/ch/Documents/FINCXP_WORKSPACE/financiamientocuentasporpagar/src/main/java/com/davivienda/financiamiento/controller/SsoController.java
-/Users/ch/Documents/FINCXP_WORKSPACE/financiamientocuentasporpagar/src/main/java/com/davivienda/financiamiento/domain/dto/StartSessionRequestDTO.java
-/Users/ch/Documents/FINCXP_WORKSPACE/financiamientocuentasporpagar/src/main/java/com/davivienda/financiamiento/domain/dto/StartSessionResponseDTO.java
-/Users/ch/Documents/FINCXP_WORKSPACE/financiamientocuentasporpagar/src/main/java/com/davivienda/financiamiento/domain/entities/SystemParameterModel.java
-/Users/ch/Documents/FINCXP_WORKSPACE/financiamientocuentasporpagar/src/main/java/com/davivienda/financiamiento/repository/ParameterRepository.java
