@@ -6,3 +6,6 @@ catalina.base_IS_UNDEFINED/
 
 # Salida de compilación de Maven
 target/
+
+# Entregables
+/Entregable_Puesta_en_Marcha/
