@@ -9,12 +9,14 @@ import org.springframework.stereotype.Component;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Cookie HttpOnly que lleva el JWT: JavaScript no la puede leer. Solo la arma la API;
  * en el ingreso por SSO el portal reenvía el Set-Cookie de activateSession.
  * Sin Max-Age, el navegador la borra al cerrarse; la vigencia real la da el JWT.
  */
+@Slf4j
 @Component
 public class SessionCookies {
 
@@ -29,11 +31,21 @@ public class SessionCookies {
     }
 
     public ResponseCookie create(String jwt, HttpServletRequest request) {
-        return base(jwt, request).build();
+        ResponseCookie cookie = base(jwt, request).build();
+        log.info("[SSO-TRACE][cookie] Creada para {} {}: name={}, path='{}' (session.cookie.path='{}', contextPath='{}'), "
+                + "httpOnly={}, secure={}, sameSite={}, maxAge={}, domain={}, largo del JWT={}",
+                request.getMethod(), request.getRequestURI(), cookie.getName(), cookie.getPath(),
+                configuredPath, request.getContextPath(), cookie.isHttpOnly(), cookie.isSecure(),
+                cookie.getSameSite(), cookie.getMaxAge(), cookie.getDomain(), jwt == null ? 0 : jwt.length());
+        log.info("[SSO-TRACE][cookie] Set-Cookie: {}", cookie);
+        return cookie;
     }
 
     public ResponseCookie clear(HttpServletRequest request) {
-        return base("", request).maxAge(0).build();
+        ResponseCookie cookie = base("", request).maxAge(0).build();
+        log.info("[SSO-TRACE][cookie] Borrado para {} {}: Set-Cookie: {}",
+                request.getMethod(), request.getRequestURI(), cookie);
+        return cookie;
     }
 
     /** JWT de la cookie o, mientras se despliegan los clientes nuevos, del encabezado Authorization. */

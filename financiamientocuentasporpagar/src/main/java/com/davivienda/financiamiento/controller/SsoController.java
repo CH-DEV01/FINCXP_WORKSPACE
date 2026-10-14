@@ -71,6 +71,12 @@ public class SsoController {
                                 requestEntity,
                                 StartSessionResponseDTO.class);
 
+                log.info("[SSO-TRACE][start-session][{}] Respuesta de la API ({}): status={}, headers={}, "
+                                + "success={}, message='{}'",
+                                sessionToken, uriParameter.getValue(), response.getStatusCode(), response.getHeaders(),
+                                response.getBody() != null ? response.getBody().getSuccess() : null,
+                                response.getBody() != null ? response.getBody().getMessage() : null);
+
                 HttpHeaders redirect = new HttpHeaders();
                 redirect.setLocation(APP_HOME);
 
@@ -83,6 +89,9 @@ public class SsoController {
                         redirect.put(HttpHeaders.SET_COOKIE, cookies);
                 }
 
+                log.info("[SSO-TRACE][start-session][{}] Redirección al frontend: status={}, Location={}, "
+                                + "Set-Cookie reenviados={}, headers={}",
+                                sessionToken, HttpStatus.FOUND.value(), redirect.getLocation(), cookies.size(), redirect);
                 return new ResponseEntity<>(redirect, HttpStatus.FOUND);
 
         }
