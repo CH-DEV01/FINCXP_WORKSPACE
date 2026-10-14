@@ -37,9 +37,15 @@ public class SsoController {
     @PostMapping("/handoff")
     public ResponseEntity<HandoffDTOResponse> handoff(
             @RequestHeader("Authorization") String bearerTokenRequest,
-            @RequestBody HandoffDTORequest request) {
+            @RequestBody HandoffDTORequest request,
+            HttpServletRequest httpRequest) {
 
         log.info("Endpoint /handoff activated");
+        log.info("[SSO-TRACE][handoff] Petición: {} {} desde ip={}, X-Forwarded-For='{}', User-Agent='{}', "
+                + "app='{}', otc='{}', Authorization='{}'",
+                httpRequest.getMethod(), httpRequest.getRequestURL(), httpRequest.getRemoteAddr(),
+                httpRequest.getHeader("X-Forwarded-For"), httpRequest.getHeader("User-Agent"),
+                request.getApp(), request.getOtc(), bearerTokenRequest);
 
         HandoffDTOResponse response = ssoService.processHandoff(request.getApp(), request.getOtc(), bearerTokenRequest);
 
@@ -58,6 +64,10 @@ public class SsoController {
             HttpServletRequest httpRequest) {
 
         log.info("Endpoint /activateSession activated");
+        log.info("[SSO-TRACE][activate] Petición: {} {} desde ip={}, X-Forwarded-For='{}', contextPath='{}', "
+                + "sessionToken='{}'",
+                httpRequest.getMethod(), httpRequest.getRequestURL(), httpRequest.getRemoteAddr(),
+                httpRequest.getHeader("X-Forwarded-For"), httpRequest.getContextPath(), request.getSessionToken());
 
         try {
             String jwt = ssoService.activateSession(request.getSessionToken());
@@ -67,13 +77,18 @@ public class SsoController {
             response.setMessage("Sesión activada correctamente");
             response.setSuccess(true);
 
+            String cookie = sessionCookies.create(jwt, httpRequest).toString();
+            log.info("[SSO-TRACE][activate][{}] Set-Cookie enviado al portal: {}", request.getSessionToken(), cookie);
+
             return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, sessionCookies.create(jwt, httpRequest).toString())
+                    .header(HttpHeaders.SET_COOKIE, cookie)
                     .body(response);
 
         } catch (RuntimeException e) {
 
             log.error("Error al activar sesión del usuario: {}", e.getMessage());
+            log.error("[SSO-TRACE][activate][{}] FIN con error: {}: {}",
+                    request.getSessionToken(), e.getClass().getName(), e.getMessage());
 
             McsSSODTOResponse errorResponse = new McsSSODTOResponse();
             errorResponse.setJwt(null);

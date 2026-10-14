@@ -62,6 +62,10 @@ public class SsoServiceImpl implements SsoService {
 
         log.info("[Handoff-Start] Iniciando proceso para AppCode: {}", appCode);
 
+        String traceId = UUID.randomUUID().toString().substring(0, 8);
+        log.info("[SSO-TRACE][handoff][{}] 1. Entrada: app='{}', otc='{}', Authorization='{}'",
+                traceId, appCode, otc, bearerTokenRequest);
+
         try {
             // 1. CARGA DE PARÁMETROS (Configuración)
             SystemParameterModel myBearerToken = parameterRepository.findByKey("BEARER_TOKEN")
@@ -77,14 +81,27 @@ public class SsoServiceImpl implements SsoService {
                     .orElseThrow(() -> new RuntimeException("Pay Davivienda URL not found"));
 
             log.info("url para petición: {}", payDaviviendaUrl.getValue());
+            log.info("[SSO-TRACE][handoff][{}] 2. Parámetros: BEARER_TOKEN(id={})='{}', PAY_BEARER_TOKEN(id={})='{}', "
+                    + "APP_CODE(id={})='{}', PAY_DAVIVIENDA_URL(id={})='{}'",
+                    traceId,
+                    myBearerToken.getId(), myBearerToken.getValue(),
+                    payBearerToken.getId(), payBearerToken.getValue(),
+                    myAppCode.getId(), myAppCode.getValue(),
+                    payDaviviendaUrl.getId(), payDaviviendaUrl.getValue());
 
             // 2. VALIDACIONES DE SEGURIDAD
-            if (!secretEquals("Bearer " + myBearerToken.getValue(), bearerTokenRequest)) {
+            boolean bearerOk = secretEquals("Bearer " + myBearerToken.getValue(), bearerTokenRequest);
+            log.info("[SSO-TRACE][handoff][{}] 3. Bearer: esperado='{}', recibido='{}', coincide={}",
+                    traceId, "Bearer " + myBearerToken.getValue(), bearerTokenRequest, bearerOk);
+            if (!bearerOk) {
                 log.warn("[Handoff-Business] Intento de acceso no autorizado. Token inválido.");
                 throw new BusinessException("No autorizado: Bearer Token inválido");
             }
 
-            if (myAppCode.getValue() == null || !secretEquals(myAppCode.getValue(), appCode)) {
+            boolean appCodeOk = myAppCode.getValue() != null && secretEquals(myAppCode.getValue(), appCode);
+            log.info("[SSO-TRACE][handoff][{}] 4. AppCode: esperado='{}', recibido='{}', coincide={}",
+                    traceId, myAppCode.getValue(), appCode, appCodeOk);
+            if (!appCodeOk) {
                 log.warn("[Handoff-Business] AppCode no coincide.");
                 throw new BusinessException("Código de aplicación incorrecto");
             }
@@ -99,10 +116,13 @@ public class SsoServiceImpl implements SsoService {
             HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
 
             log.info("[Handoff-External] Consultando validación en Davivienda...");
+            log.info("[SSO-TRACE][handoff][{}] 5. Petición a Davivienda: POST {} headers={} body={}",
+                    traceId, payDaviviendaUrl.getValue(), headers, jsonBody);
 
             // disableSslVerification();
 
             // 4. LLAMADA AL SERVICIO EXTERNO
+            long started = System.currentTimeMillis();
             ResponseEntity<OtcDTOResponse> response = restTemplate.exchange(
                     payDaviviendaUrl.getValue(),
                     HttpMethod.POST,
@@ -110,6 +130,9 @@ public class SsoServiceImpl implements SsoService {
                     OtcDTOResponse.class);
 
             OtcDTOResponse otcResponse = response.getBody();
+            log.info("[SSO-TRACE][handoff][{}] 6. Respuesta de Davivienda en {} ms: status={} headers={} body={}",
+                    traceId, System.currentTimeMillis() - started, response.getStatusCode(),
+                    response.getHeaders(), otcResponse);
 
             // 5. VALIDACIÓN DE RESPUESTA DE NEGOCIO (Proveedor Externo)
             if (otcResponse == null || !Boolean.TRUE.equals(otcResponse.getSuccess())) {
@@ -118,6 +141,7 @@ public class SsoServiceImpl implements SsoService {
             }
 
             String status = otcResponse.getData().getStatus();
+            log.info("[SSO-TRACE][handoff][{}] 7. Estado del OTC: '{}' (se espera 'validated')", traceId, status);
             if (!"validated".equals(status)) {
                 log.warn("[Handoff-Business] OTC no validado. Status devuelto: {}", status);
                 throw new BusinessException("OTC no tiene estado 'validated'");
@@ -135,6 +159,10 @@ public class SsoServiceImpl implements SsoService {
 
             pendingSessionRepository.save(pendingSession);
             log.info("[Handoff-Success] Sesión creada para el E-mail: {}", email);
+            log.info("[SSO-TRACE][handoff][{}] 8. Sesión pendiente guardada: sessionToken={}, user='{}', "
+                    + "userEmail='{}', createdAt={}, expiresAt={}",
+                    traceId, sessionToken, email, otcResponse.getData().getUserEmail(),
+                    pendingSession.getCreatedAt(), pendingSession.getExpiresAt());
 
             // 7. CONSTRUCCIÓN DE RESPUESTA
             HandoffDTOResponse handoffResponse = new HandoffDTOResponse();
@@ -145,22 +173,28 @@ public class SsoServiceImpl implements SsoService {
             session.setTimestamp(OffsetDateTime.now());
             handoffResponse.setData(session);
 
+            log.info("[SSO-TRACE][handoff][{}] 9. Respuesta del handoff: {}", traceId, handoffResponse);
             return handoffResponse;
 
         } catch (BusinessException e) {
             // AQUÍ CAEN: Tokens inválidos, AppCode erróneo, OTC no validado por Davivienda.
             log.warn("[Handoff-Logic-Error] Error de regla de negocio: {}", e.getMessage());
+            log.warn("[SSO-TRACE][handoff][{}] FIN con error de negocio: {}", traceId, e.getMessage());
             throw e;
 
         } catch (HttpStatusCodeException e) {
             // AQUÍ CAEN: Errores HTTP (404, 500, 401 del servidor de Davivienda).
             log.error("[Handoff-External-Error] Error de comunicación (HTTP {}). Response: {}",
                     e.getStatusCode(), e.getResponseBodyAsString());
+            log.error("[SSO-TRACE][handoff][{}] FIN con error HTTP de Davivienda: status={} headers={} body={}",
+                    traceId, e.getStatusCode(), e.getResponseHeaders(), e.getResponseBodyAsString());
             throw new RuntimeException("Error en comunicación con proveedor externo");
 
         } catch (Exception e) {
             // AQUÍ CAEN: NullPointer, errores de base de datos, errores inesperados.
             log.error("[Handoff-Critical-Error] Error no controlado en el proceso", e);
+            log.error("[SSO-TRACE][handoff][{}] FIN con error no controlado: {}: {}",
+                    traceId, e.getClass().getName(), e.getMessage());
             throw new RuntimeException("Error interno del sistema: " + e.getMessage());
         }
     }
@@ -179,20 +213,44 @@ public class SsoServiceImpl implements SsoService {
     @Transactional
     public String activateSession(String sessionToken) {
 
+        log.info("[SSO-TRACE][activate][{}] 1. Entrada: sessionToken='{}'", sessionToken, sessionToken);
+
         // 1. Buscar el token en la BD
         PendingSessionModel session = pendingSessionRepository.findById(sessionToken)
-                .orElseThrow(() -> new RuntimeException("invalid_session"));
+                .orElseThrow(() -> {
+                    log.warn("[SSO-TRACE][activate][{}] FIN: no existe en sso_pending_sessions "
+                            + "(ya se usó o nunca se creó)", sessionToken);
+                    return new RuntimeException("invalid_session");
+                });
+        log.info("[SSO-TRACE][activate][{}] 2. Sesión pendiente encontrada: userEmail='{}', createdAt={}, expiresAt={}",
+                sessionToken, session.getUserEmail(), session.getCreatedAt(), session.getExpiresAt());
 
         // 2. Borrarlo inmediatamente para que sea de un solo uso
         pendingSessionRepository.delete(session);
+        log.info("[SSO-TRACE][activate][{}] 3. Sesión pendiente eliminada (un solo uso)", sessionToken);
 
         // 3. Validar si ya había expirado (aunque lo encontremos, verificamos la hora)
-        if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
+        LocalDateTime now = LocalDateTime.now();
+        log.info("[SSO-TRACE][activate][{}] 4. Vigencia: ahora={}, expiresAt={}, vencida={}",
+                sessionToken, now, session.getExpiresAt(), session.getExpiresAt().isBefore(now));
+        if (session.getExpiresAt().isBefore(now)) {
             throw new RuntimeException("session_expired");
         }
 
-        UserModel user = userRepository.findByEmail(IdentifierNormalizer.withoutSeparators(session.getUserEmail()))
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no registrado en el sistema local."));
+        String normalizedEmail = IdentifierNormalizer.withoutSeparators(session.getUserEmail());
+        log.info("[SSO-TRACE][activate][{}] 5. Búsqueda de usuario: userEmail='{}', normalizado='{}'",
+                sessionToken, session.getUserEmail(), normalizedEmail);
+        UserModel user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> {
+                    log.warn("[SSO-TRACE][activate][{}] FIN: no hay usuario con email '{}'", sessionToken, normalizedEmail);
+                    return new ResourceNotFoundException("Usuario no registrado en el sistema local.");
+                });
+
+        log.info("[SSO-TRACE][activate][{}] 6. Usuario: id={}, email='{}', status={}, enabled={}, rol={}, entidad={} ({})",
+                sessionToken, user.getId(), user.getEmail(), user.getStatus(), user.isEnabled(),
+                user.getRole() != null ? user.getRole().getName() : null,
+                user.getEntity() != null ? user.getEntity().getId() : null,
+                user.getEntity() != null ? user.getEntity().getStatus() : null);
 
         if (user.getStatus() != GeneralStatusEnum.ACTIVE) {
             throw new UnauthorizedAccessException("El usuario se encuentra inactivo.");
@@ -202,6 +260,8 @@ public class SsoServiceImpl implements SsoService {
                     "La entidad a la que pertenece el usuario se encuentra inactiva. Contacte al administrador.");
         }
 
-        return jwtService.generateToken(user);
+        String jwt = jwtService.generateToken(user);
+        log.info("[SSO-TRACE][activate][{}] 7. JWT emitido para el usuario {}: {}", sessionToken, user.getId(), jwt);
+        return jwt;
     }
 }

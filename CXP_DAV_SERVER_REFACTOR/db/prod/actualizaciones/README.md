@@ -24,7 +24,7 @@ con el mismo número y descripción: `Vn__descripcion.sql`.
 
 Los scripts se ejecutan en orden de número, empezando por el siguiente a la versión
 de `instalacion_inicial.sql` con la que se instaló la base. La versión actual del
-script incluye hasta V20.
+script incluye hasta V21.
 
 ```bash
 psql -h <host> -U <usuario> -d <base> -f V12__descripcion.sql
@@ -44,3 +44,4 @@ psql -h <host> -U <usuario> -d <base> -f V12__descripcion.sql
 | `V18__recarga_de_documentos_inactivados.sql` | Los índices de doble fondeo excluyen los documentos inactivados por el pagador, que así se pueden volver a cargar. |
 | `V19__jwt_secret_sin_valor_por_defecto.sql` | `JWT_SECRET` vuelve a `CONFIGURAR` si tenía la llave por defecto. Después, colocar la llave propia del ambiente con el `UPDATE` que indica el script, antes de arrancar la API. |
 | `V20__revocacion_de_sesiones.sql` | Columna `users.sessions_revoked_at`, con la que la API invalida los JWT de un usuario al cerrar sesión. |
+| `V21__sesiones_pendientes_sso.sql` | Tabla `sso_pending_sessions`, donde el handoff del SSO deja el token de un solo uso que el portal canjea por la sesión. Sin ella la API no arranca. |

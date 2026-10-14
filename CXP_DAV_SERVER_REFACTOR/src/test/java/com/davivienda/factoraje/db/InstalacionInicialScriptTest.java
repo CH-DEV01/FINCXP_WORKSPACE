@@ -44,7 +44,8 @@ class InstalacionInicialScriptTest {
             Path.of("db/prod/actualizaciones/V17__niu_de_pagadores.sql"),
             Path.of("db/prod/actualizaciones/V18__recarga_de_documentos_inactivados.sql"),
             Path.of("db/prod/actualizaciones/V19__jwt_secret_sin_valor_por_defecto.sql"),
-            Path.of("db/prod/actualizaciones/V20__revocacion_de_sesiones.sql"));
+            Path.of("db/prod/actualizaciones/V20__revocacion_de_sesiones.sql"),
+            Path.of("db/prod/actualizaciones/V21__sesiones_pendientes_sso.sql"));
 
     private static final List<String> SCHEMA_QUERIES = List.of(
             """
