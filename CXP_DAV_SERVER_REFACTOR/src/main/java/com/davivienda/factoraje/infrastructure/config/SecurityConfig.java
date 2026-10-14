@@ -4,6 +4,7 @@ import com.davivienda.factoraje.domain.constants.Roles;
 import com.davivienda.factoraje.domain.enums.SystemParameterKey;
 import com.davivienda.factoraje.dto.ApiResponse;
 import com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter;
+import com.davivienda.factoraje.infrastructure.security.SessionTokens;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
@@ -49,7 +50,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/sso/handoff", "/api/v1/sso/activateSession", "api/v1/auth/sso-login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/sso/handoff", "/api/v1/sso/activateSession", "/api/v1/auth/sso-login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").authenticated()
@@ -131,7 +132,7 @@ public class SecurityConfig {
             CorsConfiguration configuration = new CorsConfiguration();
             configuration.setAllowedOrigins(systemParameters.getList(SystemParameterKey.CORS_ALLOWED_ORIGINS));
             configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-            configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+            configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", SessionTokens.CSRF_HEADER));
             configuration.setAllowCredentials(true);
             return configuration;
         };

@@ -60,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserProfileResponseDTO getCurrentUserProfile() {
+    public UserProfileResponseDTO getCurrentUserProfile(String token) {
         UserModel user = currentUserService.get();
 
         // Ruta base, rutas y menús del rol, administrados en roles_cat, role_routes y role_menus
@@ -86,7 +86,8 @@ public class AuthServiceImpl implements AuthService {
                 List.of(),
                 menus,
                 routes,
-                systemParameters.getInt(SystemParameterKey.SESSION_IDLE_TIMEOUT_MINUTES)
+                systemParameters.getInt(SystemParameterKey.SESSION_IDLE_TIMEOUT_MINUTES),
+                jwtService.window(token)
             );
     }
 

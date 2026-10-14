@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.davivienda.factoraje.domain.entities.UserModel;
 import com.davivienda.factoraje.domain.enums.SystemParameterKey;
+import com.davivienda.factoraje.dto.auth.SessionWindowDTO;
 import com.davivienda.factoraje.infrastructure.config.SystemParameters;
 import com.davivienda.factoraje.infrastructure.exception.SessionExpiredException;
 
@@ -99,6 +100,12 @@ public class JwtService {
 
     public String extractUsername(String token) {
         return parse(token).getSubject();
+    }
+
+    /** El cliente no puede leer el token de la cookie: la vigencia viaja en las respuestas. */
+    public SessionWindowDTO window(String token) {
+        Claims claims = parse(token);
+        return new SessionWindowDTO(claims.getIssuedAt().getTime(), claims.getExpiration().getTime());
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {

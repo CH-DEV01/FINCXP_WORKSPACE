@@ -34,6 +34,9 @@ public enum SystemParameterKey {
     CORS_ALLOWED_ORIGINS(ValueType.ORIGINS, "http://localhost:5173,https://devpay.davivienda.com.sv", null, null),
     JWT_EXPIRATION_MINUTES(ValueType.INTEGER, "1440", "5", "10080"),
     SESSION_IDLE_TIMEOUT_MINUTES(ValueType.INTEGER, "15", "1", "480"),
+    // Dominio común de la app de financiamiento y la API; debe coincidir con el que
+    // usa el SsoController de financiamiento.
+    SESSION_COOKIE_DOMAIN(ValueType.TEXT, "davivienda.com.sv", false),
     // El literal no puede ser la constante UNCONFIGURED: los campos estáticos del enum
     // se inicializan después de las constantes.
     // Sin llave configurada la API no arranca (JwtService).
