@@ -1,0 +1,8 @@
+# Logs de las aplicaciones
+*.log
+logs/
+# Logback escribe aquí cuando la app corre fuera de Tomcat (sin catalina.base)
+catalina.base_IS_UNDEFINED/
+
+# Salida de compilación de Maven
+target/
