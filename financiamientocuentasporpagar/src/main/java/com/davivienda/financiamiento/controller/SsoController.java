@@ -56,13 +56,6 @@ public class SsoController {
                                 .orElseThrow(() -> new RuntimeException("URI not found"));
 
                 log.info("Uri for request: " + uriParameter.getValue());
-                log.info("[SSO-TRACE][start-session][{}] 1. Petición: {} {}?{} desde ip={}, X-Forwarded-For='{}', "
-                                + "Referer='{}', User-Agent='{}'",
-                                sessionToken, request.getMethod(), request.getRequestURL(), request.getQueryString(),
-                                request.getRemoteAddr(), request.getHeader("X-Forwarded-For"),
-                                request.getHeader("Referer"), request.getHeader("User-Agent"));
-                log.info("[SSO-TRACE][start-session][{}] 2. Parámetro FIN_CXP_URI(id={})='{}'",
-                                sessionToken, uriParameter.getId(), uriParameter.getValue());
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
@@ -71,30 +64,12 @@ public class SsoController {
                 body.setSessionToken(sessionToken);
 
                 HttpEntity<StartSessionRequestDTO> requestEntity = new HttpEntity<>(body, headers);
-                log.info("[SSO-TRACE][start-session][{}] 3. Petición a la API: POST {} headers={} body={{\"sessionToken\":\"{}\"}}",
-                                sessionToken, uriParameter.getValue(), headers, sessionToken);
 
-                long started = System.currentTimeMillis();
-                ResponseEntity<StartSessionResponseDTO> response;
-                try {
-                        response = restTemplate.exchange(
-                                        uriParameter.getValue(),
-                                        HttpMethod.POST,
-                                        requestEntity,
-                                        StartSessionResponseDTO.class);
-                } catch (RuntimeException e) {
-                        log.error("[SSO-TRACE][start-session][{}] FIN: falló la llamada a la API en {} ms: {}: {}",
-                                        sessionToken, System.currentTimeMillis() - started,
-                                        e.getClass().getName(), e.getMessage());
-                        throw e;
-                }
-
-                log.info("[SSO-TRACE][start-session][{}] 4. Respuesta de la API en {} ms: status={} headers={} "
-                                + "success={} message='{}'",
-                                sessionToken, System.currentTimeMillis() - started, response.getStatusCode(),
-                                response.getHeaders(),
-                                response.getBody() != null ? response.getBody().getSuccess() : null,
-                                response.getBody() != null ? response.getBody().getMessage() : null);
+                ResponseEntity<StartSessionResponseDTO> response = restTemplate.exchange(
+                                uriParameter.getValue(),
+                                HttpMethod.POST,
+                                requestEntity,
+                                StartSessionResponseDTO.class);
 
                 HttpHeaders redirect = new HttpHeaders();
                 redirect.setLocation(APP_HOME);
@@ -108,8 +83,6 @@ public class SsoController {
                         redirect.put(HttpHeaders.SET_COOKIE, cookies);
                 }
 
-                log.info("[SSO-TRACE][start-session][{}] 5. Respuesta al navegador: 302 Location={} Set-Cookie={}",
-                                sessionToken, APP_HOME, cookies);
                 return new ResponseEntity<>(redirect, HttpStatus.FOUND);
 
         }

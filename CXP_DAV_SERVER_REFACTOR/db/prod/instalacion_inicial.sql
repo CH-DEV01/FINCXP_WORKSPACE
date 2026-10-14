@@ -14,7 +14,7 @@
 --        - Administrador del sistema (rol SYSTEM_ADMIN): administra los parámetros.
 --          Este rol solo se asigna directamente en la base de datos.
 --
--- Equivale a las migraciones V1 a V21 de src/main/resources/db/migration, con los
+-- Equivale a las migraciones V1 a V20 de src/main/resources/db/migration, con los
 -- mismos identificadores, más los datos propios de producción. Los cambios
 -- posteriores se entregan en db/prod/actualizaciones/.
 --
@@ -652,16 +652,6 @@ CREATE UNIQUE INDEX uk_credit_facility_histories_disbursement_batch
 -- NIU de pagadores y proveedores; los proveedores creados desde la carga no lo traen.
 ALTER TABLE public.entities ADD COLUMN niu character varying(25);
 ALTER TABLE public.entities ADD CONSTRAINT uk_entities_niu UNIQUE (niu);
-
--- Sesiones que deja el handoff del SSO para que el portal las active una sola vez
--- (vencen a los 5 minutos).
-CREATE TABLE public.sso_pending_sessions (
-    session_token character varying(255) NOT NULL,
-    user_email character varying(255) NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    expires_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT sso_pending_sessions_pkey PRIMARY KEY (session_token)
-);
 
 -- -----------------------------------------------------------------------------
 -- 2. CATÁLOGOS

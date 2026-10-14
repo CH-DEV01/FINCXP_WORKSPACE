@@ -6680,194 +6680,136 @@ Unconditional classes:
 2026-10-13 14:55:41 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
 2026-10-13 14:55:41 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-20 - Shutdown initiated...
 2026-10-13 14:55:41 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-20 - Shutdown completed.
-2026-10-13 17:27:11 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 62039 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
-2026-10-13 17:27:11 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
-2026-10-13 17:27:11 INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-2026-10-13 17:27:11 INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-2026-10-13 17:27:12 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-10-13 17:27:12 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 48 ms. Found 28 JPA repository interfaces.
-2026-10-13 17:27:12 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-10-13 17:27:12 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
-2026-10-13 17:27:12 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
-2026-10-13 17:27:12 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
-2026-10-13 17:27:12 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 710 ms
-2026-10-13 17:27:12 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
-2026-10-13 17:27:12 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5c5f2bf0
-2026-10-13 17:27:12 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
-2026-10-13 17:27:12 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
-2026-10-13 17:27:12 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-10-13 17:27:12 INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.2.Final
-2026-10-13 17:27:12 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
-2026-10-13 17:27:12 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-10-13 17:27:13 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-10-13 17:27:13 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-10-13 17:27:13 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 17:27:13 INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-10-13 17:27:14 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
-2026-10-13 17:27:14 INFO  c.d.f.controller.SsoController - SsoService initialized
-2026-10-13 17:27:14 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-10-13 17:27:14 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
-2026-10-13 17:27:14 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@d462815, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@2c281207, org.springframework.security.web.context.SecurityContextHolderFilter@6709bcb2, org.springframework.security.web.header.HeaderWriterFilter@10b108a, org.springframework.web.filter.CorsFilter@7b25061b, org.springframework.security.web.authentication.logout.LogoutFilter@79a55bbb, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@462b92e, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7d1cd651, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@32d6ac73, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@a35e90a, org.springframework.security.web.session.SessionManagementFilter@55632b8c, org.springframework.security.web.access.ExceptionTranslationFilter@7736ae, org.springframework.security.web.access.intercept.AuthorizationFilter@496d145e]
-2026-10-13 17:27:15 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
-2026-10-13 17:27:15 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
-2026-10-13 17:27:15 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 3.325 seconds (process running for 3.558)
-2026-10-13 17:53:22 INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (1 addition, 0 deletions, 0 modifications)
-2026-10-13 17:53:22 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 17:53:22 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
-2026-10-13 17:53:22 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
-2026-10-13 17:53:22 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 62039 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
-2026-10-13 17:53:22 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
-2026-10-13 17:53:23 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-10-13 17:53:23 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 51 ms. Found 28 JPA repository interfaces.
-2026-10-13 17:53:23 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-10-13 17:53:23 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
-2026-10-13 17:53:23 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
-2026-10-13 17:53:23 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
-2026-10-13 17:53:23 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 290 ms
-2026-10-13 17:53:23 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
-2026-10-13 17:53:23 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@3755049c
-2026-10-13 17:53:23 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
-2026-10-13 17:53:23 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
-2026-10-13 17:53:23 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-10-13 17:53:23 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
-2026-10-13 17:53:23 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-10-13 17:53:23 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-10-13 17:53:23 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-10-13 17:53:23 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 17:53:23 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
-2026-10-13 17:53:23 INFO  c.d.f.controller.SsoController - SsoService initialized
-2026-10-13 17:53:23 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-10-13 17:53:23 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
-2026-10-13 17:53:23 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@193a0636, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@47ea51b6, org.springframework.security.web.context.SecurityContextHolderFilter@38ccce88, org.springframework.security.web.header.HeaderWriterFilter@5b912b87, org.springframework.web.filter.CorsFilter@33276181, org.springframework.security.web.authentication.logout.LogoutFilter@3b61acad, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@145065fe, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3f2c8eca, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@6db347bb, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6735c1e9, org.springframework.security.web.session.SessionManagementFilter@523b40f6, org.springframework.security.web.access.ExceptionTranslationFilter@a0e8eb, org.springframework.security.web.access.intercept.AuthorizationFilter@7845907c]
-2026-10-13 17:53:23 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
-2026-10-13 17:53:23 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
-2026-10-13 17:53:23 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 1.025 seconds (process running for 1572.351)
-2026-10-13 17:53:23 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
-2026-10-13 18:09:22 INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
-2026-10-13 18:09:22 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 18:09:22 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
-2026-10-13 18:09:22 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
-2026-10-13 18:09:22 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 62039 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
-2026-10-13 18:09:22 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
-2026-10-13 18:09:22 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-10-13 18:09:22 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 25 ms. Found 28 JPA repository interfaces.
-2026-10-13 18:09:22 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-10-13 18:09:22 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
-2026-10-13 18:09:22 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
-2026-10-13 18:09:22 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
-2026-10-13 18:09:22 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 194 ms
-2026-10-13 18:09:22 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Starting...
-2026-10-13 18:09:22 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@10dabe51
-2026-10-13 18:09:22 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Start completed.
-2026-10-13 18:09:22 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
-2026-10-13 18:09:22 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-10-13 18:09:22 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
-2026-10-13 18:09:22 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-10-13 18:09:22 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-10-13 18:09:22 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-10-13 18:09:22 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 18:09:23 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
-2026-10-13 18:09:23 INFO  c.d.f.controller.SsoController - SsoService initialized
-2026-10-13 18:09:23 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-10-13 18:09:23 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
-2026-10-13 18:09:23 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@6c22d10c, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@2034770e, org.springframework.security.web.context.SecurityContextHolderFilter@22c92751, org.springframework.security.web.header.HeaderWriterFilter@287ae5da, org.springframework.web.filter.CorsFilter@4f7131a6, org.springframework.security.web.authentication.logout.LogoutFilter@46d4169b, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@142f1646, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@412bb99f, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@3e80d055, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@73be48f5, org.springframework.security.web.session.SessionManagementFilter@2a67370e, org.springframework.security.web.access.ExceptionTranslationFilter@85d7b8c, org.springframework.security.web.access.intercept.AuthorizationFilter@4beef3be]
-2026-10-13 18:09:23 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
-2026-10-13 18:09:23 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
-2026-10-13 18:09:23 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 0.677 seconds (process running for 2531.622)
-2026-10-13 18:09:23 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
-2026-10-13 18:09:26 INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
-2026-10-13 18:09:26 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 18:09:26 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown initiated...
-2026-10-13 18:09:26 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown completed.
-2026-10-13 18:09:26 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 62039 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
-2026-10-13 18:09:26 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
-2026-10-13 18:09:26 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-10-13 18:09:26 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 21 ms. Found 28 JPA repository interfaces.
-2026-10-13 18:09:26 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-10-13 18:09:26 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
-2026-10-13 18:09:26 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
-2026-10-13 18:09:26 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
-2026-10-13 18:09:26 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 116 ms
-2026-10-13 18:09:26 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Starting...
-2026-10-13 18:09:26 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-4 - Added connection org.postgresql.jdbc.PgConnection@14ec60d9
-2026-10-13 18:09:26 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Start completed.
-2026-10-13 18:09:26 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
-2026-10-13 18:09:26 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-10-13 18:09:26 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
-2026-10-13 18:09:26 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-10-13 18:09:26 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-10-13 18:09:27 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-10-13 18:09:27 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 18:09:27 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
-2026-10-13 18:09:27 INFO  c.d.f.controller.SsoController - SsoService initialized
-2026-10-13 18:09:27 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-10-13 18:09:27 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
-2026-10-13 18:09:27 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@70fd01d2, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@1b20be65, org.springframework.security.web.context.SecurityContextHolderFilter@1f8c2cf7, org.springframework.security.web.header.HeaderWriterFilter@309d1be9, org.springframework.web.filter.CorsFilter@6665337f, org.springframework.security.web.authentication.logout.LogoutFilter@186e63a2, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@1a7b6824, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3e7c82cd, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@666694b8, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@303b8448, org.springframework.security.web.session.SessionManagementFilter@3776fd7f, org.springframework.security.web.access.ExceptionTranslationFilter@27f0d427, org.springframework.security.web.access.intercept.AuthorizationFilter@45126358]
-2026-10-13 18:09:27 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
-2026-10-13 18:09:27 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
-2026-10-13 18:09:27 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 0.653 seconds (process running for 2535.781)
-2026-10-13 18:09:27 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
-2026-10-13 18:09:28 INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
-2026-10-13 18:09:28 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 18:09:28 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Shutdown initiated...
-2026-10-13 18:09:28 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Shutdown completed.
-2026-10-13 18:09:28 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 62039 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
-2026-10-13 18:09:28 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
-2026-10-13 18:09:28 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-10-13 18:09:28 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 21 ms. Found 28 JPA repository interfaces.
-2026-10-13 18:09:28 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-10-13 18:09:28 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
-2026-10-13 18:09:28 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
-2026-10-13 18:09:28 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
-2026-10-13 18:09:28 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 126 ms
-2026-10-13 18:09:28 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Starting...
-2026-10-13 18:09:28 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-5 - Added connection org.postgresql.jdbc.PgConnection@399b5295
-2026-10-13 18:09:28 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Start completed.
-2026-10-13 18:09:28 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
-2026-10-13 18:09:28 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-10-13 18:09:28 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
-2026-10-13 18:09:28 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-10-13 18:09:28 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-10-13 18:09:29 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-10-13 18:09:29 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 18:09:29 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
-2026-10-13 18:09:29 INFO  c.d.f.controller.SsoController - SsoService initialized
-2026-10-13 18:09:29 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-10-13 18:09:29 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
-2026-10-13 18:09:29 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1bde45bb, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4f743adc, org.springframework.security.web.context.SecurityContextHolderFilter@5f80be6f, org.springframework.security.web.header.HeaderWriterFilter@70126891, org.springframework.web.filter.CorsFilter@7065d38f, org.springframework.security.web.authentication.logout.LogoutFilter@69619ae1, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@54bb70ab, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@479f27f3, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@242a9971, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@33ada6c0, org.springframework.security.web.session.SessionManagementFilter@7cfd7114, org.springframework.security.web.access.ExceptionTranslationFilter@7aec4d69, org.springframework.security.web.access.intercept.AuthorizationFilter@30ce68b3]
-2026-10-13 18:09:29 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
-2026-10-13 18:09:29 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
-2026-10-13 18:09:29 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 0.677 seconds (process running for 2537.933)
-2026-10-13 18:09:29 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
-2026-10-13 18:09:30 INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
-2026-10-13 18:09:30 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 18:09:30 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Shutdown initiated...
-2026-10-13 18:09:30 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Shutdown completed.
-2026-10-13 18:09:30 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 62039 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
-2026-10-13 18:09:30 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
-2026-10-13 18:09:31 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-10-13 18:09:31 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 17 ms. Found 28 JPA repository interfaces.
-2026-10-13 18:09:31 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-10-13 18:09:31 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
-2026-10-13 18:09:31 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
-2026-10-13 18:09:31 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
-2026-10-13 18:09:31 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 104 ms
-2026-10-13 18:09:31 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-6 - Starting...
-2026-10-13 18:09:31 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-6 - Added connection org.postgresql.jdbc.PgConnection@56b83802
-2026-10-13 18:09:31 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-6 - Start completed.
-2026-10-13 18:09:31 INFO  o.s.b.a.h.H2ConsoleAutoConfiguration - H2 console available at '/h2-console'. Database available at 'jdbc:postgresql://localhost:5432/postgres'
-2026-10-13 18:09:31 INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-10-13 18:09:31 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
-2026-10-13 18:09:31 WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-10-13 18:09:31 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-10-13 18:09:31 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-10-13 18:09:31 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-10-13 18:09:31 INFO  c.d.f.service.impl.SsoServiceImpl - SsoServiceImpl initialized
-2026-10-13 18:09:31 INFO  c.d.f.controller.SsoController - SsoService initialized
-2026-10-13 18:09:31 WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-10-13 18:09:31 INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
-2026-10-13 18:09:31 INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@72e46aac, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@61d5c82f, org.springframework.security.web.context.SecurityContextHolderFilter@75bbad0f, org.springframework.security.web.header.HeaderWriterFilter@72f6b87d, org.springframework.web.filter.CorsFilter@1f1f93c6, org.springframework.security.web.authentication.logout.LogoutFilter@43e6bf76, com.davivienda.factoraje.infrastructure.security.JwtAuthenticationFilter@6b96c816, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@79061159, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@3ef46b54, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@4f125e5a, org.springframework.security.web.session.SessionManagementFilter@1e596cb1, org.springframework.security.web.access.ExceptionTranslationFilter@58aa9362, org.springframework.security.web.access.intercept.AuthorizationFilter@67c6e37c]
-2026-10-13 18:09:31 INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
-2026-10-13 18:09:31 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
-2026-10-13 18:09:31 INFO  c.d.factoraje.FactorajeApplication - Started FactorajeApplication in 0.496 seconds (process running for 2539.926)
-2026-10-13 18:09:31 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+2026-10-13 18:25:53 INFO  c.d.factoraje.FactorajeApplication - Starting FactorajeApplication using Java 21.0.8 with PID 62039 (/Users/ch/Documents/FINCXP_WORKSPACE/CXP_DAV_SERVER_REFACTOR/target/classes started by ch in /Users/ch/Documents/FINCXP_WORKSPACE)
+2026-10-13 18:25:53 INFO  c.d.factoraje.FactorajeApplication - No active profile set, falling back to 1 default profile: "default"
+2026-10-13 18:25:53 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-13 18:25:53 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 21 ms. Found 28 JPA repository interfaces.
+2026-10-13 18:25:53 INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-10-13 18:25:53 INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-10-13 18:25:53 INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-10-13 18:25:53 INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-10-13 18:25:53 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 179 ms
+2026-10-13 18:25:53 ERROR o.s.b.w.e.tomcat.TomcatStarter - Error starting Tomcat context. Exception: org.springframework.beans.factory.BeanCreationException. Message: Error creating bean with name 'h2Console' defined in class path resource [org/springframework/boot/autoconfigure/h2/H2ConsoleAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.web.servlet.ServletRegistrationBean]: Factory method 'h2Console' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/autoconfigure/jdbc/JndiDataSourceAutoConfiguration.class]: Failed to instantiate [javax.sql.DataSource]: Factory method 'dataSource' threw exception with message: Failed to look up JNDI DataSource with name 'java:comp/env/jdbc/FinanciamientoCuentasDB'
+2026-10-13 18:25:53 INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2026-10-13 18:25:53 WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Unable to start web server
+2026-10-13 18:25:53 INFO  o.s.b.a.l.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-13 18:25:53 ERROR o.s.boot.SpringApplication - Application run failed
+org.springframework.context.ApplicationContextException: Unable to start web server
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:165)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:618)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:335)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1363)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1352)
+	at com.davivienda.factoraje.FactorajeApplication.main(FactorajeApplication.java:10)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
+Caused by: org.springframework.boot.web.server.WebServerException: Unable to start embedded Tomcat
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:147)
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.<init>(TomcatWebServer.java:107)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getTomcatWebServer(TomcatServletWebServerFactory.java:516)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getWebServer(TomcatServletWebServerFactory.java:222)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.createWebServer(ServletWebServerApplicationContext.java:188)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:162)
+	... 11 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'h2Console' defined in class path resource [org/springframework/boot/autoconfigure/h2/H2ConsoleAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.web.servlet.ServletRegistrationBean]: Factory method 'h2Console' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/autoconfigure/jdbc/JndiDataSourceAutoConfiguration.class]: Failed to instantiate [javax.sql.DataSource]: Factory method 'dataSource' threw exception with message: Failed to look up JNDI DataSource with name 'java:comp/env/jdbc/FinanciamientoCuentasDB'
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:648)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:636)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1337)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1167)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:205)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:211)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:202)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addServletContextInitializerBeans(ServletContextInitializerBeans.java:97)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.<init>(ServletContextInitializerBeans.java:86)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.getServletContextInitializerBeans(ServletWebServerApplicationContext.java:266)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.selfInitialize(ServletWebServerApplicationContext.java:240)
+	at org.springframework.boot.web.embedded.tomcat.TomcatStarter.onStartup(TomcatStarter.java:52)
+	at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4414)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:171)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1203)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1193)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:75)
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:749)
+	at org.apache.catalina.core.StandardHost.startInternal(StandardHost.java:772)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:171)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1203)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1193)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:75)
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:749)
+	at org.apache.catalina.core.StandardEngine.startInternal(StandardEngine.java:203)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:171)
+	at org.apache.catalina.core.StandardService.startInternal(StandardService.java:415)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:171)
+	at org.apache.catalina.core.StandardServer.startInternal(StandardServer.java:874)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:171)
+	at org.apache.catalina.startup.Tomcat.start(Tomcat.java:437)
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:128)
+	... 16 common frames omitted
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [org.springframework.boot.web.servlet.ServletRegistrationBean]: Factory method 'h2Console' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/autoconfigure/jdbc/JndiDataSourceAutoConfiguration.class]: Failed to instantiate [javax.sql.DataSource]: Factory method 'dataSource' threw exception with message: Failed to look up JNDI DataSource with name 'java:comp/env/jdbc/FinanciamientoCuentasDB'
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:177)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:644)
+	... 56 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/autoconfigure/jdbc/JndiDataSourceAutoConfiguration.class]: Failed to instantiate [javax.sql.DataSource]: Factory method 'dataSource' threw exception with message: Failed to look up JNDI DataSource with name 'java:comp/env/jdbc/FinanciamientoCuentasDB'
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:648)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:636)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1337)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1167)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.addCandidateEntry(DefaultListableBeanFactory.java:1696)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1653)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveMultipleBeans(DefaultListableBeanFactory.java:1470)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1392)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory$DependencyObjectProvider.resolveStream(DefaultListableBeanFactory.java:2198)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory$DependencyObjectProvider.orderedStream(DefaultListableBeanFactory.java:2192)
+	at org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration.logDataSources(H2ConsoleAutoConfiguration.java:86)
+	at org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration.lambda$h2Console$0(H2ConsoleAutoConfiguration.java:69)
+	at org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration.withThreadContextClassLoader(H2ConsoleAutoConfiguration.java:78)
+	at org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration.h2Console(H2ConsoleAutoConfiguration.java:69)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:140)
+	... 57 common frames omitted
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [javax.sql.DataSource]: Factory method 'dataSource' threw exception with message: Failed to look up JNDI DataSource with name 'java:comp/env/jdbc/FinanciamientoCuentasDB'
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:177)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:644)
+	... 80 common frames omitted
+Caused by: org.springframework.jdbc.datasource.lookup.DataSourceLookupFailureException: Failed to look up JNDI DataSource with name 'java:comp/env/jdbc/FinanciamientoCuentasDB'
+	at org.springframework.jdbc.datasource.lookup.JndiDataSourceLookup.getDataSource(JndiDataSourceLookup.java:48)
+	at org.springframework.boot.autoconfigure.jdbc.JndiDataSourceAutoConfiguration.dataSource(JndiDataSourceAutoConfiguration.java:52)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:140)
+	... 81 common frames omitted
+Caused by: javax.naming.NoInitialContextException: Need to specify class name in environment or system property, or in an application resource file: java.naming.factory.initial
+	at java.naming/javax.naming.spi.NamingManager.getInitialContext(NamingManager.java:492)
+	at java.naming/javax.naming.InitialContext.getDefaultInitCtx(InitialContext.java:305)
+	at java.naming/javax.naming.InitialContext.getURLOrDefaultInitCtx(InitialContext.java:342)
+	at java.naming/javax.naming.InitialContext.lookup(InitialContext.java:409)
+	at org.springframework.jndi.JndiTemplate.lambda$lookup$0(JndiTemplate.java:157)
+	at org.springframework.jndi.JndiTemplate.execute(JndiTemplate.java:92)
+	at org.springframework.jndi.JndiTemplate.lookup(JndiTemplate.java:157)
+	at org.springframework.jndi.JndiTemplate.lookup(JndiTemplate.java:179)
+	at org.springframework.jndi.JndiLocatorSupport.lookup(JndiLocatorSupport.java:96)
+	at org.springframework.jdbc.datasource.lookup.JndiDataSourceLookup.getDataSource(JndiDataSourceLookup.java:45)
+	... 85 common frames omitted
