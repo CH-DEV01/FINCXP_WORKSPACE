@@ -25,7 +25,9 @@ import org.testcontainers.images.builder.Transferable;
 public final class DeliverableScripts {
 
     private static final Path ROOT = Path.of("../Entregables");
-    public static final Path INSTALLATION = ROOT.resolve("01_Puesta_en_marcha/01_Script_inicial/instalacion_inicial.sql");
+    public static final Path INSTALLATION_DIR = ROOT.resolve("01_Puesta_en_marcha/01_Script_inicial");
+    public static final Path SCHEMA = INSTALLATION_DIR.resolve("01_esquema.sql");
+    public static final Path DATA = INSTALLATION_DIR.resolve("02_datos_iniciales.sql");
     public static final Path UPDATES = ROOT.resolve("02_Actualizaciones");
     /** Base en la versión 8, la primera que se entregó a producción; las actualizaciones parten de aquí. */
     public static final Path BASE_V8 = Path.of("src/test/resources/db/base_v8.sql");
@@ -54,7 +56,7 @@ public final class DeliverableScripts {
     }
 
     public static boolean available() {
-        return Files.isRegularFile(INSTALLATION) && Files.isDirectory(UPDATES);
+        return Files.isRegularFile(SCHEMA) && Files.isRegularFile(DATA) && Files.isDirectory(UPDATES);
     }
 
     /** Scripts V{n}__descripcion.sql de la carpeta de actualizaciones, en orden de aplicación. */
@@ -72,8 +74,8 @@ public final class DeliverableScripts {
         return Integer.parseInt(matcher.group(1));
     }
 
-    /** Script de instalación con los valores de prueba en la sección PARÁMETROS. */
-    public static String installationWithTestParameters() throws IOException {
+    /** Script de datos iniciales con los valores de prueba en la sección PARÁMETROS. */
+    public static String dataWithTestParameters() throws IOException {
         return replaceParameters(name -> {
             String value = TEST_PARAMETERS.get(name);
             assertThat(value).as("valor de prueba para " + name).isNotNull();
@@ -81,18 +83,18 @@ public final class DeliverableScripts {
         });
     }
 
-    /** Script de instalación con la sección PARÁMETROS sin completar. */
-    public static String installationWithoutParameters() throws IOException {
+    /** Script de datos iniciales con la sección PARÁMETROS sin completar. */
+    public static String dataWithoutParameters() throws IOException {
         return replaceParameters(name -> "COMPLETAR");
     }
 
     private static String replaceParameters(Function<String, String> valueOf) throws IOException {
-        String content = Files.readString(INSTALLATION, StandardCharsets.UTF_8);
+        String content = Files.readString(DATA, StandardCharsets.UTF_8);
         int start = content.indexOf(PARAMETERS_START);
-        assertThat(start).as("sección PARÁMETROS de " + INSTALLATION).isNotNegative();
+        assertThat(start).as("sección PARÁMETROS de " + DATA).isNotNegative();
         // Los comentarios de la sección también pueden tener punto y coma.
         Matcher sectionEnd = PARAMETERS_END.matcher(content);
-        assertThat(sectionEnd.find(start)).as("fin de la sección PARÁMETROS de " + INSTALLATION).isTrue();
+        assertThat(sectionEnd.find(start)).as("fin de la sección PARÁMETROS de " + DATA).isTrue();
         int end = sectionEnd.start();
 
         Matcher matcher = PARAMETER.matcher(content.substring(start, end));
@@ -115,5 +117,13 @@ public final class DeliverableScripts {
 
     public static ExecResult run(PostgreSQLContainer<?> postgres, String database, Path script) throws Exception {
         return run(postgres, database, script.getFileName().toString(), Files.readString(script, StandardCharsets.UTF_8));
+    }
+
+    /** Esquema y luego datos iniciales, con los valores de prueba. */
+    public static void install(PostgreSQLContainer<?> postgres, String database) throws Exception {
+        ExecResult schema = run(postgres, database, SCHEMA);
+        assertThat(schema.getExitCode()).as(schema.getStderr()).isZero();
+        ExecResult data = run(postgres, database, "02_datos_iniciales.sql", dataWithTestParameters());
+        assertThat(data.getExitCode()).as(data.getStderr()).isZero();
     }
 }

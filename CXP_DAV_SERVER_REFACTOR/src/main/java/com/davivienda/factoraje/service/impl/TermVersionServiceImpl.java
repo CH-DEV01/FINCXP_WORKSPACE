@@ -195,7 +195,7 @@ public class TermVersionServiceImpl implements TermVersionService {
     }
 
     /**
-     * Debe coincidir con los hashes de los términos cargados por instalacion_inicial.sql, que equivalen a
+     * Debe coincidir con los hashes de los términos cargados por 02_datos_iniciales.sql, que equivalen a
      * sha256(title || E'\n\n' || content || E'\n\n' || acceptance_text).
      */
     static String computeHash(TermVersionCat version) {

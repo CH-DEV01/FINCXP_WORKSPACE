@@ -18,7 +18,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -49,9 +48,7 @@ class DocumentDoubleFundingIndexTest {
     @BeforeAll
     static void installSchema() throws Exception {
         assumeTrue(DeliverableScripts.available(), "No existe la carpeta Entregables con los scripts de base de datos.");
-        ExecResult installation = DeliverableScripts.run(POSTGRES, POSTGRES.getDatabaseName(), "instalacion_inicial.sql",
-                DeliverableScripts.installationWithTestParameters());
-        assertThat(installation.getExitCode()).as(installation.getStderr()).isZero();
+        DeliverableScripts.install(POSTGRES, POSTGRES.getDatabaseName());
     }
 
     @Autowired

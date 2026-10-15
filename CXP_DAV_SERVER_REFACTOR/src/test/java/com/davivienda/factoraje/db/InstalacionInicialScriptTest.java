@@ -18,10 +18,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * La base se crea con el script de instalación inicial y los cambios posteriores se
- * entregan como scripts de actualización. Esta prueba instala el script en una base y,
- * en otra, aplica todas las actualizaciones en orden sobre una base en la versión 8, y
- * exige que el esquema y los catálogos coincidan.
+ * La base se crea con los scripts de instalación inicial (esquema y datos) y los cambios
+ * posteriores se entregan como scripts de actualización. Esta prueba instala esos scripts
+ * en una base y, en otra, aplica todas las actualizaciones en orden sobre una base en la
+ * versión 8, y exige que el esquema y los catálogos coincidan.
  */
 @Testcontainers(disabledWithoutDocker = true)
 class InstalacionInicialScriptTest {
@@ -79,9 +79,7 @@ class InstalacionInicialScriptTest {
         admin.execute("CREATE DATABASE instalacion");
         admin.execute("CREATE DATABASE actualizacion");
 
-        ExecResult installation = DeliverableScripts.run(POSTGRES, "instalacion", "instalacion_inicial.sql",
-                DeliverableScripts.installationWithTestParameters());
-        assertThat(installation.getExitCode()).as(installation.getStderr()).isZero();
+        DeliverableScripts.install(POSTGRES, "instalacion");
         script = jdbc("instalacion");
 
         ExecResult base = DeliverableScripts.run(POSTGRES, "actualizacion", DeliverableScripts.BASE_V8);
@@ -164,9 +162,8 @@ class InstalacionInicialScriptTest {
     }
 
     @Test
-    void refusesToRunOnANonEmptyDatabase() throws Exception {
-        ExecResult second = DeliverableScripts.run(POSTGRES, "instalacion", "instalacion_inicial.sql",
-                DeliverableScripts.installationWithTestParameters());
+    void refusesToCreateTheSchemaOnANonEmptyDatabase() throws Exception {
+        ExecResult second = DeliverableScripts.run(POSTGRES, "instalacion", DeliverableScripts.SCHEMA);
 
         assertThat(second.getExitCode()).isNotZero();
         assertThat(second.getStderr()).contains("La base no está vacía");
@@ -174,15 +171,40 @@ class InstalacionInicialScriptTest {
     }
 
     @Test
-    void refusesToRunWithMissingParameters() throws Exception {
+    void refusesToLoadDataTwice() throws Exception {
+        ExecResult second = DeliverableScripts.run(POSTGRES, "instalacion", "02_datos_iniciales.sql",
+                DeliverableScripts.dataWithTestParameters());
+
+        assertThat(second.getExitCode()).isNotZero();
+        assertThat(second.getStderr()).contains("ya están cargados");
+        assertThat(script.queryForObject("SELECT count(*) FROM users", Integer.class)).isEqualTo(2);
+    }
+
+    @Test
+    void refusesToLoadDataWithMissingParameters() throws Exception {
         jdbc(POSTGRES.getDatabaseName()).execute("CREATE DATABASE sin_parametros");
+        ExecResult schema = DeliverableScripts.run(POSTGRES, "sin_parametros", DeliverableScripts.SCHEMA);
+        assertThat(schema.getExitCode()).as(schema.getStderr()).isZero();
 
         ExecResult result = DeliverableScripts.run(POSTGRES, "sin_parametros", "sin_parametros.sql",
-                DeliverableScripts.installationWithoutParameters());
+                DeliverableScripts.dataWithoutParameters());
 
         assertThat(result.getExitCode()).isNotZero();
         assertThat(result.getStderr()).contains("Faltan parámetros por completar");
-        assertThat(jdbc("sin_parametros").queryForObject(
+        assertThat(jdbc("sin_parametros").queryForObject("SELECT count(*) FROM entity_types_cat", Integer.class))
+                .isZero();
+    }
+
+    @Test
+    void refusesToLoadDataWithoutTheSchema() throws Exception {
+        jdbc(POSTGRES.getDatabaseName()).execute("CREATE DATABASE sin_esquema");
+
+        ExecResult result = DeliverableScripts.run(POSTGRES, "sin_esquema", "sin_esquema.sql",
+                DeliverableScripts.dataWithTestParameters());
+
+        assertThat(result.getExitCode()).isNotZero();
+        assertThat(result.getStderr()).contains("Falta el esquema");
+        assertThat(jdbc("sin_esquema").queryForObject(
                 "SELECT count(*) FROM pg_tables WHERE schemaname = 'public'", Integer.class)).isZero();
     }
 
