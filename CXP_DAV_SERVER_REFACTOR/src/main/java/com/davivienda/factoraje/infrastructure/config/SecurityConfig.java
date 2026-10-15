@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/sso/handoff", "/api/v1/sso/activateSession", "/api/v1/auth/sso-login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/config").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").authenticated()
@@ -59,7 +60,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/term-versions/active/payer").hasAnyRole(Roles.PAYER, Roles.ADMIN)
                         .requestMatchers("/api/v1/term-versions/**").hasRole(Roles.ADMIN)
 
-                        .requestMatchers("/api/v1/parameters/**").hasRole(Roles.SYSTEM_ADMIN)
+                        // Qué parámetros ve y edita cada rol lo decide ParameterServiceImpl.
+                        .requestMatchers("/api/v1/parameters/**").hasAnyRole(Roles.SYSTEM_ADMIN, Roles.ADMIN)
 
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/master-agreements/supplier/*",

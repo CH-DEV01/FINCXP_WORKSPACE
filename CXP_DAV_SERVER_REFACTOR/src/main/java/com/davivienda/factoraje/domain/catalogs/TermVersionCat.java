@@ -35,8 +35,8 @@ import lombok.Setter;
  * editables; al publicarse quedan inmutables porque las aceptaciones registradas
  * en acceptance_audits apuntan a ellas.
  *
- * Las restricciones NOT NULL de title, content y acceptance_text están en la
- * migración V1 de Flyway.
+ * Las restricciones NOT NULL de title, content y acceptance_text están en el
+ * script de instalación inicial.
  */
 @Entity
 @Setter

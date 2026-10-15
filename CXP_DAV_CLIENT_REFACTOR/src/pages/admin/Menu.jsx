@@ -13,6 +13,7 @@ import {
   FaExchangeAlt,
   FaListAlt,
   FaFolderOpen,
+  FaSlidersH,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -95,6 +96,12 @@ const menuItems = [
     icon: FaFolderOpen,
     title: "Recursos de carga",
     description: "Publica la plantilla de Excel y el manual que se ofrecen en la carga de documentos.",
+  },
+  {
+    id: "param-management",
+    icon: FaSlidersH,
+    title: "Parametros de negocio",
+    description: "Ajusta el IVA, la hora de corte, el umbral del cupo y los plazos de elegibilidad de los documentos.",
   },
 ];
 

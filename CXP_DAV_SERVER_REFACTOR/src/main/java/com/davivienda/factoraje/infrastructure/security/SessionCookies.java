@@ -28,6 +28,7 @@ public class SessionCookies {
 
     private final SystemParameters systemParameters;
     private final JwtService jwtService;
+    private final SessionTokens sessionTokens;
 
     public void write(HttpServletRequest request, HttpServletResponse response, String jwt) {
         long seconds = (jwtService.window(jwt).expiresAt() - System.currentTimeMillis()) / 1000;
@@ -41,7 +42,7 @@ public class SessionCookies {
     private ResponseCookie build(HttpServletRequest request, String value, Duration maxAge) {
         String host = request.getServerName().toLowerCase(Locale.ROOT);
         boolean local = LOCAL_HOSTS.contains(host);
-        ResponseCookie.ResponseCookieBuilder cookie = ResponseCookie.from(SessionTokens.COOKIE_NAME, value)
+        ResponseCookie.ResponseCookieBuilder cookie = ResponseCookie.from(sessionTokens.cookieName(), value)
                 .path("/")
                 .httpOnly(true)
                 .secure(!local)

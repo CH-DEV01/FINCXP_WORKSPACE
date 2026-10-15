@@ -2,12 +2,14 @@ package com.davivienda.factoraje.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +18,12 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.davivienda.factoraje.db.DeliverableScripts;
 import com.davivienda.factoraje.domain.entities.DocumentModel;
 import com.davivienda.factoraje.domain.entities.MasterAgreementModel;
 import com.davivienda.factoraje.domain.entities.UploadBatchModel;
@@ -30,8 +34,8 @@ import com.davivienda.factoraje.domain.enums.IssuanceMethodEnum;
 import jakarta.persistence.EntityManager;
 
 /**
- * El esquema lo crea Flyway (V1/V2) y Hibernate lo valida (ddl-auto=validate), así que
- * la prueba también cubre las migraciones.
+ * El esquema lo crea el script de instalación inicial que se entrega al DBA, así que la
+ * prueba también cubre sus índices.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -41,6 +45,14 @@ class DocumentDoubleFundingIndexTest {
     @Container
     @ServiceConnection
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16.9");
+
+    @BeforeAll
+    static void installSchema() throws Exception {
+        assumeTrue(DeliverableScripts.available(), "No existe la carpeta Entregables con los scripts de base de datos.");
+        ExecResult installation = DeliverableScripts.run(POSTGRES, POSTGRES.getDatabaseName(), "instalacion_inicial.sql",
+                DeliverableScripts.installationWithTestParameters());
+        assertThat(installation.getExitCode()).as(installation.getStderr()).isZero();
+    }
 
     @Autowired
     private DocumentRepository documentRepository;
@@ -59,13 +71,6 @@ class DocumentDoubleFundingIndexTest {
         // Solo interesan los índices únicos: se omiten las llaves foráneas en esta transacción
         // para no tener que crear pagador, proveedor, convenio y carga.
         jdbcTemplate.execute("SET LOCAL session_replication_role = replica");
-    }
-
-    @Test
-    void flywayAppliedBothMigrations() {
-        assertThat(jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM flyway_schema_history WHERE success AND version IN ('1', '2')", Integer.class))
-                .isEqualTo(2);
     }
 
     @Test

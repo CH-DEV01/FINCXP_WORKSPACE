@@ -11,6 +11,8 @@ import FieldLabel from "../../components/form/FieldLabel";
 import FieldError from "../../components/form/FieldError";
 import inputClass from "../../components/form/inputClass";
 
+import { useAuth } from "../../context/AuthContext";
+import { ROLES } from "../../constants/roles";
 import { parameterService } from "../../services/admin/parameterService";
 import { paramSchema } from "../../schemas/paramSchema";
 import useClientPagination from "../../hooks/useClientPagination";
@@ -29,6 +31,9 @@ const matchesParameter = (item, term) =>
   (item.description?.toLowerCase() || "").includes(term);
 
 const ParamsManagement = () => {
+  const { user } = useAuth();
+  // La API devuelve a cada rol solo los parámetros que le corresponden.
+  const isBankOperator = user?.role === ROLES.ADMIN;
   const [parameters, setParameters] = useState([]);
   const [editingParam, setEditingParam] = useState(null);
 
@@ -99,8 +104,12 @@ const ParamsManagement = () => {
     <div className="flex flex-col w-full lg:h-[calc(100dvh-5.5rem)] min-h-0 pb-3">
       <div className="shrink-0">
         <HeaderCard
-          title={"Gestion de parametros"}
-          description={"Administre parametros globales del sistema"}
+          title={isBankOperator ? "Parametros de negocio" : "Parametros tecnicos"}
+          description={
+            isBankOperator
+              ? "Reglas que afectan montos, fechas de desembolso y elegibilidad de documentos. Aplican desde que se guardan."
+              : "Integraciones, seguridad, sesión y límites de carga del sistema."
+          }
           icon={<FaCog />}
         />
       </div>

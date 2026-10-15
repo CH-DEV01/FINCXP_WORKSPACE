@@ -8,10 +8,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.davivienda.factoraje.infrastructure.util.IdentifierNormalizer;
 
@@ -34,8 +37,9 @@ public enum SystemParameterKey {
     CORS_ALLOWED_ORIGINS(ValueType.ORIGINS, "http://localhost:5173,https://devpay.davivienda.com.sv", null, null),
     JWT_EXPIRATION_MINUTES(ValueType.INTEGER, "1440", "5", "10080"),
     SESSION_IDLE_TIMEOUT_MINUTES(ValueType.INTEGER, "15", "1", "480"),
-    // Dominio común de la app de financiamiento y la API; debe coincidir con el que
-    // usa el SsoController de financiamiento.
+    // Cookie de sesión compartida con la app de financiamiento, que lee estos mismos
+    // parámetros. Cambiar el nombre deja sin sesión a quien ya ingresó.
+    SESSION_COOKIE_NAME(ValueType.COOKIE_NAME, "fincxp_token", null, null),
     SESSION_COOKIE_DOMAIN(ValueType.TEXT, "davivienda.com.sv", false),
     // El literal no puede ser la constante UNCONFIGURED: los campos estáticos del enum
     // se inicializan después de las constantes.
@@ -45,15 +49,24 @@ public enum SystemParameterKey {
     MAILJET_API_SECRET(ValueType.TEXT, "CONFIGURAR", true),
     MAILJET_FROM_EMAIL(ValueType.EMAIL, "CONFIGURAR", false),
     MAILJET_FROM_NAME(ValueType.TEXT, "CONFIGURAR", false),
-    MAILJET_API_URL(ValueType.URL, "https://api.mailjet.com/v3/send", false),
-    APP_LOGIN_URL(ValueType.URL, "CONFIGURAR", false);
+    // MailjetTransport arma el cuerpo de la API v3.1; la versión de la URL debe coincidir.
+    MAILJET_API_URL(ValueType.URL, "https://api.mailjet.com/v3.1/send", false),
+    APP_LOGIN_URL(ValueType.URL, "CONFIGURAR", false),
+    // Content Security Policy que envía el Web Server. Los valores se validan aquí porque
+    // el administrador del sistema los edita desde la Core API.
+    CSP_MODE(ValueType.CSP_MODE, "REPORT_ONLY", false),
+    CSP_CONNECT_SRC(ValueType.ORIGINS, "CONFIGURAR", false);
 
     /** Valor inicial de un parámetro que todavía no se ha configurado en el ambiente. */
     public static final String UNCONFIGURED = "CONFIGURAR";
 
     public enum ValueType {
-        INTEGER, DECIMAL, TIME, FILE_EXTENSIONS, ORIGINS, TEXT, EMAIL, URL, BASE64_KEY
+        INTEGER, DECIMAL, TIME, FILE_EXTENSIONS, ORIGINS, TEXT, EMAIL, URL, BASE64_KEY, COOKIE_NAME, CSP_MODE
     }
+
+    private static final Pattern COOKIE_NAME_FORMAT = Pattern.compile("[A-Za-z0-9_-]{1,64}");
+
+    private static final Set<String> CSP_MODES = Set.of("REPORT_ONLY", "ENFORCE", "DISABLED");
 
     /** Formatos que el lector de Apache POI (WorkbookFactory) puede abrir. */
     public static final Set<String> SUPPORTED_UPLOAD_EXTENSIONS = Set.of(".xlsx", ".xls");
@@ -111,6 +124,21 @@ public enum SystemParameterKey {
     }
 
     /**
+     * Reglas de negocio que administra el operador bancario (ADMIN). El resto, incluidas
+     * las llaves que no están en este enum, son técnicas y las administra el SYSTEM_ADMIN.
+     */
+    private static final Set<SystemParameterKey> BUSINESS = EnumSet.of(
+            IVA_RATE, DEFAULT_CREDIT_THRESHOLD, DISBURSEMENT_CUTOFF_TIME, DUE_DATE_GRACE_DAYS, MAX_INVOICE_AGE_DAYS);
+
+    public static Set<String> businessKeys() {
+        return BUSINESS.stream().map(Enum::name).collect(Collectors.toUnmodifiableSet());
+    }
+
+    public static boolean isBusiness(String key) {
+        return find(key).map(BUSINESS::contains).orElse(false);
+    }
+
+    /**
      * Valida el valor y lo devuelve en su forma canónica.
      *
      * @throws IllegalArgumentException si el valor no es válido para este parámetro.
@@ -134,7 +162,26 @@ public enum SystemParameterKey {
             case EMAIL -> normalizeEmail(value);
             case URL -> normalizeUrl(value);
             case BASE64_KEY -> normalizeBase64Key(value);
+            case COOKIE_NAME -> normalizeCookieName(value);
+            case CSP_MODE -> normalizeCspMode(value);
         };
+    }
+
+    private String normalizeCspMode(String value) {
+        String mode = value.toUpperCase(Locale.ROOT);
+        if (!CSP_MODES.contains(mode)) {
+            throw new IllegalArgumentException(name()
+                    + " admite REPORT_ONLY, ENFORCE o DISABLED. Valor recibido: " + value);
+        }
+        return mode;
+    }
+
+    private String normalizeCookieName(String value) {
+        if (!COOKIE_NAME_FORMAT.matcher(value).matches()) {
+            throw new IllegalArgumentException(name()
+                    + " solo admite letras, números, guion y guion bajo (máximo 64). Valor recibido: " + value);
+        }
+        return value;
     }
 
     private String normalizeInteger(String value) {

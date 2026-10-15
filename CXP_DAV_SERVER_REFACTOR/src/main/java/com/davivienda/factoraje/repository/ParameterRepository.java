@@ -1,5 +1,6 @@
 package com.davivienda.factoraje.repository;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,5 +17,9 @@ public interface ParameterRepository extends JpaRepository<SystemParameterModel,
     Optional <SystemParameterModel> findByKey(String key);
 
     Page<SystemParameterModel> findAll(Pageable pageable);
+
+    Page<SystemParameterModel> findByKeyIn(Collection<String> keys, Pageable pageable);
+
+    Page<SystemParameterModel> findByKeyNotIn(Collection<String> keys, Pageable pageable);
 
 }

@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -35,6 +36,7 @@ import com.davivienda.factoraje.controller.DocumentController;
 import com.davivienda.factoraje.controller.HolidayController;
 import com.davivienda.factoraje.controller.ParameterController;
 import com.davivienda.factoraje.controller.PayerController;
+import com.davivienda.factoraje.controller.PublicConfigController;
 import com.davivienda.factoraje.controller.SupplierController;
 import com.davivienda.factoraje.controller.UploadResourceController;
 import com.davivienda.factoraje.controller.UserController;
@@ -45,6 +47,7 @@ import com.davivienda.factoraje.dto.upload_resource.ResourceFile;
 import com.davivienda.factoraje.dto.upload_resource.UploadResourcesDTOResponse;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.infrastructure.security.JwtService;
+import com.davivienda.factoraje.infrastructure.security.SessionTokens;
 import com.davivienda.factoraje.domain.enums.SystemParameterKey;
 
 import com.davivienda.factoraje.service.DocumentService;
@@ -58,8 +61,9 @@ import com.davivienda.factoraje.service.UserService;
 import io.jsonwebtoken.MalformedJwtException;
 
 @WebMvcTest(controllers = { UserController.class, ParameterController.class, HolidayController.class,
-        UploadResourceController.class, PayerController.class, SupplierController.class, DocumentController.class })
-@Import(SecurityConfig.class)
+        UploadResourceController.class, PayerController.class, SupplierController.class, DocumentController.class,
+        PublicConfigController.class })
+@Import({ SecurityConfig.class, SessionTokens.class })
 class SecurityConfigTest {
 
     private static final String PDF = "%PDF-1.4";
@@ -178,11 +182,17 @@ class SecurityConfigTest {
     }
 
     @Test
-    void adminCannotReadSystemParameters() throws Exception {
-        mockMvc.perform(get("/api/v1/parameters").header(HttpHeaders.AUTHORIZATION, bearer(Roles.ADMIN)))
-                .andExpect(status().isForbidden());
+    void onlyAdminAndSystemAdminCanReadParameters() throws Exception {
+        when(parameterService.readAllParameters(any())).thenReturn(Page.empty());
 
-        verifyNoInteractions(parameterService);
+        mockMvc.perform(get("/api/v1/parameters").header(HttpHeaders.AUTHORIZATION, bearer(Roles.ADMIN)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/parameters").header(HttpHeaders.AUTHORIZATION, bearer(Roles.SYSTEM_ADMIN)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/parameters").header(HttpHeaders.AUTHORIZATION, bearer(Roles.PAYER)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/parameters").header(HttpHeaders.AUTHORIZATION, bearer(Roles.SUPPLIER)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -260,6 +270,21 @@ class SecurityConfigTest {
                         .header(HttpHeaders.ORIGIN, "https://pay.davivienda.com.sv")
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void publicConfigIsAvailableWithoutSession() throws Exception {
+        when(systemParameters.get(SystemParameterKey.APP_LOGIN_URL)).thenReturn("https://pay.davivienda.com.sv/login");
+
+        mockMvc.perform(get("/api/v1/public/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.portalUrl").value("https://pay.davivienda.com.sv/login"));
+
+        when(systemParameters.get(SystemParameterKey.APP_LOGIN_URL)).thenReturn(SystemParameterKey.UNCONFIGURED);
+
+        mockMvc.perform(get("/api/v1/public/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.portalUrl").doesNotExist());
     }
 
     @Test

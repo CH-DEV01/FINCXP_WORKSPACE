@@ -27,6 +27,7 @@ public class AuthController {
     private final AuthService authService;
     private final JwtService jwtService;
     private final SessionCookies sessionCookies;
+    private final SessionTokens sessionTokens;
 
     public record SsoLoginRequest(String dui) {}
 
@@ -61,8 +62,8 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null, "Sesión cerrada correctamente"));
     }
 
-    private static String currentToken(HttpServletRequest httpRequest) {
-        return SessionTokens.read(httpRequest)
+    private String currentToken(HttpServletRequest httpRequest) {
+        return sessionTokens.read(httpRequest)
                 .orElseThrow(() -> new SessionExpiredException("La sesión no es válida o expiró."));
     }
 }

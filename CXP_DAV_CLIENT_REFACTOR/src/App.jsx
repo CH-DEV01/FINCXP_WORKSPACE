@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { AgreementProvider } from "./context/AgreementContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import LoadingSpinner from "./components/LoadingSpinner";
-import { PORTAL_URL } from "./constants/apiConstants";
+import { goToPortal } from "./services/portal";
 import { ROLES } from "./constants/roles";
 import { ROUTES } from "./constants/routes";
 
@@ -62,7 +62,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
   useEffect(() => {
     if (!user && !isLoading) {
-      window.location.href = PORTAL_URL;
+      goToPortal();
     }
   }, [user, isLoading]);
 

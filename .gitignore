@@ -7,8 +7,5 @@ catalina.base_IS_UNDEFINED/
 # Salida de compilación de Maven
 target/
 
-# Entregables
-/Entregable_Puesta_en_Marcha/
-
-# Scripts de base de datos de la API
-/CXP_DAV_SERVER_REFACTOR/db/
+# Entregables: puesta en marcha y scripts de actualización
+/Entregables/

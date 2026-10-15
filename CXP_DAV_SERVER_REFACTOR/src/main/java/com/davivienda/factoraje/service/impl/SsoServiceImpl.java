@@ -4,11 +4,14 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +22,7 @@ import com.davivienda.factoraje.domain.entities.PendingSessionModel;
 import com.davivienda.factoraje.domain.entities.SystemParameterModel;
 import com.davivienda.factoraje.domain.entities.UserModel;
 import com.davivienda.factoraje.domain.enums.GeneralStatusEnum;
+import com.davivienda.factoraje.domain.enums.SystemParameterKey;
 import com.davivienda.factoraje.dto.sso.DataSession;
 import com.davivienda.factoraje.dto.sso.HandoffDTOResponse;
 import com.davivienda.factoraje.dto.sso.OtcDTOResponse;
@@ -36,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class SsoServiceImpl implements SsoService {
+
+    private static final int MAX_OTC_LENGTH = 512;
 
     private final ParameterRepository parameterRepository;
     private final PendingSessionRepository pendingSessionRepository;
@@ -79,6 +85,13 @@ public class SsoServiceImpl implements SsoService {
             log.info("url para petición: {}", payDaviviendaUrl.getValue());
 
             // 2. VALIDACIONES DE SEGURIDAD
+            // Sin este control, "Bearer CONFIGURAR" pasaría la validación en una base recién instalada.
+            if (!configured(myBearerToken) || !configured(myAppCode) || !configured(payBearerToken)
+                    || !configured(payDaviviendaUrl)) {
+                log.error("[Handoff-Config] Los parámetros de SSO siguen en CONFIGURAR; el handoff está deshabilitado.");
+                throw new BusinessException("La integración SSO no está configurada");
+            }
+
             if (!secretEquals("Bearer " + myBearerToken.getValue(), bearerTokenRequest)) {
                 log.warn("[Handoff-Business] Intento de acceso no autorizado. Token inválido.");
                 throw new BusinessException("No autorizado: Bearer Token inválido");
@@ -89,14 +102,18 @@ public class SsoServiceImpl implements SsoService {
                 throw new BusinessException("Código de aplicación incorrecto");
             }
 
+            if (!validOtc(otc)) {
+                log.warn("[Handoff-Business] OTC con formato inválido.");
+                throw new BusinessException("OTC con formato inválido");
+            }
+
             // 3. PREPARACIÓN DE PETICIÓN EXTERNA
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Content-Type", "application/json");
+            headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("X-Authorization", "Bearer " + payBearerToken.getValue());
-            headers.set("Accept", "application/json");
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-            String jsonBody = "{\"otc\":\"" + otc + "\"}";
-            HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(Map.of("otc", otc), headers);
 
             log.info("[Handoff-External] Consultando validación en Davivienda...");
 
@@ -163,6 +180,17 @@ public class SsoServiceImpl implements SsoService {
             log.error("[Handoff-Critical-Error] Error no controlado en el proceso", e);
             throw new RuntimeException("Error interno del sistema: " + e.getMessage());
         }
+    }
+
+    private static boolean configured(SystemParameterModel parameter) {
+        String value = parameter.getValue();
+        return value != null && !value.isBlank() && !SystemParameterKey.UNCONFIGURED.equals(value.trim());
+    }
+
+    /** El formato del OTC lo define Davivienda; aquí solo se descarta lo que no puede serlo. */
+    static boolean validOtc(String otc) {
+        return otc != null && !otc.isBlank() && otc.length() <= MAX_OTC_LENGTH
+                && otc.chars().noneMatch(Character::isISOControl);
     }
 
     /** Compara en tiempo constante para no revelar cuántos caracteres coinciden. */

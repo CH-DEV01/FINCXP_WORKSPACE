@@ -22,9 +22,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.davivienda.factoraje.domain.entities.SystemParameterModel;
+import com.davivienda.factoraje.domain.enums.SystemParameterKey;
 import com.davivienda.factoraje.dto.parameter.ParameterDTORequest;
 import com.davivienda.factoraje.dto.parameter.ParameterDTOResponse;
 import com.davivienda.factoraje.infrastructure.config.SystemParameters;
+import com.davivienda.factoraje.infrastructure.exception.UnauthorizedAccessException;
+import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.repository.ParameterRepository;
 
 import ch.qos.logback.classic.Logger;
@@ -38,6 +41,8 @@ class ParameterServiceImplTest {
     private ParameterRepository parameterRepository;
     @Mock
     private SystemParameters systemParameters;
+    @Mock
+    private CurrentUserService currentUser;
     @InjectMocks
     private ParameterServiceImpl service;
 
@@ -63,18 +68,76 @@ class ParameterServiceImplTest {
     @Test
     void readingParametersMasksSecretsButNotPendingOnes() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(parameterRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(
+        when(parameterRepository.findByKeyNotIn(SystemParameterKey.businessKeys(), pageable)).thenReturn(new PageImpl<>(List.of(
                 parameter("JWT_SECRET", "c2VjcmV0by1kZS1wcnVlYmEtZGUtMzItYnl0ZXMtbWluaW1v"),
                 parameter("BEARER_TOKEN", "token-del-sso"),
                 parameter("MAILJET_API_SECRET", "CONFIGURAR"),
-                parameter("IVA_RATE", "0.13"))));
+                parameter("UPLOAD_MAX_ROWS", "5000"))));
 
         List<ParameterDTOResponse> result = service.readAllParameters(pageable).getContent();
 
         assertThat(result).extracting(ParameterDTOResponse::value)
-                .containsExactly(ParameterDTOResponse.MASK, ParameterDTOResponse.MASK, "CONFIGURAR", "0.13");
+                .containsExactly(ParameterDTOResponse.MASK, ParameterDTOResponse.MASK, "CONFIGURAR", "5000");
         assertThat(result).extracting(ParameterDTOResponse::sensitive)
                 .containsExactly(true, true, true, false);
+    }
+
+    @Test
+    void bankOperatorOnlyReadsBusinessParameters() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(parameterRepository.findByKeyIn(SystemParameterKey.businessKeys(), pageable))
+                .thenReturn(new PageImpl<>(List.of(parameter("IVA_RATE", "0.13"))));
+
+        List<ParameterDTOResponse> result = service.readAllParameters(pageable).getContent();
+
+        assertThat(result).extracting(ParameterDTOResponse::key).containsExactly("IVA_RATE");
+        verify(parameterRepository, never()).findByKeyNotIn(any(), any());
+    }
+
+    @Test
+    void businessAndTechnicalParametersDoNotOverlap() {
+        assertThat(SystemParameterKey.businessKeys()).containsExactlyInAnyOrder("IVA_RATE",
+                "DEFAULT_CREDIT_THRESHOLD", "DISBURSEMENT_CUTOFF_TIME", "DUE_DATE_GRACE_DAYS", "MAX_INVOICE_AGE_DAYS");
+        assertThat(SystemParameterKey.isBusiness("UPLOAD_MAX_ROWS")).isFalse();
+        assertThat(SystemParameterKey.isBusiness("BEARER_TOKEN")).isFalse();
+    }
+
+    @Test
+    void bankOperatorUpdatesABusinessParameter() {
+        UUID id = UUID.randomUUID();
+        SystemParameterModel parameter = parameter("DISBURSEMENT_CUTOFF_TIME", "15:00");
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(parameterRepository.findById(id)).thenReturn(Optional.of(parameter));
+        when(parameterRepository.saveAndFlush(parameter)).thenReturn(parameter);
+
+        ListAppender<ILoggingEvent> logs = attachLogs();
+        service.updateParameter(id, new ParameterDTORequest("DISBURSEMENT_CUTOFF_TIME", "14:30"));
+
+        assertThat(parameter.getValue()).isEqualTo("14:30");
+        assertThat(logs.list).anyMatch(event -> event.getFormattedMessage().contains("from 15:00 to 14:30"));
+    }
+
+    @Test
+    void bankOperatorCannotUpdateATechnicalParameter() {
+        UUID id = UUID.randomUUID();
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(parameterRepository.findById(id)).thenReturn(Optional.of(parameter("UPLOAD_MAX_ROWS", "5000")));
+
+        assertThatThrownBy(() -> service.updateParameter(id, new ParameterDTORequest("UPLOAD_MAX_ROWS", "100")))
+                .isInstanceOf(UnauthorizedAccessException.class);
+        verify(parameterRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void systemAdminCannotUpdateABusinessParameter() {
+        UUID id = UUID.randomUUID();
+        when(parameterRepository.findById(id)).thenReturn(Optional.of(parameter("IVA_RATE", "0.13")));
+
+        assertThatThrownBy(() -> service.updateParameter(id, new ParameterDTORequest("IVA_RATE", "0.15")))
+                .isInstanceOf(UnauthorizedAccessException.class)
+                .hasMessageContaining("operador bancario");
+        verify(parameterRepository, never()).saveAndFlush(any());
     }
 
     @Test

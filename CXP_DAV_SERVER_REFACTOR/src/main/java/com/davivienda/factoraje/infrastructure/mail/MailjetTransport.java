@@ -48,7 +48,7 @@ public class MailjetTransport implements MailTransport {
 
     /**
      * El cliente arma {@code baseUrl/version/send}. La URL guardada es el endpoint completo,
-     * por ejemplo {@code https://api.mailjet.com/v3/send}.
+     * por ejemplo {@code https://api.mailjet.com/v3.1/send}.
      */
     static ClientOptions clientOptions(String apiUrl) {
         URI uri;
@@ -64,7 +64,7 @@ public class MailjetTransport implements MailTransport {
         String prefix = path.substring(0, path.length() - "/send".length());
         int slash = prefix.lastIndexOf('/');
         if (slash < 0 || slash == prefix.length() - 1) {
-            throw new EmailDeliveryException("MAILJET_API_URL debe incluir la versión, por ejemplo /v3/send.");
+            throw new EmailDeliveryException("MAILJET_API_URL debe incluir la versión, por ejemplo /v3.1/send.");
         }
         String version = prefix.substring(slash + 1);
         String basePath = prefix.substring(0, slash);

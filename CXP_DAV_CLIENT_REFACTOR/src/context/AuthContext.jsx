@@ -7,7 +7,8 @@ import api, {
   markSessionActive,
   markSessionEnded,
 } from "../services/api";
-import { API_BASE_URL, API_URL, PORTAL_URL } from "../constants/apiConstants";
+import { API_BASE_URL, API_URL } from "../constants/apiConstants";
+import { goToPortal, portalUrl } from "../services/portal";
 
 // El JWT está en una cookie HttpOnly que JavaScript no puede leer. Aquí se guarda solo
 // su vigencia ({ issuedAt, expiresAt } en milisegundos), compartida entre pestañas.
@@ -98,6 +99,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     localStorage.removeItem(LEGACY_SESSION_KEY);
     localStorage.removeItem(LEGACY_TOKEN_KEY);
+    // Se pide desde el inicio: al cerrar la sesión la URL ya está lista.
+    portalUrl();
     fetchUserProfile();
   }, [fetchUserProfile]);
 
@@ -120,7 +123,7 @@ export const AuthProvider = ({ children }) => {
       allowOutsideClick: false,
       allowEscapeKey: false,
     });
-    window.location.href = PORTAL_URL;
+    await goToPortal();
   }, []);
 
   useEffect(() => {
@@ -245,7 +248,7 @@ export const AuthProvider = ({ children }) => {
     markSessionEnded();
     clearStoredSession();
     await revokeSession();
-    window.location.replace(PORTAL_URL);
+    await goToPortal({ replace: true });
   }, []);
 
   const userData = useMemo(

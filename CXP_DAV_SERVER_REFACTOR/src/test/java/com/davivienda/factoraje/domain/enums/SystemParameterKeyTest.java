@@ -25,7 +25,7 @@ class SystemParameterKeyTest {
         assertThat(SystemParameterKey.MAILJET_FROM_NAME.normalize("  Banco Davivienda  "))
                 .isEqualTo("Banco Davivienda");
         assertThat(SystemParameterKey.MAILJET_API_URL.defaultValue())
-                .isEqualTo("https://api.mailjet.com/v3/send");
+                .isEqualTo("https://api.mailjet.com/v3.1/send");
         assertThat(SystemParameterKey.MAILJET_API_URL.normalize("https://API.Mailjet.com/v3.1/send"))
                 .isEqualTo("https://api.mailjet.com/v3.1/send");
     }
@@ -53,6 +53,19 @@ class SystemParameterKeyTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> SystemParameterKey.JWT_SECRET.normalize(
                 Base64.getEncoder().encodeToString(new byte[16])))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void cspParametersAcceptOnlyKnownModesAndPlainOrigins() {
+        assertThat(SystemParameterKey.CSP_MODE.normalize(" enforce ")).isEqualTo("ENFORCE");
+        assertThatThrownBy(() -> SystemParameterKey.CSP_MODE.normalize("BLOQUEAR"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        assertThat(SystemParameterKey.CSP_CONNECT_SRC.normalize("CONFIGURAR")).isEqualTo("CONFIGURAR");
+        assertThat(SystemParameterKey.CSP_CONNECT_SRC.normalize("https://API.davivienda.com.sv:8443/"))
+                .isEqualTo("https://api.davivienda.com.sv:8443");
+        assertThatThrownBy(() -> SystemParameterKey.CSP_CONNECT_SRC.normalize("https://api.davivienda.com.sv; script-src *"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

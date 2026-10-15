@@ -33,7 +33,8 @@ public class SsoController {
 
         private static final String APP_HOME = "/financiamientocuentasporpagar/";
 
-        private static final String SESSION_COOKIE = "fincxp_token";
+        private static final String DEFAULT_COOKIE_NAME = "fincxp_token";
+        private static final Pattern COOKIE_NAME_FORMAT = Pattern.compile("[A-Za-z0-9_-]{1,64}");
         private static final String DEFAULT_COOKIE_DOMAIN = "davivienda.com.sv";
         private static final int DEFAULT_SESSION_MINUTES = 1440;
         private static final Set<String> LOCAL_HOSTS = Set.of("localhost", "127.0.0.1");
@@ -159,7 +160,7 @@ public class SsoController {
                         String value, Duration maxAge) {
                 String host = request.getServerName().toLowerCase(Locale.ROOT);
                 boolean local = LOCAL_HOSTS.contains(host);
-                ResponseCookie.ResponseCookieBuilder cookie = ResponseCookie.from(SESSION_COOKIE, value)
+                ResponseCookie.ResponseCookieBuilder cookie = ResponseCookie.from(cookieName(), value)
                                 .path("/")
                                 .httpOnly(true)
                                 .secure(!local)
@@ -171,6 +172,14 @@ public class SsoController {
                         cookie.domain(domain);
                 }
                 httpResponse.addHeader(HttpHeaders.SET_COOKIE, cookie.build().toString());
+        }
+
+        private String cookieName() {
+                return parameterRepository.findByKey("SESSION_COOKIE_NAME")
+                                .map(SystemParameterModel::getValue)
+                                .map(String::trim)
+                                .filter(value -> COOKIE_NAME_FORMAT.matcher(value).matches())
+                                .orElse(DEFAULT_COOKIE_NAME);
         }
 
         private String cookieDomain() {
