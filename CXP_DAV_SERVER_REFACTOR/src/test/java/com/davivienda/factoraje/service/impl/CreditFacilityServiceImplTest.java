@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -140,15 +141,60 @@ class CreditFacilityServiceImplTest {
     }
 
     @Test
-    void fullLiquidationUsesTheRequestedAmountWithoutBatch() {
+    void fullLiquidationUsesExactConsumptionAndMarksRestorableBatches() {
+        DisbursementBatchModel batchA = batch(payer, DisbursementBatchStatusEnum.SETTLED, "DSB-A");
+        DisbursementBatchModel batchB = batch(payer, DisbursementBatchStatusEnum.SETTLED, "DSB-B");
+        when(disbursementBatchRepository.findRestorableEntitiesByPayerForUpdate(payer.getId()))
+                .thenReturn(List.of(batchA, batchB));
+        when(disbursementBatchRepository.sumNominalAmount(batchA.getId())).thenReturn(new BigDecimal("10000"));
+        when(disbursementBatchRepository.sumNominalAmount(batchB.getId())).thenReturn(new BigDecimal("15000"));
+
+        // El monto del request se ignora: siempre se liquida el consumo actual (50000).
         service.restoreCreditFacility(new RestoreCreditFacilityDTORequest(
-                facility.getId(), new BigDecimal("50000"), "REF-1", RepaymentTypeEnum.FULL, null), DUI);
+                facility.getId(), new BigDecimal("1"), "REF-FULL", RepaymentTypeEnum.FULL, null), DUI);
 
         assertThat(facility.getAmountInUse()).isEqualByComparingTo("0");
-        ArgumentCaptor<CreditFacilityHistoryModel> captor = ArgumentCaptor.forClass(CreditFacilityHistoryModel.class);
-        verify(creditFacilityHistoryRepository).save(captor.capture());
-        assertThat(captor.getValue().getDisbursementBatch()).isNull();
-        verify(disbursementBatchRepository, never()).findByIdForUpdate(any());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<CreditFacilityHistoryModel>> captor = ArgumentCaptor.forClass(List.class);
+        verify(creditFacilityHistoryRepository).saveAll(captor.capture());
+        List<CreditFacilityHistoryModel> entries = captor.getValue();
+        assertThat(entries).hasSize(3);
+        assertThat(entries.get(0).getDisbursementBatch()).isSameAs(batchA);
+        assertThat(entries.get(0).getAmount()).isEqualByComparingTo("10000");
+        assertThat(entries.get(1).getDisbursementBatch()).isSameAs(batchB);
+        assertThat(entries.get(1).getAmount()).isEqualByComparingTo("15000");
+        assertThat(entries.get(2).getDisbursementBatch()).isNull();
+        assertThat(entries.get(2).getAmount()).isEqualByComparingTo("25000");
+        assertThat(entries).allMatch(e -> e.getRepaymentType() == RepaymentTypeEnum.FULL);
+        assertThat(entries.stream().map(CreditFacilityHistoryModel::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)).isEqualByComparingTo("50000");
+    }
+
+    @Test
+    void fullLiquidationWithoutBatchesStillZerosConsumption() {
+        when(disbursementBatchRepository.findRestorableEntitiesByPayerForUpdate(payer.getId()))
+                .thenReturn(List.of());
+
+        service.restoreCreditFacility(new RestoreCreditFacilityDTORequest(
+                facility.getId(), null, "REF-FULL", RepaymentTypeEnum.FULL, null), DUI);
+
+        assertThat(facility.getAmountInUse()).isEqualByComparingTo("0");
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<CreditFacilityHistoryModel>> captor = ArgumentCaptor.forClass(List.class);
+        verify(creditFacilityHistoryRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getAmount()).isEqualByComparingTo("50000");
+        assertThat(captor.getValue().get(0).getDisbursementBatch()).isNull();
+    }
+
+    @Test
+    void fullLiquidationRequiresCurrentConsumption() {
+        facility.setAmountInUse(BigDecimal.ZERO);
+
+        assertThatThrownBy(() -> service.restoreCreditFacility(new RestoreCreditFacilityDTORequest(
+                facility.getId(), new BigDecimal("1"), "REF-FULL", RepaymentTypeEnum.FULL, null), DUI))
+                .hasMessageContaining("No hay consumo que liquidar");
+        verify(creditFacilityRepository, never()).save(any());
     }
 
     private RestoreCreditFacilityDTORequest partial(UUID batchId, BigDecimal amount) {
@@ -156,9 +202,13 @@ class CreditFacilityServiceImplTest {
     }
 
     private static DisbursementBatchModel batch(EntityModel owner, DisbursementBatchStatusEnum status) {
+        return batch(owner, status, "DSB-20261013-ABC123");
+    }
+
+    private static DisbursementBatchModel batch(EntityModel owner, DisbursementBatchStatusEnum status, String number) {
         return DisbursementBatchModel.builder()
                 .id(UUID.randomUUID())
-                .batchNumber("DSB-20261013-ABC123")
+                .batchNumber(number)
                 .payer(owner)
                 .status(status)
                 .build();

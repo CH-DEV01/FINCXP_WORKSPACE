@@ -9,6 +9,8 @@ import api, {
 } from "../services/api";
 import { API_BASE_URL, API_URL } from "../constants/apiConstants";
 import { goToPortal, portalUrl } from "../services/portal";
+import { applyServerTime, nowMs } from "../utils/sessionClock";
+import { shouldClearSessionOnProfileError } from "../utils/sessionProfileError";
 
 // El JWT está en una cookie HttpOnly que JavaScript no puede leer. Aquí se guarda solo
 // su vigencia ({ issuedAt, expiresAt } en milisegundos), compartida entre pestañas.
@@ -42,7 +44,12 @@ const readSession = () => {
 };
 
 const writeSession = (session) => {
-  if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  if (!session) return;
+  applyServerTime(session.serverTime);
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({ issuedAt: session.issuedAt, expiresAt: session.expiresAt }),
+  );
 };
 
 /** Momento en que conviene renovar el token, antes de que venza. */
@@ -86,10 +93,14 @@ export const AuthProvider = ({ children }) => {
       markSessionActive();
       setUser(profile);
     } catch (error) {
-      // Sin cookie o con una vencida la API responde 401: no hay sesión.
-      if (error?.response?.status !== 401) console.error("Error validando sesión:", error);
+      // Solo un 401 confirma que no hay sesión. Timeout, 5xx o red no deben borrar
+      // session_window: las demás pestañas lo interpretarían como cierre (SES-06).
       setUser(null);
-      clearStoredSession();
+      if (shouldClearSessionOnProfileError(error)) {
+        clearStoredSession();
+      } else {
+        console.error("Error validando sesión:", error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -143,7 +154,8 @@ export const AuthProvider = ({ children }) => {
 
     const schedule = (at, action) => {
       clearTimeout(timer);
-      timer = setTimeout(action, Math.max(0, at - Date.now()));
+      // at e issuedAt/expiresAt están en hora de servidor; nowMs() corrige el reloj local.
+      timer = setTimeout(action, Math.max(0, at - nowMs()));
     };
 
     const check = async () => {
@@ -151,7 +163,7 @@ export const AuthProvider = ({ children }) => {
       const session = readSession();
       if (!session) return;
 
-      const now = Date.now();
+      const now = nowMs();
       if (session.expiresAt <= now) {
         endSession("expired");
         return;
@@ -191,7 +203,7 @@ export const AuthProvider = ({ children }) => {
     let lastWrite = 0;
 
     const recordActivity = () => {
-      const now = Date.now();
+      const now = nowMs();
       if (now - lastWrite >= ACTIVITY_WRITE_INTERVAL_MS) {
         lastWrite = now;
         localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
@@ -203,7 +215,7 @@ export const AuthProvider = ({ children }) => {
 
     const interval = setInterval(() => {
       const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY));
-      if (lastActivity && Date.now() - lastActivity >= idleMs) {
+      if (lastActivity && nowMs() - lastActivity >= idleMs) {
         endSession("idle");
       }
     }, IDLE_CHECK_INTERVAL_MS);

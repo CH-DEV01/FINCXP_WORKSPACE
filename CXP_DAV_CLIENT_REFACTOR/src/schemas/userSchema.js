@@ -11,6 +11,7 @@ export const userSchema = z.object({
     .string()
     .trim()
     .min(1, { message: "El nombre es obligatorio" })
+    .max(255, { message: "Máximo 255 caracteres" })
     .refine((value) => nameWords(value).length >= 2, {
       message: "Ingrese al menos un nombre y un apellido",
     })
@@ -30,8 +31,9 @@ export const userSchema = z.object({
 
   email: z
     .string()
-    .min(1, { message: "El correo electrónico es obligatorio" }) // <-- Revisa primero si está vacío
-    .email({ message: "Debe ser un formato de correo válido" }), // <-- Luego revisa el formato
+    .min(1, { message: "El correo electrónico es obligatorio" })
+    .max(255, { message: "Máximo 255 caracteres" })
+    .email({ message: "Debe ser un formato de correo válido" }),
 
   dui: z
     .string()

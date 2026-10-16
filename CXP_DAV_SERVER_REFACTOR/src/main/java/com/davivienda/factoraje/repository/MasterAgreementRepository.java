@@ -13,15 +13,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.davivienda.factoraje.domain.entities.MasterAgreementModel;
-import com.davivienda.factoraje.domain.enums.AgreementTypeEnum;
 
 @Repository
 public interface MasterAgreementRepository extends JpaRepository<MasterAgreementModel, UUID> {
-
-    boolean existsByPayerIdAndSupplierIdAndAgreementType(
-            UUID payerId,
-            UUID supplierId,
-            AgreementTypeEnum agreementType);
 
     @Override
     @EntityGraph(attributePaths = {"payer", "supplier", "paymentPolicy", "disbursementPolicy"})
@@ -50,6 +44,7 @@ public interface MasterAgreementRepository extends JpaRepository<MasterAgreement
     @EntityGraph(attributePaths = {"payer", "supplier", "paymentPolicy", "disbursementPolicy"})
     List<MasterAgreementModel> findBySupplierId(UUID supplierId);
 
+    @EntityGraph(attributePaths = {"paymentPolicy", "disbursementPolicy"})
     Optional<MasterAgreementModel> findByPayerIdAndSupplierId(UUID payerId, UUID supplierId);
 
     @Query("SELECT COUNT(ma) > 0 FROM MasterAgreementModel ma " +

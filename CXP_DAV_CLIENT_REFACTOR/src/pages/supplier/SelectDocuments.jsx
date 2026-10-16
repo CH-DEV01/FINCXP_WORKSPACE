@@ -72,10 +72,16 @@ const SelectDocuments = () => {
       throw new Error("No se encontró la versión activa de términos y condiciones.");
     }
 
+    if (!calculation.disbursementDate) {
+      throw new Error("No hay una simulación vigente. Vuelva a la selección de documentos e intente de nuevo.");
+    }
+
     return fundingRequestService.submitFunding({
       masterAgreementId,
       documentIds: selectedIds,
       termVersionId,
+      expectedDisbursementDate: calculation.disbursementDate,
+      expectedAmountToBeDisbursed: calculation.amountToBeDisbursed,
     });
   };
 
@@ -90,9 +96,21 @@ const SelectDocuments = () => {
 
       showSuccess("La solicitud de desembolso se ha efectuado correctamente", "Éxito");
     } catch (error) {
-      await showError(apiErrorMessage(error, "Ocurrió un error al procesar la solicitud"));
+      const status = error?.response?.status;
 
-      if (error?.response?.status === 422) {
+      // 409: las condiciones cambiaron desde la simulación (hora de corte, tarifario) o un
+      // documento ya no está disponible. Se recalcula con la misma selección y el proveedor
+      // vuelve a ver el detalle actualizado antes de confirmar otra vez.
+      if (status === 409) {
+        await calculateNow();
+      }
+
+      await showError(
+        apiErrorMessage(error, "Ocurrió un error al procesar la solicitud"),
+        status === 409 ? "Revise el nuevo cálculo" : "Error",
+      );
+
+      if (status === 422) {
         setStep(1);
         refreshDocuments();
       }

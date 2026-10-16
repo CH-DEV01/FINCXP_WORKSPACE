@@ -1,5 +1,6 @@
 package com.davivienda.factoraje.service.impl;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import com.davivienda.factoraje.domain.enums.TermTypeUniqueCodeEnum;
 import com.davivienda.factoraje.dto.funding_request.CalculateDTOResponse;
 import com.davivienda.factoraje.dto.funding_request.DetailDTOResponse;
 import com.davivienda.factoraje.infrastructure.exception.DocumentNotAvailableException;
+import com.davivienda.factoraje.infrastructure.exception.FundingQuoteChangedException;
 import com.davivienda.factoraje.infrastructure.exception.InactiveResourceException;
 import com.davivienda.factoraje.infrastructure.exception.MissingBankAccountException;
 import com.davivienda.factoraje.infrastructure.exception.ResourceNotFoundException;
@@ -147,7 +149,7 @@ public class FundingRequestServiceImpl implements FundingRequestService {
 
         List<String> rejected = documents.stream()
                 .filter(doc -> doc.getDueDate() == null || !doc.getDueDate().isAfter(threshold))
-                .map(doc -> doc.getDocumentNumber() != null ? doc.getDocumentNumber() : doc.getControlNumber())
+                .map(DocumentModel::displayNumber)
                 .toList();
 
         if (!rejected.isEmpty()) {
@@ -168,6 +170,8 @@ public class FundingRequestServiceImpl implements FundingRequestService {
             UUID requestedById,
             List<UUID> documentIds,
             UUID termVersionId,
+            LocalDate expectedDisbursementDate,
+            BigDecimal expectedAmountToBeDisbursed,
             String userAgent) {
 
         if (documentIds == null || documentIds.isEmpty()) {
@@ -198,13 +202,14 @@ public class FundingRequestServiceImpl implements FundingRequestService {
         for (DocumentModel doc : realDocuments) {
             if (doc.getStatus() != DocumentStatusEnum.APPROVED) {
                 log.warn("Intento de fondeo duplicado. El documento {} está en estado {}.",
-                        doc.getDocumentNumber(), doc.getStatus());
+                        doc.displayNumber(), doc.getStatus());
 
                 throw new DocumentNotAvailableException("El documento ya fue solicitado o no está disponible para financiamiento.");
             }
         }
 
         CalculationResult result = performFinancialCalculation(masterAgreementId, realDocuments);
+        requireQuoteUnchanged(result, expectedDisbursementDate, expectedAmountToBeDisbursed);
 
         FinancingRequestModel requestModel = new FinancingRequestModel();
         requestModel.setRequestNumber("REQ-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -267,6 +272,38 @@ public class FundingRequestServiceImpl implements FundingRequestService {
         return toResponse(result);
     }
 
+    /**
+     * La solicitud debe registrar exactamente lo que el proveedor vio y aceptó. Si entre la
+     * simulación y el envío cambió la fecha de desembolso (hora de corte, feriado recién
+     * cargado) o el total (tarifario actualizado), se rechaza para que vuelva a revisar.
+     */
+    private static void requireQuoteUnchanged(CalculationResult result,
+            LocalDate expectedDisbursementDate, BigDecimal expectedAmountToBeDisbursed) {
+
+        boolean dateChanged = !result.disbursementDate().equals(expectedDisbursementDate);
+        boolean amountChanged = Money.roundOrZero(result.totalAmountToDisburse())
+                .compareTo(Money.roundOrZero(expectedAmountToBeDisbursed)) != 0;
+
+        if (!dateChanged && !amountChanged) {
+            return;
+        }
+
+        List<String> changes = new ArrayList<>(2);
+        if (dateChanged) {
+            changes.add("la fecha de desembolso pasó del " + DATE_FMT.format(expectedDisbursementDate)
+                    + " al " + DATE_FMT.format(result.disbursementDate()));
+        }
+        if (amountChanged) {
+            changes.add("el monto a desembolsar pasó de " + Money.format(expectedAmountToBeDisbursed)
+                    + " a " + Money.format(result.totalAmountToDisburse()));
+        }
+        log.warn("[SOLICITUD] Condiciones distintas a la simulación aceptada: {}", String.join("; ", changes));
+
+        throw new FundingQuoteChangedException(
+                "Las condiciones cambiaron desde la simulación: " + String.join(" y ", changes)
+                        + ". Revise el nuevo cálculo y confirme de nuevo la solicitud.");
+    }
+
     private static void requireDistinct(List<UUID> documentIds) {
         if (new HashSet<>(documentIds).size() != documentIds.size()) {
             throw new IllegalArgumentException("La lista contiene documentos repetidos.");
@@ -300,7 +337,7 @@ public class FundingRequestServiceImpl implements FundingRequestService {
 
         for (DocumentMathResult docMath : result.details()) {
             DetailDTOResponse detail = new DetailDTOResponse();
-            detail.setDocumentNumber(docMath.document().getDocumentNumber());
+            detail.setDocumentNumber(docMath.document().displayNumber());
             detail.setIssueDate(docMath.issueDate());
             detail.setDueDate(docMath.dueDate());
             detail.setFinancingDays(docMath.diffDays());

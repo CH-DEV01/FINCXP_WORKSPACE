@@ -47,7 +47,7 @@ public class CreditFacilityModel {
     private UUID id;
 
     @NotBlank(message = "El número de la facilidad de crédito es obligatorio")
-    @Column(name = "credit_facility_number", nullable = false, length = 255)
+    @Column(name = "credit_facility_number", nullable = false, length = 255, unique = true)
     private String creditFacilityNumber;
 
     @NotNull(message = "El límite de la facilidad de crédito es obligatorio")

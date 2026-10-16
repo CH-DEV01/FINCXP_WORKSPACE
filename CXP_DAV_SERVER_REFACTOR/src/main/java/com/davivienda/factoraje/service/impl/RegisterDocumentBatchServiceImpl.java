@@ -19,12 +19,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.davivienda.factoraje.domain.entities.EntityModel;
 import com.davivienda.factoraje.domain.entities.ExcelTemplateColumnModel;
 import com.davivienda.factoraje.domain.entities.UserModel;
+import com.davivienda.factoraje.domain.enums.IssuanceMethodEnum;
 import com.davivienda.factoraje.domain.enums.SystemParameterKey;
 import com.davivienda.factoraje.dto.acceptance_audit.AcceptanceAuditDTORequest;
 import com.davivienda.factoraje.dto.upload_batch.BatchProcessResult;
 import com.davivienda.factoraje.dto.upload_batch.InvoiceRecordDTO;
 import com.davivienda.factoraje.infrastructure.config.SystemParameters;
 import com.davivienda.factoraje.infrastructure.exception.CreditLimitExceededException;
+import com.davivienda.factoraje.infrastructure.exception.DataIntegrityViolations;
 import com.davivienda.factoraje.infrastructure.exception.InactiveResourceException;
 import com.davivienda.factoraje.infrastructure.exception.InvalidFileException;
 import com.davivienda.factoraje.infrastructure.exception.ResourceAlreadyExistsException;
@@ -44,6 +46,7 @@ import com.davivienda.factoraje.service.BatchPersistenceService;
 import com.davivienda.factoraje.service.DocumentValidationService;
 import com.davivienda.factoraje.service.RegisterDocumentBatchService;
 
+import static com.davivienda.factoraje.infrastructure.util.IdentifierNormalizer.normalizePaperDocumentNumber;
 import static com.davivienda.factoraje.infrastructure.util.IdentifierNormalizer.upperCase;
 import static com.davivienda.factoraje.infrastructure.util.IdentifierNormalizer.withoutSeparators;
 
@@ -110,7 +113,7 @@ public class RegisterDocumentBatchServiceImpl implements RegisterDocumentBatchSe
 
         Map<String, List<InvoiceRecordDTO>> invoicesBySupplier = parsedInvoices.stream()
                 .collect(Collectors.groupingBy(inv -> Objects.toString(inv.supplierNit(), "")));
-        errors.addAll(validate(parsedInvoices, invoicesBySupplier));
+        errors.addAll(validate(parsedInvoices, invoicesBySupplier, payer.getId()));
 
         if (!errors.isEmpty()) {
             log.warn("La validación previa falló con {} errores. Generando PDF de rechazo. No se tocó la Base de Datos.", errors.size());
@@ -169,15 +172,20 @@ public class RegisterDocumentBatchServiceImpl implements RegisterDocumentBatchSe
 
     private InvoiceRecordDTO toInvoiceRecord(ExcelRowAccessor accessor, int rowIndex,
             List<ExcelTemplateColumnModel> columns) {
+        String issuanceMethod = accessor.getString(getPhysicalColumnName(columns, "issuanceMethod"));
+        // En DIGITAL el identificador es el DTE; el número de documento se descarta (CEL-03).
+        String documentNumber = IssuanceMethodEnum.fromString(issuanceMethod) == IssuanceMethodEnum.PAPER
+                ? normalizePaperDocumentNumber(accessor.getTextOnly(getPhysicalColumnName(columns, "documentNumber")))
+                : null;
         return new InvoiceRecordDTO(
                 rowIndex,
                 accessor.getLocalDate(getPhysicalColumnName(columns, "issueDate")),
                 accessor.getBigDecimal(getPhysicalColumnName(columns, "nominalAmount")),
-                accessor.getString(getPhysicalColumnName(columns, "documentNumber")),
+                documentNumber,
                 upperCase(accessor.getString(getPhysicalColumnName(columns, "generationCode"))),
                 upperCase(accessor.getString(getPhysicalColumnName(columns, "receivedStamp"))),
                 upperCase(accessor.getString(getPhysicalColumnName(columns, "controlNumber"))),
-                accessor.getString(getPhysicalColumnName(columns, "issuanceMethod")),
+                issuanceMethod,
                 accessor.getString(getPhysicalColumnName(columns, "invoiceType")),
                 withoutSeparators(accessor.getTextOnly(getPhysicalColumnName(columns, "supplierNit"))),
                 accessor.getString(getPhysicalColumnName(columns, "supplierName")),
@@ -186,9 +194,9 @@ public class RegisterDocumentBatchServiceImpl implements RegisterDocumentBatchSe
                 accessor.getString(getPhysicalColumnName(columns, "disbursementDay")));
     }
 
-    /** Duplicados dentro del archivo y reglas de negocio por proveedor, sin tocar la base de datos. */
+    /** Duplicados dentro del archivo y reglas de negocio por proveedor. */
     private List<BatchValidationError> validate(List<InvoiceRecordDTO> parsedInvoices,
-            Map<String, List<InvoiceRecordDTO>> invoicesBySupplier) {
+            Map<String, List<InvoiceRecordDTO>> invoicesBySupplier, UUID payerId) {
 
         List<BatchValidationError> errors = new ArrayList<>();
         if (parsedInvoices.isEmpty()) {
@@ -196,8 +204,9 @@ public class RegisterDocumentBatchServiceImpl implements RegisterDocumentBatchSe
         }
 
         errors.addAll(validationService.validateDteDuplicatesInFile(parsedInvoices));
+        errors.addAll(validationService.validateNewSupplierNamesInFile(parsedInvoices));
         for (List<InvoiceRecordDTO> supplierInvoices : invoicesBySupplier.values()) {
-            errors.addAll(validationService.validateBatch(supplierInvoices, null));
+            errors.addAll(validationService.validateBatch(supplierInvoices, payerId));
         }
         return errors;
     }
@@ -236,8 +245,20 @@ public class RegisterDocumentBatchServiceImpl implements RegisterDocumentBatchSe
             log.warn("Carga {} rechazada: {}", originalFilename, e.getMessage());
             return generalRejection(payer, context, BatchErrorType.RESOURCE_UNAVAILABLE, e.getMessage());
 
-        } catch (DataIntegrityViolationException | PessimisticLockingFailureException
-                | ResourceAlreadyExistsException e) {
+        } catch (DataIntegrityViolationException e) {
+            if (DataIntegrityViolations.isValueOutOfRange(e)) {
+                log.warn("Carga {} rechazada por valor fuera de rango: {}", originalFilename, e.getMessage());
+                return generalRejection(payer, context, BatchErrorType.VALUE_NOT_ALLOWED,
+                        DataIntegrityViolations.VALUE_OUT_OF_RANGE_MESSAGE);
+            }
+            log.warn("Carga {} rechazada por conflicto con una operación simultánea: {}",
+                    originalFilename, e.getMessage());
+            return generalRejection(payer, context, BatchErrorType.CONCURRENT_UPLOAD,
+                    "Otra carga registró al mismo tiempo uno o más documentos de este archivo, "
+                            + "o datos de sus proveedores. "
+                            + "Vuelva a cargar el archivo para ver el detalle de los registros duplicados.");
+
+        } catch (PessimisticLockingFailureException | ResourceAlreadyExistsException e) {
             log.warn("Carga {} rechazada por conflicto con una operación simultánea: {}",
                     originalFilename, e.getMessage());
             return generalRejection(payer, context, BatchErrorType.CONCURRENT_UPLOAD,

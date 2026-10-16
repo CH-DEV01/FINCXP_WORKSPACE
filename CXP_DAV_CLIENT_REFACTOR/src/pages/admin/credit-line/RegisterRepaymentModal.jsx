@@ -48,7 +48,11 @@ const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, curr
 
   const isPartial = repaymentType === "PARTIAL";
   const selectedBatch = batches.find((batch) => batch.id === selectedBatchId);
-  const repaymentAmount = isPartial ? selectedBatch?.nominalAmount ?? "" : Number(currentConsumed).toFixed(2);
+  // El servidor ignora amount: PARTIAL usa el nominal del lote; FULL, el consumo exacto
+  // (scale 4). No redondear a 2 decimales ni comparar contra el cupo (VAL-03/VAL-04).
+  const displayAmount = isPartial
+    ? (selectedBatch?.nominalAmount != null ? String(selectedBatch.nominalAmount) : "")
+    : String(currentConsumed ?? "");
   const canSubmit = !isProcessing && (!isPartial || Boolean(selectedBatch));
 
   const handleSubmit = (e) => {
@@ -59,26 +63,25 @@ const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, curr
       return;
     }
 
-    const amount = Number(repaymentAmount);
-
-    if (isNaN(amount) || amount <= 0) {
+    if (!isPartial && !(Number(currentConsumed) > 0)) {
       Swal.fire("Atención", "No hay consumo que restaurar.", "warning");
       return;
     }
 
-    if (amount > currentConsumed) {
-      Swal.fire("Monto excedido", "El abono no puede ser mayor al consumo actual del cupo.", "warning");
+    const reference = referenceNumber.trim();
+    if (!reference) {
+      Swal.fire("Atención", "Debe especificar el número de comprobante o referencia de pago.", "warning");
       return;
     }
-
-    if (!referenceNumber.trim()) {
-      Swal.fire("Atención", "Debe especificar el número de comprobante o referencia de pago.", "warning");
+    if (reference.length > 255) {
+      Swal.fire("Atención", "La referencia no puede superar 255 caracteres.", "warning");
       return;
     }
 
     onConfirm({
-      amount,
-      reference: referenceNumber,
+      // FULL: sin monto; el API liquida el consumo actual. PARTIAL: opcional (el API usa el lote).
+      amount: isPartial ? displayAmount : undefined,
+      reference,
       type: repaymentType,
       disbursementBatchId: isPartial ? selectedBatch.id : undefined,
       batchNumber: isPartial ? selectedBatch.batchNumber : undefined,
@@ -214,13 +217,17 @@ const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, curr
                 type="text"
                 readOnly
                 placeholder={isPartial ? "Seleccione un lote" : "0.00"}
-                value={repaymentAmount === "" ? "" : formatMoney(repaymentAmount)}
+                value={displayAmount === "" ? "" : formatMoney(displayAmount)}
                 className="w-full border rounded-xl text-sm py-3 pr-4 pl-8 font-mono outline-none bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed font-bold"
               />
             </div>
-            {isPartial && (
+            {isPartial ? (
               <p className="text-[11px] text-slate-400 mt-1">
                 Se restaura el valor nominal de los documentos del lote, que es lo que consumieron del cupo.
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Liquida todo el consumo actual y marca como abonados los lotes desembolsados pendientes.
               </p>
             )}
           </div>
@@ -232,6 +239,7 @@ const RegisterRepaymentModal = ({ isOpen, onClose, onConfirm, isProcessing, curr
             <input
               type="text"
               required
+              maxLength={255}
               placeholder="Ej: DEP-9827364-DAV"
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}

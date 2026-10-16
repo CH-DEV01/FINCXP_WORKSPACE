@@ -5,8 +5,10 @@ import java.util.regex.Pattern;
 
 /**
  * Formato único con el que se guardan y buscan los identificadores: NIT, DUI y
- * cuentas sin guiones ni espacios; correo en minúsculas; campos del DTE en mayúsculas.
- * Solo se quitan separadores: si queda algo que no sea dígito, la validación lo rechaza.
+ * cuentas sin guiones ni espacios; correo solo con trim (se conserva mayúsculas y guiones);
+ * campos del DTE en mayúsculas; número de factura en papel en mayúsculas sin espacios ni
+ * guiones. Solo se quitan separadores en NIT/DUI/cuentas: si queda algo que no sea dígito,
+ * la validación lo rechaza.
  */
 public final class IdentifierNormalizer {
 
@@ -19,16 +21,30 @@ public final class IdentifierNormalizer {
         return normalized.isEmpty() ? null : normalized;
     }
 
-    public static String lowerCase(String value) {
+    /**
+     * Número de documento PAPER: mayúsculas y sin espacios ni guiones, para que
+     * "F-001", "f-001" y "F 001" se traten como la misma factura.
+     */
+    public static String normalizePaperDocumentNumber(String value) {
+        String normalized = withoutSeparators(value);
+        return normalized == null ? null : normalized.toUpperCase(Locale.ROOT);
+    }
+
+    /** Quita espacios al inicio y al final; no cambia mayúsculas ni el resto del texto. */
+    public static String trimmed(String value) {
         if (value == null) return null;
-        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        String normalized = value.trim();
         return normalized.isEmpty() ? null : normalized;
     }
 
+    public static String lowerCase(String value) {
+        String normalized = trimmed(value);
+        return normalized == null ? null : normalized.toLowerCase(Locale.ROOT);
+    }
+
     public static String upperCase(String value) {
-        if (value == null) return null;
-        String normalized = value.trim().toUpperCase(Locale.ROOT);
-        return normalized.isEmpty() ? null : normalized;
+        String normalized = trimmed(value);
+        return normalized == null ? null : normalized.toUpperCase(Locale.ROOT);
     }
 
     // Normalizan y validan en un paso para los formularios; lanzan IllegalArgumentException (HTTP 422).
@@ -54,7 +70,7 @@ public final class IdentifierNormalizer {
     }
 
     public static String requireEmail(String value) {
-        return requireMatch(lowerCase(value), EMAIL_PATTERN, "El correo electrónico es obligatorio.",
+        return requireMatch(trimmed(value), EMAIL_PATTERN, "El correo electrónico es obligatorio.",
                 "El correo electrónico no tiene un formato válido.");
     }
 

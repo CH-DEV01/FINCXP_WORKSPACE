@@ -26,6 +26,7 @@ import com.davivienda.factoraje.dto.term_version.TermVersionDTOResponse;
 import com.davivienda.factoraje.infrastructure.exception.ResourceAlreadyExistsException;
 import com.davivienda.factoraje.infrastructure.exception.ResourceNotFoundException;
 import com.davivienda.factoraje.infrastructure.exception.TermVersionConflictException;
+import com.davivienda.factoraje.infrastructure.util.VersionNumbers;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.repository.AcceptanceAuditRepository;
 import com.davivienda.factoraje.repository.TermTypeCatRepository;
@@ -123,7 +124,7 @@ public class TermVersionServiceImpl implements TermVersionService {
     @Transactional
     public TermVersionAdminDTOResponse createDraft(TermVersionDTORequest request) {
         TermTypeCat termType = findTermType(request.termTypeCode());
-        String versionNumber = request.versionNumber().trim();
+        String versionNumber = VersionNumbers.normalize(request.versionNumber());
 
         if (termVersionRepository.existsByTermType_IdAndVersionNumberIgnoreCase(termType.getId(), versionNumber)) {
             throw new ResourceAlreadyExistsException(
@@ -145,7 +146,7 @@ public class TermVersionServiceImpl implements TermVersionService {
     @Transactional
     public TermVersionAdminDTOResponse updateDraft(UUID id, TermVersionDTORequest request) {
         TermVersionCat draft = findDraft(id, "editar");
-        String versionNumber = request.versionNumber().trim();
+        String versionNumber = VersionNumbers.normalize(request.versionNumber());
 
         if (termVersionRepository.existsByTermType_IdAndVersionNumberIgnoreCaseAndIdNot(
                 draft.getTermType().getId(), versionNumber, id)) {
@@ -209,7 +210,7 @@ public class TermVersionServiceImpl implements TermVersionService {
     }
 
     private void applyRequest(TermVersionCat version, TermVersionDTORequest request) {
-        version.setVersionNumber(request.versionNumber().trim());
+        version.setVersionNumber(VersionNumbers.normalize(request.versionNumber()));
         version.setTitle(request.title().trim());
         version.setContent(normalizeLineEndings(request.content()).strip());
         version.setAcceptanceText(request.acceptanceText().trim());

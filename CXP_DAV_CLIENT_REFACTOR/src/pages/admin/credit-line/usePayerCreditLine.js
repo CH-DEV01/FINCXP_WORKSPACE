@@ -5,10 +5,9 @@ import { EMPTY_CREDIT_LINE, toCreditLine } from "./creditLineConfig";
 
 const HISTORY_PAGE_SIZE = 10;
 
-/** Pagadores, cupo del pagador activo y su historial paginado de movimientos. */
+/** Pagador activo (vía búsqueda en servidor), su cupo y el historial paginado de movimientos. */
 const usePayerCreditLine = () => {
-  const [payersList, setPayersList] = useState([]);
-  const [activePayer, setActivePayer] = useState("");
+  const [selectedPayer, setSelectedPayer] = useState(null);
   const [isLoadingPayers, setIsLoadingPayers] = useState(true);
 
   const [creditLineData, setCreditLineData] = useState(null);
@@ -18,35 +17,37 @@ const usePayerCreditLine = () => {
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
   const [historyReloadKey, setHistoryReloadKey] = useState(0);
 
+  const activePayerId = selectedPayer?.id ?? "";
+
   useEffect(() => {
-    const fetchPayers = async () => {
-      try {
-        const page = await entityService.getPayers();
-        const serverPayers = page?.content ?? [];
-
-        setPayersList(serverPayers);
-
-        if (serverPayers.length > 0) {
-          setActivePayer(serverPayers[0].id);
-        }
-      } catch (error) {
+    let cancelled = false;
+    entityService
+      .getPayerSummaries({ page: 0, size: 1 })
+      .then((page) => {
+        if (cancelled) return;
+        const first = page?.content?.[0] ?? null;
+        setSelectedPayer(first);
+      })
+      .catch((error) => {
+        if (cancelled) return;
         console.error("Error al cargar la lista de pagadores:", error);
-        setPayersList([]);
-      } finally {
-        setIsLoadingPayers(false);
-      }
+        setSelectedPayer(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPayers(false);
+      });
+    return () => {
+      cancelled = true;
     };
-
-    fetchPayers();
   }, []);
 
   useEffect(() => {
-    if (!activePayer) return undefined;
+    if (!activePayerId) return undefined;
 
     let cancelled = false;
 
     creditFacilityService
-      .getPayerCreditLineDetails(activePayer)
+      .getPayerCreditLineDetails(activePayerId)
       .then((facility) => {
         if (!cancelled && facility) setCreditLineData(toCreditLine(facility));
       })
@@ -59,10 +60,10 @@ const usePayerCreditLine = () => {
     return () => {
       cancelled = true;
     };
-  }, [activePayer, creditLineVersion]);
+  }, [activePayerId, creditLineVersion]);
 
-  const selectPayer = useCallback((payerId) => {
-    setActivePayer(payerId);
+  const selectPayer = useCallback((payer) => {
+    setSelectedPayer(payer);
     setCreditLineData(null);
     setHistoryPage(0);
   }, []);
@@ -105,8 +106,8 @@ const usePayerCreditLine = () => {
   }, []);
 
   return {
-    payersList,
-    activePayer,
+    selectedPayer,
+    activePayerId,
     isLoadingPayers,
     selectPayer,
     creditLineData,

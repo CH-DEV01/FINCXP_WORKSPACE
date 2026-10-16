@@ -98,6 +98,14 @@ public class DocumentModel {
     @JoinColumn(name = "master_agreement_id", nullable = false)
     private MasterAgreementModel masterAgreement;
 
+    /**
+     * Proveedor del convenio, desnormalizado para el índice único PAPER
+     * (proveedor + número + año) frente al doble fondeo entre pagadores.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "supplier_id", nullable = false)
+    private EntityModel supplier;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "upload_batch_id", nullable = false)
     private UploadBatchModel uploadBatch;
@@ -113,5 +121,13 @@ public class DocumentModel {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    /**
+     * Número visible del documento: el de documento y, si falta (p. ej. DTE), el de control.
+     * Usar en mensajes, reportes y detalles hacia el usuario.
+     */
+    public String displayNumber() {
+        return documentNumber != null && !documentNumber.isBlank() ? documentNumber : controlNumber;
+    }
 
 }

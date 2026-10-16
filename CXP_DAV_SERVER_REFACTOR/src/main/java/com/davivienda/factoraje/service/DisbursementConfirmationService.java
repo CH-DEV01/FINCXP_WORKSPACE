@@ -1,6 +1,5 @@
 package com.davivienda.factoraje.service;
 
-import java.util.List;
 import java.util.UUID;
 
 import com.davivienda.factoraje.dto.disbursement_batch.DisbursementBatchSummaryDTOResponse;
@@ -13,6 +12,4 @@ public interface DisbursementConfirmationService {
      * lote queda SETTLED.
      */
     DisbursementBatchSummaryDTOResponse confirmDisbursementBatch(UUID batchId, UUID confirmedById);
-
-    void confirmDisbursement(List<UUID> documentIds, UUID confirmedById);
 }

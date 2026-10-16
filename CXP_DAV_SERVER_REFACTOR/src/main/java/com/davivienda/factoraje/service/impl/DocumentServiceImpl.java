@@ -232,7 +232,7 @@ public class DocumentServiceImpl implements DocumentService {
 
         List<String> notLoaded = documents.stream()
                 .filter(doc -> doc.getStatus() != DocumentStatusEnum.APPROVED)
-                .map(DocumentServiceImpl::displayNumber)
+                .map(DocumentModel::displayNumber)
                 .toList();
         if (!notLoaded.isEmpty()) {
             throw new IllegalArgumentException("Solo se pueden inactivar documentos en estado Cargado. "
@@ -255,7 +255,7 @@ public class DocumentServiceImpl implements DocumentService {
         }
         for (DocumentModel doc : documents) {
             if (doc.getStatus() != DocumentStatusEnum.APPROVED) {
-                throw new IllegalStateException("El documento " + displayNumber(doc) + " no está Cargado.");
+                throw new IllegalStateException("El documento " + doc.displayNumber() + " no está Cargado.");
             }
         }
         inactivate(documents, DocumentStatusEnum.IN_QUARANTINE, actor);
@@ -312,7 +312,7 @@ public class DocumentServiceImpl implements DocumentService {
                 used = used.subtract(doc.getNominalAmount());
                 movements.add(CreditFacilityHistoryModel.builder()
                         .amount(doc.getNominalAmount())
-                        .referenceNumber(displayNumber(doc))
+                        .referenceNumber(doc.displayNumber())
                         .repaymentType(RepaymentTypeEnum.DOCUMENT_INACTIVATION)
                         .creditFacility(facility)
                         .payer(facility.getPayer())
@@ -332,12 +332,6 @@ public class DocumentServiceImpl implements DocumentService {
             log.info("Cupo {} liberado por inactivación de {} documento(s): consumo ${} -> ${}.",
                     facility.getId(), payerDocuments.size(), currentUsed, used);
         });
-    }
-
-    private static String displayNumber(DocumentModel doc) {
-        return doc.getDocumentNumber() != null && !doc.getDocumentNumber().isBlank()
-                ? doc.getDocumentNumber()
-                : doc.getControlNumber();
     }
 
     /**
@@ -367,7 +361,7 @@ public class DocumentServiceImpl implements DocumentService {
 
                     return new DocumentHistoryDTOResponse(
                         doc.getId(),
-                        displayNumber(doc),
+                        doc.displayNumber(),
                         doc.getIssueDate(),
                         doc.getDueDate(),
                         tx != null ? tx.getScheduledDisbursementDate() : null,

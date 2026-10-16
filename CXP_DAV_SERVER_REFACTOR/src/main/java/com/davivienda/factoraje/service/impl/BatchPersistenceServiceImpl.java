@@ -239,17 +239,21 @@ public class BatchPersistenceServiceImpl implements BatchPersistenceService {
             MasterAgreementModel masterAgreement = resolvedAgreements.get(dto.supplierNit());
             Integer paymentDays = paymentDaysBySupplier.get(dto.supplierNit());
 
+            IssuanceMethodEnum issuanceMethod = IssuanceMethodEnum.fromString(dto.issuanceMethod());
             DocumentModel document = DocumentModel.builder()
-                    .documentNumber(dto.documentNumber())
+                    .documentNumber(issuanceMethod == IssuanceMethodEnum.PAPER
+                            ? IdentifierNormalizer.normalizePaperDocumentNumber(dto.documentNumber())
+                            : null)
                     .issueDate(dto.issueDate())
                     .nominalAmount(dto.nominalAmount())
                     .generationCode(dto.generationCode())
                     .receivedStamp(dto.receivedStamp())
                     .controlNumber(dto.controlNumber())
                     .invoiceType(InvoiceTypeEnum.fromString(dto.invoiceType()))
-                    .issuanceMethod(IssuanceMethodEnum.fromString(dto.issuanceMethod()))
+                    .issuanceMethod(issuanceMethod)
                     .status(DocumentStatusEnum.APPROVED)
                     .masterAgreement(masterAgreement)
+                    .supplier(masterAgreement.getSupplier())
                     .uploadBatch(batchProxy)
                     .dueDate(dto.issueDate().plusDays(paymentDays != null ? paymentDays : 0))
                     .build();

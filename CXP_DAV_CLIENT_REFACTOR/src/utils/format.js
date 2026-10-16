@@ -38,13 +38,14 @@ export const formatAmountMask = (value, prefix = "") => {
   return `${prefix}${grouped}${decimal !== undefined ? `.${decimal.slice(0, 2)}` : ""}`;
 };
 
-/** Deja solo dígitos y un punto decimal con máximo dos decimales ("$ 1,500.567" -> "1500.56"). */
+/** Deja solo dígitos y un punto decimal: máx. 15 enteros y 2 decimales ("$ 1,500.567" -> "1500.56"). */
 export const sanitizeAmount = (value) => {
   let clean = String(value).replace(/[^0-9.]/g, "");
   const parts = clean.split(".");
   if (parts.length > 2) clean = `${parts[0]}.${parts.slice(1).join("")}`;
   const [integer, decimal] = clean.split(".");
-  return decimal !== undefined ? `${integer}.${decimal.slice(0, 2)}` : integer;
+  const cappedInteger = integer.slice(0, 15);
+  return decimal !== undefined ? `${cappedInteger}.${decimal.slice(0, 2)}` : cappedInteger;
 };
 
 export const downloadBlob = (data, fileName, type = "application/pdf") => {

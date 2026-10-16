@@ -18,6 +18,7 @@ import com.davivienda.factoraje.domain.enums.GeneralStatusEnum;
 import com.davivienda.factoraje.dto.user.UserDTORequest;
 import com.davivienda.factoraje.dto.user.UserDTOResponse;
 import com.davivienda.factoraje.dto.user.UserUpdateDTORequest;
+import com.davivienda.factoraje.infrastructure.exception.DataIntegrityViolations;
 import com.davivienda.factoraje.infrastructure.exception.ResourceAlreadyExistsException;
 import com.davivienda.factoraje.infrastructure.exception.ResourceNotFoundException;
 import com.davivienda.factoraje.infrastructure.mail.AuditText;
@@ -103,6 +104,9 @@ public class UserServiceImpl implements UserService {
 
         } catch (DataIntegrityViolationException e) {
             log.error("Integrity violation when creating user", e);
+            if (DataIntegrityViolations.isValueOutOfRange(e)) {
+                throw new IllegalArgumentException(DataIntegrityViolations.VALUE_OUT_OF_RANGE_MESSAGE);
+            }
             throw new ResourceAlreadyExistsException("El DUI o el correo ya están registrados para otro usuario.");
         }
 
@@ -173,6 +177,9 @@ public class UserServiceImpl implements UserService {
             return UserDTOResponse.fromEntity(saved);
         } catch (DataIntegrityViolationException e) {
             log.error("Integrity violation when updating user {}", id, e);
+            if (DataIntegrityViolations.isValueOutOfRange(e)) {
+                throw new IllegalArgumentException(DataIntegrityViolations.VALUE_OUT_OF_RANGE_MESSAGE);
+            }
             throw new ResourceAlreadyExistsException("El DUI o el correo ya están registrados para otro usuario.");
         }
     }

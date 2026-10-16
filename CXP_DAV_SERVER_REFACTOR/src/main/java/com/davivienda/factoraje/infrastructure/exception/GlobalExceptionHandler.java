@@ -41,18 +41,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Restricciones únicas que respaldan las validaciones de negocio cuando dos
-     * operaciones simultáneas pasan la validación a la vez.
+     * Unicidad: 409 (dos operaciones simultáneas). Desbordamiento de columna o
+     * precisión numérica (SQLSTATE 22001/22003): 400, no un falso conflicto (VAL-01).
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
 
         log.warn("Violación de integridad no controlada por el servicio: {}", ex.getMostSpecificCause().getMessage());
 
+        boolean valueOutOfRange = DataIntegrityViolations.isValueOutOfRange(ex);
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(
-                        "Otra operación registró los mismos datos al mismo tiempo. Actualice la información e intente de nuevo."));
+                .status(valueOutOfRange ? HttpStatus.BAD_REQUEST : HttpStatus.CONFLICT)
+                .body(ApiResponse.error(DataIntegrityViolations.clientMessage(ex)));
     }
 
     @ExceptionHandler(PessimisticLockingFailureException.class)

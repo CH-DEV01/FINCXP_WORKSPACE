@@ -29,6 +29,7 @@ import com.davivienda.factoraje.infrastructure.security.JwtService;
 import com.davivienda.factoraje.repository.ParameterRepository;
 import com.davivienda.factoraje.repository.PendingSessionRepository;
 import com.davivienda.factoraje.repository.UserRepository;
+import com.davivienda.factoraje.service.PendingSessionService;
 
 class SsoServiceImplHandoffTest {
 
@@ -39,7 +40,8 @@ class SsoServiceImplHandoffTest {
     private final MockRestServiceServer payDavivienda = MockRestServiceServer.createServer(restTemplate);
     private final PendingSessionRepository pendingSessionRepository = mock(PendingSessionRepository.class);
     private final SsoServiceImpl service = new SsoServiceImpl(parameterRepository, restTemplate,
-            pendingSessionRepository, mock(UserRepository.class), mock(JwtService.class));
+            pendingSessionRepository, mock(PendingSessionService.class), mock(UserRepository.class),
+            mock(JwtService.class));
 
     @Test
     void anUnconfiguredIntegrationRejectsTheDefaultValues() {

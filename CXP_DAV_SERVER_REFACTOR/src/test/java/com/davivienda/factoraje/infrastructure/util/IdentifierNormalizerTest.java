@@ -56,13 +56,30 @@ class IdentifierNormalizerTest {
     }
 
     @Test
-    void requireEmailNormalizesAndValidatesFormat() {
-        assertThat(IdentifierNormalizer.requireEmail(" Ana@Empresa.COM ")).isEqualTo("ana@empresa.com");
+    void requireEmailTrimsButKeepsCaseAndValidatesFormat() {
+        assertThat(IdentifierNormalizer.requireEmail(" Ana@Empresa.COM ")).isEqualTo("Ana@Empresa.COM");
         assertThatThrownBy(() -> IdentifierNormalizer.requireEmail("ana@empresa"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("formato válido");
         assertThatThrownBy(() -> IdentifierNormalizer.requireEmail(""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El correo electrónico es obligatorio.");
+    }
+
+    @Test
+    void trimmedOnlyRemovesLeadingAndTrailingWhitespace() {
+        assertThat(IdentifierNormalizer.trimmed(" Ana-Lopez@Grupo-X.com ")).isEqualTo("Ana-Lopez@Grupo-X.com");
+        assertThat(IdentifierNormalizer.trimmed("   ")).isNull();
+        assertThat(IdentifierNormalizer.trimmed(null)).isNull();
+    }
+
+    @Test
+    void paperDocumentNumberIgnoresCaseSpacesAndHyphens() {
+        assertThat(IdentifierNormalizer.normalizePaperDocumentNumber("F-001")).isEqualTo("F001");
+        assertThat(IdentifierNormalizer.normalizePaperDocumentNumber("f-001")).isEqualTo("F001");
+        assertThat(IdentifierNormalizer.normalizePaperDocumentNumber("F 001")).isEqualTo("F001");
+        assertThat(IdentifierNormalizer.normalizePaperDocumentNumber(" f\u00A0001 ")).isEqualTo("F001");
+        assertThat(IdentifierNormalizer.normalizePaperDocumentNumber(" - ")).isNull();
+        assertThat(IdentifierNormalizer.normalizePaperDocumentNumber(null)).isNull();
     }
 }

@@ -24,6 +24,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.davivienda.factoraje.db.DeliverableScripts;
 import com.davivienda.factoraje.domain.entities.DocumentModel;
+import com.davivienda.factoraje.domain.entities.EntityModel;
 import com.davivienda.factoraje.domain.entities.MasterAgreementModel;
 import com.davivienda.factoraje.domain.entities.UploadBatchModel;
 import com.davivienda.factoraje.domain.enums.DocumentStatusEnum;
@@ -61,6 +62,9 @@ class DocumentDoubleFundingIndexTest {
     private JdbcTemplate jdbcTemplate;
 
     private final UUID masterAgreementId = UUID.randomUUID();
+    private final UUID otherAgreementId = UUID.randomUUID();
+    private final UUID supplierId = UUID.randomUUID();
+    private final UUID otherSupplierId = UUID.randomUUID();
     private final UUID uploadBatchId = UUID.randomUUID();
 
     @BeforeEach
@@ -134,11 +138,36 @@ class DocumentDoubleFundingIndexTest {
     }
 
     @Test
-    void paperDocumentNumberIsUniquePerAgreementAndYear() {
+    void paperDocumentNumberIsUniquePerSupplierAndYear() {
         documentRepository.saveAndFlush(paper("F-100", LocalDate.of(2025, 3, 1)));
         documentRepository.saveAndFlush(paper("F-100", LocalDate.of(2026, 3, 1)));
 
         assertThatThrownBy(() -> documentRepository.saveAndFlush(paper("F-100", LocalDate.of(2026, 7, 15))))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("uq_documents_paper_number_year");
+    }
+
+    @Test
+    void paperDocumentNumberIsUniqueAcrossAgreementsOfTheSameSupplier() {
+        documentRepository.saveAndFlush(paper("F-300", LocalDate.of(2026, 3, 1), masterAgreementId, supplierId));
+
+        assertThatThrownBy(() -> documentRepository.saveAndFlush(
+                paper("F-300", LocalDate.of(2026, 7, 15), otherAgreementId, supplierId)))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("uq_documents_paper_number_year");
+    }
+
+    @Test
+    void paperDocumentNumberCanRepeatForDifferentSuppliers() {
+        documentRepository.saveAndFlush(paper("F-400", LocalDate.of(2026, 3, 1), masterAgreementId, supplierId));
+        documentRepository.saveAndFlush(paper("F-400", LocalDate.of(2026, 3, 1), otherAgreementId, otherSupplierId));
+    }
+
+    @Test
+    void paperDocumentNumberIgnoresCaseSpacesAndHyphensInTheUniqueIndex() {
+        documentRepository.saveAndFlush(paper("F-001", LocalDate.of(2026, 3, 1)));
+
+        assertThatThrownBy(() -> documentRepository.saveAndFlush(paper("f 001", LocalDate.of(2026, 7, 15))))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("uq_documents_paper_number_year");
     }
@@ -201,20 +230,29 @@ class DocumentDoubleFundingIndexTest {
     }
 
     private DocumentModel paper(String documentNumber, LocalDate issueDate) {
-        DocumentModel document = base(issueDate);
+        return paper(documentNumber, issueDate, masterAgreementId, supplierId);
+    }
+
+    private DocumentModel paper(String documentNumber, LocalDate issueDate, UUID agreementId, UUID documentSupplierId) {
+        DocumentModel document = base(issueDate, agreementId, documentSupplierId);
         document.setIssuanceMethod(IssuanceMethodEnum.PAPER);
         document.setDocumentNumber(documentNumber);
         return document;
     }
 
     private DocumentModel base(LocalDate issueDate) {
+        return base(issueDate, masterAgreementId, supplierId);
+    }
+
+    private DocumentModel base(LocalDate issueDate, UUID agreementId, UUID documentSupplierId) {
         return DocumentModel.builder()
                 .issueDate(issueDate)
                 .dueDate(issueDate.plusDays(90))
                 .nominalAmount(new BigDecimal("100.00"))
                 .invoiceType(InvoiceTypeEnum.CCF)
                 .status(DocumentStatusEnum.APPROVED)
-                .masterAgreement(entityManager.getReference(MasterAgreementModel.class, masterAgreementId))
+                .masterAgreement(entityManager.getReference(MasterAgreementModel.class, agreementId))
+                .supplier(entityManager.getReference(EntityModel.class, documentSupplierId))
                 .uploadBatch(entityManager.getReference(UploadBatchModel.class, uploadBatchId))
                 .build();
     }

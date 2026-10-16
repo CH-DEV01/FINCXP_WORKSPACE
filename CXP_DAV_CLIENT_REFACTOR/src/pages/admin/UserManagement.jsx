@@ -235,13 +235,13 @@ const UserManagement = () => {
         <form className="space-y-4">
           <div>
             <label className="block text-xs text-gray-600 mb-2">Nombre</label>
-            <input type="text" {...register("name")} className={inputClass(errors.name)} />
+            <input type="text" maxLength={255} {...register("name")} className={inputClass(errors.name)} />
             <FieldError error={errors.name} />
           </div>
 
           <div>
             <label className="block text-xs text-gray-600 mb-2">E-mail</label>
-            <input type="text" {...register("email")} className={inputClass(errors.email)} />
+            <input type="text" maxLength={255} {...register("email")} className={inputClass(errors.email)} />
             <FieldError error={errors.email} />
           </div>
 

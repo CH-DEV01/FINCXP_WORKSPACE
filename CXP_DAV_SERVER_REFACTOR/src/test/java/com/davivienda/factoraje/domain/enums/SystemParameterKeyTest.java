@@ -68,4 +68,17 @@ class SystemParameterKeyTest {
         assertThatThrownBy(() -> SystemParameterKey.CSP_CONNECT_SRC.normalize("https://api.davivienda.com.sv; script-src *"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void urlAndOriginsRejectValuesLongerThan255() {
+        String longHost = "https://" + "a".repeat(250) + ".com";
+        assertThatThrownBy(() -> SystemParameterKey.APP_LOGIN_URL.normalize(longHost))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("255 caracteres");
+
+        String longOrigins = "https://one.example," + "https://" + "b".repeat(240) + ".com";
+        assertThatThrownBy(() -> SystemParameterKey.CORS_ALLOWED_ORIGINS.normalize(longOrigins))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("255 caracteres");
+    }
 }

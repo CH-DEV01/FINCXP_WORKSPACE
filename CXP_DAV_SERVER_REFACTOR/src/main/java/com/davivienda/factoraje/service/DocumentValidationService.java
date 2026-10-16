@@ -9,15 +9,21 @@ import com.davivienda.factoraje.infrastructure.file_parser.excel.BatchValidation
 public interface DocumentValidationService {
     
     /**
-     * Evalúa las reglas de negocio financieras sobre un lote de facturas extraídas del Excel.
+     * Evalúa las reglas de negocio financieras sobre un lote de facturas de un solo proveedor.
      * Acumula todos los errores encontrados para no interrumpir el flujo prematuramente.
      *
-     * @param invoices Lista de facturas parseadas del archivo.
-     * @param masterAgreementId ID del convenio marco para verificar duplicidad.
-     * @return Lista de errores de validación (vacía si todo es correcto).
+     * @param invoices facturas del mismo NIT parseadas del archivo
+     * @param payerId pagador de la carga; sirve para contrastar el convenio ya registrado
+     * @return errores de validación (vacía si todo es correcto)
      */
-    List<BatchValidationError> validateBatch(List<InvoiceRecordDTO> invoices, UUID masterAgreementId);
+    List<BatchValidationError> validateBatch(List<InvoiceRecordDTO> invoices, UUID payerId);
 
     /** Duplicados de código de generación, número de control y sello en todo el archivo. */
     List<BatchValidationError> validateDteDuplicatesInFile(List<InvoiceRecordDTO> invoices);
+
+    /**
+     * Nombres de proveedores nuevos que chocan entre sí dentro del mismo archivo
+     * (dos NIT distintos que aún no existen y traen el mismo nombre).
+     */
+    List<BatchValidationError> validateNewSupplierNamesInFile(List<InvoiceRecordDTO> invoices);
 }

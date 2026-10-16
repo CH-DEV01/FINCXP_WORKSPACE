@@ -1,23 +1,17 @@
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
 export const EMPTY_CALCULATION = {
   amount: 0,
   interests: 0,
   commissions: 0,
   amountToFinance: 0,
   amountToBeDisbursed: 0,
+  // "YYYY-MM-DD" tal como lo devuelve el backend; se reenvía al confirmar la solicitud.
+  disbursementDate: null,
   details: [],
 };
 
 // Las fechas llegan como "YYYY-MM-DD"; se fija medianoche local para evitar
 // el corrimiento de un día que produce new Date("YYYY-MM-DD") (UTC).
 export const parseLocalDate = (isoDate) => (isoDate ? new Date(`${isoDate}T00:00:00`) : null);
-
-const daysBetween = (a, b) => {
-  const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-  const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-  return Math.round((utcB - utcA) / ONE_DAY_MS);
-};
 
 export const mapDocumentToAccount = (doc) => ({
   id: doc.id,
@@ -34,6 +28,7 @@ export const toCalculation = (data) => ({
   commissions: Number(data?.commissions) || 0,
   amountToFinance: Number(data?.amountToFinance) || 0,
   amountToBeDisbursed: Number(data?.amountToBeDisbursed) || 0,
+  disbursementDate: data?.disbursementDate || null,
   details: (data?.detail || []).map((item) => ({
     ...item,
     // ItemsSelectedCard muestra la fecha de corte como cutOffDate
@@ -45,15 +40,6 @@ export const toCalculation = (data) => ({
     amountToBeDisbursed: Number(item.amountToBeDisbursed) || 0,
   })),
 });
-
-// El backend ya excluye los documentos por vencer; este cálculo solo cubre
-// el caso en que la fecha cambie mientras la pantalla sigue abierta.
-export const getDueInfo = (item) => {
-  const issueDate = new Date(item.issueDate);
-  const dueDate = item.dueDate ? new Date(item.dueDate) : null;
-  const daysToDue = dueDate ? daysBetween(new Date(), dueDate) : Number.POSITIVE_INFINITY;
-  return { issueDate, dueDate, isDisabled: daysToDue <= 5 };
-};
 
 export const formatDueDate = (dueDate) =>
   dueDate

@@ -3,7 +3,6 @@ import LimitExceeded from "../../components/LimitExceeded.jsx";
 import PayerData from "../../components/PayerData.jsx";
 import PayerDirectory from "../../components/payer/PayerDirectory.jsx";
 import DocumentUploadCenter from "../../components/upload/DocumentUploadCenter.jsx";
-import { entityService } from "../../services/admin/entityService.js";
 import { creditFacilityService } from "../../services/admin/creditFacilityService.js";
 import { formatMoney } from "../../utils/format.js";
 
@@ -15,31 +14,9 @@ const toCreditMetrics = (facility) => ({
 });
 
 const UploadFilePageAdmin = () => {
-  const [payers, setPayers] = useState([]);
-  const [selectedPayer, setSelectedPayer] = useState({});
-  const [isLoadingPayers, setIsLoadingPayers] = useState(true);
+  const [selectedPayer, setSelectedPayer] = useState(null);
   const [creditMetrics, setCreditMetrics] = useState(null);
   const [metricsVersion, setMetricsVersion] = useState(0);
-
-  useEffect(() => {
-    const fetchPayers = async () => {
-      try {
-        const page = await entityService.getPayers(0, 100);
-        const realPayers = page?.content ?? [];
-
-        setPayers(realPayers);
-
-        if (realPayers.length > 0) {
-          setSelectedPayer(realPayers[0]);
-        }
-      } catch (error) {
-        console.error("Error fetching payers:", error);
-      } finally {
-        setIsLoadingPayers(false);
-      }
-    };
-    fetchPayers();
-  }, []);
 
   const selectedPayerId = selectedPayer?.id;
 
@@ -74,7 +51,7 @@ const UploadFilePageAdmin = () => {
         {/* --- PANEL IZQUIERDO (Rojo) --- */}
         <div className="shadow-2xl w-full md:w-1/3 lg:w-1/4 bg-gradient-to-r from-red-600 to-red-800 bg-red-800 text-white p-4 rounded-xl font-montserrat flex flex-col">
           <div className="flex-shrink-0">
-            <PayerData payer={selectedPayer} />
+            <PayerData payer={selectedPayer || {}} />
           </div>
 
           {creditMetrics && (
@@ -124,12 +101,7 @@ const UploadFilePageAdmin = () => {
           )}
 
           <div className="mt-6 flex flex-col flex-1 min-h-0">
-            <PayerDirectory
-              payers={payers}
-              isLoading={isLoadingPayers}
-              selectedPayerId={selectedPayerId}
-              onSelect={setSelectedPayer}
-            />
+            <PayerDirectory selectedPayerId={selectedPayerId} onSelect={setSelectedPayer} />
           </div>
         </div>
 

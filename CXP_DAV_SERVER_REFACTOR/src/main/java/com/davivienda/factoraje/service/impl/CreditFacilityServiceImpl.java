@@ -1,6 +1,7 @@
 package com.davivienda.factoraje.service.impl;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -82,25 +83,24 @@ public class CreditFacilityServiceImpl implements CreditFacilityService {
         CreditFacilityModel facility = creditFacilityRepository.findByIdForUpdate(request.creditFacilityId())
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró el cupo de crédito especificado."));
 
-        DisbursementBatchModel batch = null;
-        BigDecimal amount;
+        BigDecimal currentUsed = facility.getAmountInUse();
         if (request.type() == RepaymentTypeEnum.PARTIAL) {
-            batch = repayableBatch(facility, request.disbursementBatchId());
-            amount = disbursementBatchRepository.sumNominalAmount(batch.getId());
-            if (amount == null || amount.signum() <= 0) {
-                throw new IllegalArgumentException(
-                        "El lote " + batch.getBatchNumber() + " no tiene documentos que abonar al cupo.");
-            }
-        } else {
-            if (request.amount() == null) {
-                throw new IllegalArgumentException("El monto a abonar es obligatorio.");
-            }
-            amount = request.amount();
+            return restorePartial(facility, user, request, currentUsed);
+        }
+        return restoreFull(facility, user, request, currentUsed);
+    }
+
+    private CreditFacilityDTOResponse restorePartial(CreditFacilityModel facility, UserModel user,
+            RestoreCreditFacilityDTORequest request, BigDecimal currentUsed) {
+
+        DisbursementBatchModel batch = repayableBatch(facility, request.disbursementBatchId());
+        BigDecimal amount = disbursementBatchRepository.sumNominalAmount(batch.getId());
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException(
+                    "El lote " + batch.getBatchNumber() + " no tiene documentos que abonar al cupo.");
         }
 
-        BigDecimal currentUsed = facility.getAmountInUse();
         BigDecimal newUsedAmount = currentUsed.subtract(amount);
-
         if (newUsedAmount.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException(String.format(
                     "El monto a abonar ($%s) supera el consumo actual del cupo ($%s).",
@@ -109,19 +109,96 @@ public class CreditFacilityServiceImpl implements CreditFacilityService {
 
         facility.setAmountInUse(newUsedAmount);
         creditFacilityRepository.save(facility);
+        creditFacilityHistoryRepository.save(historyEntry(
+                amount, facility, user, request.reference(), RepaymentTypeEnum.PARTIAL, batch));
 
-        creditFacilityHistoryRepository.save(CreditFacilityHistoryModel.builder()
+        return notifyRestored(facility, currentUsed, newUsedAmount, amount, ", lote " + batch.getBatchNumber());
+    }
+
+    /**
+     * Liquidación total: restaura exactamente el consumo actual y marca como abonados
+     * todos los lotes liquidados pendientes del pagador.
+     */
+    private CreditFacilityDTOResponse restoreFull(CreditFacilityModel facility, UserModel user,
+            RestoreCreditFacilityDTORequest request, BigDecimal currentUsed) {
+
+        if (currentUsed == null || currentUsed.signum() <= 0) {
+            throw new IllegalArgumentException("No hay consumo que liquidar.");
+        }
+
+        BigDecimal amount = currentUsed;
+        List<DisbursementBatchModel> batches = facility.getPayer() == null
+                ? List.of()
+                : disbursementBatchRepository.findRestorableEntitiesByPayerForUpdate(facility.getPayer().getId());
+
+        List<CreditFacilityHistoryModel> entries = buildFullHistoryEntries(
+                facility, user, request.reference(), amount, batches);
+
+        facility.setAmountInUse(BigDecimal.ZERO);
+        creditFacilityRepository.save(facility);
+        creditFacilityHistoryRepository.saveAll(entries);
+
+        String batchText = batches.isEmpty() ? "" : ", " + batches.size() + " lote(s) liquidados";
+        return notifyRestored(facility, currentUsed, BigDecimal.ZERO, amount, batchText);
+    }
+
+    private List<CreditFacilityHistoryModel> buildFullHistoryEntries(
+            CreditFacilityModel facility, UserModel user, String reference, BigDecimal amount,
+            List<DisbursementBatchModel> batches) {
+
+        List<CreditFacilityHistoryModel> entries = new ArrayList<>();
+        BigDecimal assigned = BigDecimal.ZERO;
+
+        for (DisbursementBatchModel batch : batches) {
+            BigDecimal batchAmount = disbursementBatchRepository.sumNominalAmount(batch.getId());
+            if (batchAmount == null || batchAmount.signum() < 0) {
+                batchAmount = BigDecimal.ZERO;
+            }
+            entries.add(historyEntry(
+                    batchAmount, facility, user, reference, RepaymentTypeEnum.FULL, batch));
+            assigned = assigned.add(batchAmount);
+        }
+
+        BigDecimal residual = amount.subtract(assigned);
+        if (residual.signum() > 0) {
+            entries.add(historyEntry(
+                    residual, facility, user, reference, RepaymentTypeEnum.FULL, null));
+        } else if (residual.signum() < 0) {
+            // Datos inconsistentes: el nominal de lotes supera el consumo. Un solo abono
+            // por el consumo real y marcadores de lote con monto 0 (no se listan en historial).
+            entries.clear();
+            entries.add(historyEntry(
+                    amount, facility, user, reference, RepaymentTypeEnum.FULL, null));
+            for (DisbursementBatchModel batch : batches) {
+                entries.add(historyEntry(
+                        BigDecimal.ZERO, facility, user, reference, RepaymentTypeEnum.FULL, batch));
+            }
+        } else if (entries.isEmpty()) {
+            entries.add(historyEntry(
+                    amount, facility, user, reference, RepaymentTypeEnum.FULL, null));
+        }
+
+        return entries;
+    }
+
+    private static CreditFacilityHistoryModel historyEntry(
+            BigDecimal amount, CreditFacilityModel facility, UserModel user, String reference,
+            RepaymentTypeEnum type, DisbursementBatchModel batch) {
+        return CreditFacilityHistoryModel.builder()
                 .amount(amount)
                 .creditFacility(facility)
                 .executedBy(user)
                 .payer(facility.getPayer())
-                .referenceNumber(request.reference())
-                .repaymentType(request.type())
+                .referenceNumber(reference)
+                .repaymentType(type)
                 .disbursementBatch(batch)
-                .build());
+                .build();
+    }
 
+    private CreditFacilityDTOResponse notifyRestored(
+            CreditFacilityModel facility, BigDecimal currentUsed, BigDecimal newUsedAmount,
+            BigDecimal amount, String batchText) {
         String payerName = facility.getPayer() != null ? facility.getPayer().getName() : "el pagador";
-        String batchText = batch != null ? ", lote " + batch.getBatchNumber() : "";
         mailNotices.operatorChanged("Pagadores",
                 "Cupo de crédito de " + payerName + ": monto en uso " + AuditText.amount(currentUsed),
                 "Cupo de crédito de " + payerName + ": monto en uso " + AuditText.amount(newUsedAmount)

@@ -29,8 +29,13 @@ const columns = [
   { header: "Descripcion", accessor: "description" },
 ];
 
-const matchesHoliday = (item, term) =>
-  (item.description?.toLowerCase() || "").includes(term) || (item.holidayDate?.toLowerCase() || "").includes(term);
+/** Busca en descripción, ISO (AAAA-MM-DD) y fecha mostrada (DD/MM/AAAA). */
+export const matchesHoliday = (item, term) => {
+  const description = item.description?.toLowerCase() || "";
+  const isoDate = item.holidayDate?.toLowerCase() || "";
+  const formattedDate = formatHolidayDate(item.holidayDate).toLowerCase();
+  return description.includes(term) || isoDate.includes(term) || formattedDate.includes(term);
+};
 
 const HolidaysManagement = () => {
   const [holidays, setHolidays] = useState([]);

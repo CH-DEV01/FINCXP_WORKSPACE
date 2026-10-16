@@ -52,6 +52,8 @@ public class FundingRequestController {
                 currentUser.id(),
                 request.documentIds(),
                 request.termVersionId(),
+                request.expectedDisbursementDate(),
+                request.expectedAmountToBeDisbursed(),
                 userAgent);
 
         return ResponseEntity.ok(ApiResponse.success(response, "Solicitud de desembolso procesada con éxito"));

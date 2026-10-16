@@ -10,8 +10,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * @param groups combinación (vencimiento, solicitud, desembolso) a convertir en
- *               lote. Se admite una sola porque la respuesta es un único PDF.
+ * @param groups combinaciones (vencimiento, solicitud, desembolso) a convertir en
+ *               lote. Un grupo → PDF; varios → ZIP con un PDF por lote.
  */
 public record GenerateBatchRequestDTO(
     @NotBlank(message = "El nombre del archivo original es obligatorio")
@@ -21,7 +21,7 @@ public record GenerateBatchRequestDTO(
     UUID payerId,
 
     @NotNull(message = "Debe seleccionar la solicitud a generar")
-    @Size(min = 1, max = 1, message = "Seleccione una sola solicitud para generar el lote")
+    @Size(min = 1, message = "Seleccione al menos una solicitud para generar el lote")
     List<@Valid Group> groups
 ) {
 

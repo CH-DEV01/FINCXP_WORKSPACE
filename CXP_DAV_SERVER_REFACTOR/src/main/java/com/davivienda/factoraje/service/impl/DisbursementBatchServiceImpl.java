@@ -1,12 +1,16 @@
 package com.davivienda.factoraje.service.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +49,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DisbursementBatchServiceImpl implements DisbursementBatchService {
 
+    private static final DateTimeFormatter ZIP_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
+
     private final UserRepository userRepository;
     private final EntityRepository entityRepository;
     private final DocumentRepository documentRepository;
@@ -58,7 +64,7 @@ public class DisbursementBatchServiceImpl implements DisbursementBatchService {
 
     @Override
     @Transactional
-    public Map<String, byte[]> generateDisbursementBatches(UUID createdById, String originalFileName, UUID payerId,
+    public Letter generateDisbursementBatches(UUID createdById, String originalFileName, UUID payerId,
             List<GenerateBatchRequestDTO.Group> groups) {
 
         UserModel createdBy = userRepository.findById(createdById)
@@ -77,7 +83,7 @@ public class DisbursementBatchServiceImpl implements DisbursementBatchService {
         }
 
         ReportContext reportContext = letterAssembler.loadReportContext(payer);
-        Map<String, byte[]> reports = new LinkedHashMap<>();
+        List<Letter> letters = new ArrayList<>();
 
         for (GenerateBatchRequestDTO.Group group : selectedGroups) {
             List<FinancingTransactionModel> transactions = financingTransactionRepository
@@ -91,24 +97,29 @@ public class DisbursementBatchServiceImpl implements DisbursementBatchService {
             }
 
             DisbursementBatchModel batch = createBatch(transactions, group, payer, createdBy, originalFileName);
-            reports.put(letterAssembler.reportFileName(batch), buildBatchPdf(batch, transactions, reportContext));
+            letters.add(new Letter(letterAssembler.reportFileName(batch),
+                    buildBatchPdf(batch, transactions, reportContext)));
             mailNotices.disbursementBatchCreated(batch.getBatchNumber(), payer.getName(), batch.getDueDate(),
                     batch.getRequestDate(), batch.getDisbursementDate(), batch.getTransactionCount());
         }
 
-        if (reports.isEmpty()) {
+        if (letters.isEmpty()) {
             throw new DocumentNotAvailableException(
                     "Las solicitudes seleccionadas ya no tienen documentos listos para desembolso.");
         }
 
-        log.info("Se generaron {} lote(s) de desembolso para el pagador {}.", reports.size(), payerId);
+        log.info("Se generaron {} lote(s) de desembolso para el pagador {}.", letters.size(), payerId);
 
-        return reports;
+        if (letters.size() == 1) {
+            return letters.getFirst();
+        }
+        return new Letter("Reportes_Desembolso_" + ZIP_DATE_FMT.format(disbursementPolicyService.businessToday())
+                + ".zip", zip(letters));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, byte[]> regenerateBatchReport(UUID batchId) {
+    public Letter regenerateBatchReport(UUID batchId) {
 
         DisbursementBatchModel batch = disbursementBatchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote de desembolso no encontrado con ID: " + batchId));
@@ -125,10 +136,22 @@ public class DisbursementBatchServiceImpl implements DisbursementBatchService {
                 ? batch.getPayer()
                 : transactions.getFirst().getDocument().getMasterAgreement().getPayer();
 
-        Map<String, byte[]> reports = new LinkedHashMap<>();
-        reports.put(letterAssembler.reportFileName(batch),
+        return new Letter(letterAssembler.reportFileName(batch),
                 buildBatchPdf(batch, transactions, letterAssembler.loadReportContext(payer)));
-        return reports;
+    }
+
+    private static byte[] zip(List<Letter> letters) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(out)) {
+            for (Letter letter : letters) {
+                zip.putNextEntry(new ZipEntry(letter.fileName()));
+                zip.write(letter.content());
+                zip.closeEntry();
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo armar el ZIP de reportes de desembolso.", e);
+        }
+        return out.toByteArray();
     }
 
     private byte[] buildBatchPdf(DisbursementBatchModel batch, List<FinancingTransactionModel> transactions,

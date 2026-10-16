@@ -5,6 +5,7 @@ export const holidaySchema = z.object({
 
   description: z
     .string()
+    .trim()
     .min(1, { message: "La descripción es obligatoria" })
     .min(6, { message: "La descripción debe tener al menos 6 caracteres" })
     .max(150, { message: "La descripción no puede exceder los 150 caracteres" }),

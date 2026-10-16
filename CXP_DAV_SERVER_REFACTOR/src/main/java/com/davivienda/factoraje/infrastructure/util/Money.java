@@ -8,9 +8,10 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 /**
- * Montos monetarios. Los cálculos trabajan con todos los decimales ({@link #CALC}) y
- * se guardan con {@link #STORAGE_SCALE}; solo al mostrarlos se redondean a 2 decimales
- * HALF_UP con formato {@code $#,##0.00}, como una celda con formato en una hoja de cálculo.
+ * Montos monetarios. Las operaciones intermedias usan {@link #CALC}; cada componente del
+ * financiamiento (interés, comisión, IVA, neto) se redondea a centavos HALF_UP una sola vez
+ * en {@code FundingCalculator}, y de ahí en adelante todo total es una suma de centavos.
+ * Las tasas se guardan con {@link #STORAGE_SCALE}. El formato de salida es {@code $#,##0.00}.
  */
 public final class Money {
 

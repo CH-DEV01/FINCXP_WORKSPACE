@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { FaAngleDoubleLeft } from "react-icons/fa";
-import { entityService } from "../../services/admin/entityService.js";
 import usePayerSummary from "../../hooks/usePayerSummary.js";
 import PayerDirectory from "../../components/payer/PayerDirectory.jsx";
 import PayerSummaryCard from "../../components/payer/PayerSummaryCard.jsx";
 import PayerDocumentHistory from "../../components/payer/PayerDocumentHistory.jsx";
-import { showError } from "../../utils/errors.js";
 
 const DIRECTORY_HIDDEN_KEY = "operatorDocumentLog.directoryHidden";
 
@@ -14,34 +12,9 @@ const OperatorDocumentLog = () => {
   const [isDirectoryHidden, setIsDirectoryHidden] = useState(
     () => localStorage.getItem(DIRECTORY_HIDDEN_KEY) === "true",
   );
-  const [payers, setPayers] = useState([]);
-  const [isLoadingPayers, setIsLoadingPayers] = useState(true);
   const [selectedPayer, setSelectedPayer] = useState(null);
   const selectedPayerId = selectedPayer?.id ?? null;
   const { summary, isLoading: isLoadingSummary } = usePayerSummary(selectedPayerId);
-
-  useEffect(() => {
-    let cancelled = false;
-    entityService
-      .getPayers(0, 100)
-      .then((page) => {
-        if (cancelled) return;
-        const content = page?.content ?? [];
-        setPayers(content);
-        setSelectedPayer(content[0] ?? null);
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.error("Error fetching payers:", error);
-        showError("No se pudo cargar el directorio de pagadores");
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingPayers(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const toggleDirectory = () => {
     setIsDirectoryHidden((hidden) => {
@@ -99,12 +72,7 @@ const OperatorDocumentLog = () => {
               isDirectoryHidden ? "opacity-0" : "opacity-100 delay-150"
             }`}
           >
-            <PayerDirectory
-              payers={payers}
-              isLoading={isLoadingPayers}
-              selectedPayerId={selectedPayerId}
-              onSelect={setSelectedPayer}
-            />
+            <PayerDirectory selectedPayerId={selectedPayerId} onSelect={setSelectedPayer} />
           </div>
         </aside>
 
@@ -117,11 +85,9 @@ const OperatorDocumentLog = () => {
               <PayerDocumentHistory key={selectedPayerId} payerId={selectedPayerId} />
             </>
           ) : (
-            !isLoadingPayers && (
-              <div className="flex-1 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm p-6 text-sm text-gray-500">
-                Seleccione un pagador del directorio para ver su bitácora.
-              </div>
-            )
+            <div className="flex-1 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm p-6 text-sm text-gray-500">
+              Seleccione un pagador del directorio para ver su bitácora.
+            </div>
           )}
         </div>
       </div>

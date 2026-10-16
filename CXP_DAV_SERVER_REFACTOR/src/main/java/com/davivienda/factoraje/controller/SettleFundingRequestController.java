@@ -2,7 +2,6 @@ package com.davivienda.factoraje.controller;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.davivienda.factoraje.dto.ApiResponse;
-import com.davivienda.factoraje.dto.disbursement_batch.ConfirmDisbursementRequestDTO;
 import com.davivienda.factoraje.dto.disbursement_batch.DisbursementBatchDetailDTOResponse;
 import com.davivienda.factoraje.dto.disbursement_batch.DisbursementBatchHistoryDTOResponse;
 import com.davivienda.factoraje.dto.disbursement_batch.DisbursementBatchSummaryDTOResponse;
@@ -30,6 +28,7 @@ import com.davivienda.factoraje.dto.disbursement_batch.GenerateBatchRequestDTO;
 import com.davivienda.factoraje.dto.disbursement_batch.PayerDisbursementResumeDTOResponse;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
 import com.davivienda.factoraje.service.DisbursementBatchService;
+import com.davivienda.factoraje.service.DisbursementBatchService.Letter;
 import com.davivienda.factoraje.service.DisbursementConfirmationService;
 import com.davivienda.factoraje.service.DisbursementQueryService;
 
@@ -103,33 +102,33 @@ public class SettleFundingRequestController {
 
         log.info("Re-generando reporte del lote de desembolso: {}", batchId);
 
-        return pdfResponse(disbursementBatchService.regenerateBatchReport(batchId));
+        return fileResponse(disbursementBatchService.regenerateBatchReport(batchId));
     }
 
     // ---------- Comandos ----------
 
-    @PostMapping(value = "/generate-batch", produces = MediaType.APPLICATION_PDF_VALUE)
+    /** Un grupo → PDF; varios grupos → ZIP con un PDF por lote (igual que dispersión). */
+    @PostMapping("/generate-batch")
     public ResponseEntity<byte[]> generateDisbursementBatch(
             @Valid @RequestBody GenerateBatchRequestDTO request) {
 
-        log.info("Generando lote de desembolso para el pagador {}", request.payerId());
+        log.info("Generando {} lote(s) de desembolso para el pagador {}",
+                request.groups().size(), request.payerId());
 
-        Map<String, byte[]> reports = disbursementBatchService.generateDisbursementBatches(
+        return fileResponse(disbursementBatchService.generateDisbursementBatches(
                 currentUser.id(),
                 request.originalFileName(),
                 request.payerId(),
-                request.groups());
-
-        return pdfResponse(reports);
+                request.groups()));
     }
 
-    private ResponseEntity<byte[]> pdfResponse(Map<String, byte[]> reports) {
-        Map.Entry<String, byte[]> report = reports.entrySet().iterator().next();
+    private ResponseEntity<byte[]> fileResponse(Letter letter) {
+        boolean zip = letter.fileName().endsWith(".zip");
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
+                .contentType(MediaType.parseMediaType(zip ? "application/zip" : MediaType.APPLICATION_PDF_VALUE))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename(report.getKey()).build().toString())
-                .body(report.getValue());
+                        ContentDisposition.attachment().filename(letter.fileName()).build().toString())
+                .body(letter.content());
     }
 
     @PostMapping("/batches/{batchId}/confirm")
@@ -143,18 +142,5 @@ public class SettleFundingRequestController {
                 batchId, confirmedById);
 
         return ResponseEntity.ok(ApiResponse.success(batch, "El lote de desembolso ha sido confirmado."));
-    }
-
-    @PostMapping("/confirm")
-    public ResponseEntity<ApiResponse<Void>> confirmDisbursement(
-            @Valid @RequestBody ConfirmDisbursementRequestDTO request) {
-
-        UUID confirmedById = currentUser.id();
-        log.info("Confirmando desembolso de {} documentos por usuario {}",
-                request.documentIds().size(), confirmedById);
-
-        disbursementConfirmationService.confirmDisbursement(request.documentIds(), confirmedById);
-
-        return ResponseEntity.ok(ApiResponse.success(null, "El desembolso de los documentos ha sido confirmado."));
     }
 }

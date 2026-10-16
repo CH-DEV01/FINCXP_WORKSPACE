@@ -26,13 +26,10 @@ public record DisbursementBatchDocumentDTOResponse(
 
     public static DisbursementBatchDocumentDTOResponse fromTransaction(FinancingTransactionModel tx) {
         var document = tx.getDocument();
-        String documentNumber = document.getDocumentNumber() != null
-                ? document.getDocumentNumber()
-                : document.getControlNumber();
 
         return new DisbursementBatchDocumentDTOResponse(
                 document.getId(),
-                documentNumber,
+                document.displayNumber(),
                 document.getMasterAgreement().getSupplier().getName(),
                 Money.round(document.getNominalAmount()),
                 Money.round(tx.getAmountToFinance()),

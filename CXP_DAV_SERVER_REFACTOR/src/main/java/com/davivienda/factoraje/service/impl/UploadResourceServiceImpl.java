@@ -29,6 +29,7 @@ import com.davivienda.factoraje.dto.upload_resource.ResourceFile;
 import com.davivienda.factoraje.dto.upload_resource.UploadResourcesDTOResponse;
 import com.davivienda.factoraje.dto.upload_resource.UploadResourcesDTOResponse.ResourceInfo;
 import com.davivienda.factoraje.infrastructure.exception.InvalidFileException;
+import com.davivienda.factoraje.infrastructure.file_parser.excel.GenericExcelParser;
 import com.davivienda.factoraje.infrastructure.mail.MailNoticePublisher;
 import com.davivienda.factoraje.infrastructure.exception.ResourceNotFoundException;
 import com.davivienda.factoraje.infrastructure.security.CurrentUserService;
@@ -157,15 +158,21 @@ public class UploadResourceServiceImpl implements UploadResourceService {
         }
     }
 
-    /** Encabezados no vacíos de la primera fila de la primera hoja, que es lo único que lee la carga. */
+    /** Encabezados no vacíos de la primera fila de la hoja {@link GenericExcelParser#DOCUMENTS_SHEET_NAME}. */
     static List<String> readHeaders(byte[] content) {
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(content))) {
             if (hasMacros(workbook)) {
                 throw new InvalidFileException("La plantilla no puede contener macros.");
             }
-            Row headerRow = workbook.getNumberOfSheets() > 0 ? workbook.getSheetAt(0).getRow(0) : null;
+            var sheet = workbook.getSheet(GenericExcelParser.DOCUMENTS_SHEET_NAME);
+            if (sheet == null) {
+                throw new InvalidFileException(
+                        "La plantilla debe contener la hoja \"" + GenericExcelParser.DOCUMENTS_SHEET_NAME + "\".");
+            }
+            Row headerRow = sheet.getRow(0);
             if (headerRow == null) {
-                throw new InvalidFileException("La primera fila de la primera hoja debe contener los encabezados.");
+                throw new InvalidFileException("La primera fila de la hoja \""
+                        + GenericExcelParser.DOCUMENTS_SHEET_NAME + "\" debe contener los encabezados.");
             }
             DataFormatter formatter = new DataFormatter();
             List<String> headers = new ArrayList<>();

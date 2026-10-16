@@ -50,68 +50,97 @@ class FundingCalculatorTest {
     }
 
     @Test
-    void documentAmountsKeepAllDecimalsAndAddUpToNominal() {
+    void documentAmountsAreRoundedOncePerComponentAndTheNetAbsorbsTheDifference() {
         DocumentMathResult result = calculator.calculateDocument(
                 document("1000.00", LocalDate.of(2026, 11, 1)), RATES, DISBURSEMENT_DATE);
 
         assertThat(result.diffDays()).isEqualTo(31);
         assertThat(result.nominalAmount()).isEqualByComparingTo("1000.00");
-        assertThat(result.amountToFinance()).isEqualByComparingTo("989.772352358957440000");
-        assertThat(result.interest()).isEqualByComparingTo("10.227647641042560000");
-        assertThat(result.commission()).isEqualByComparingTo("2.474430880897393600");
-        assertThat(result.ivaAmount()).isEqualByComparingTo("0.321676014516661168");
-        assertThat(result.commissionWithIva()).isEqualByComparingTo("2.796106895414054768");
-        assertThat(result.disburse()).isEqualByComparingTo("986.976245463543385232");
+        // Exacto: interés 10.2276..., que redondeado define el monto a financiar.
+        assertThat(result.interest()).isEqualByComparingTo("10.23");
+        assertThat(result.amountToFinance()).isEqualByComparingTo("989.77");
+        // Comisión sobre 989.77: 2.474425 -> 2.47; IVA sobre 2.47: 0.3211 -> 0.32.
+        assertThat(result.commission()).isEqualByComparingTo("2.47");
+        assertThat(result.ivaAmount()).isEqualByComparingTo("0.32");
+        assertThat(result.commissionWithIva()).isEqualByComparingTo("2.79");
+        assertThat(result.disburse()).isEqualByComparingTo("986.98");
+        // Las tasas no son dinero: conservan todos sus decimales.
         assertThat(result.discountRate()).isEqualByComparingTo("0.989772352358957440");
         assertThat(result.financingPercentage()).isEqualByComparingTo("0.010227647641042560");
 
         assertThat(result.interest().add(result.commission()).add(result.ivaAmount()).add(result.disburse()))
                 .isEqualByComparingTo(result.nominalAmount());
+        assertThat(result.interest().scale()).isEqualTo(Money.SCALE);
+        assertThat(result.disburse().scale()).isEqualTo(Money.SCALE);
     }
 
     @Test
-    void commissionWithIvaIsShownFromTheExactSumLikeASpreadsheet() {
+    void commissionWithIvaIsTheSumOfTheShownParts() {
         DocumentMathResult result = calculator.calculateDocument(
                 document("1000.00", LocalDate.of(2026, 11, 1)), RATES, DISBURSEMENT_DATE);
 
-        assertThat(Money.round(result.commission())).isEqualByComparingTo("2.47");
-        assertThat(Money.round(result.ivaAmount())).isEqualByComparingTo("0.32");
-        assertThat(Money.round(result.commissionWithIva())).isEqualByComparingTo("2.80");
+        assertThat(result.commission()).isEqualByComparingTo("2.47");
+        assertThat(result.ivaAmount()).isEqualByComparingTo("0.32");
+        assertThat(result.commissionWithIva()).isEqualByComparingTo("2.79");
     }
 
     @Test
-    void ivaIsCalculatedOnTheUnroundedCommission() {
+    void ivaIsCalculatedOnTheRoundedCommission() {
         FundingCalculator.Rates rates = new FundingCalculator.Rates(
                 new BigDecimal("0.12"), new BigDecimal("0.005"), 360, new BigDecimal("0.13"));
 
         DocumentMathResult result = calculator.calculateDocument(
                 document("3853.50", DISBURSEMENT_DATE.minusDays(1)), rates, DISBURSEMENT_DATE);
 
-        assertThat(result.commission()).isEqualByComparingTo("19.2675");
-        assertThat(Money.round(result.ivaAmount())).isEqualByComparingTo("2.50");
+        // 3853.50 * 0.005 = 19.2675 -> 19.27; IVA sobre lo que se cobra: 19.27 * 0.13 = 2.5051 -> 2.51.
+        assertThat(result.commission()).isEqualByComparingTo("19.27");
+        assertThat(result.ivaAmount()).isEqualByComparingTo("2.51");
+        assertThat(result.disburse()).isEqualByComparingTo("3831.72");
     }
 
     @Test
-    void totalsAreTheExactSumAndRoundOnlyWhenShown() {
+    void rejectsWhenAmountToDisburseIsNotPositive() {
+        FundingCalculator.Rates highCommission = new FundingCalculator.Rates(
+                BigDecimal.ZERO, BigDecimal.ONE, 360, new BigDecimal("0.13"));
+
+        assertThatThrownBy(() -> calculator.calculateDocument(
+                document("1000.00", LocalDate.of(2026, 11, 1)), highCommission, DISBURSEMENT_DATE))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("debe ser mayor a cero");
+    }
+
+    @Test
+    void totalsAreTheSumOfTheDetailInCents() {
         CalculationResult result = calculator.calculate(List.of(
                 document("1000.00", LocalDate.of(2026, 11, 1)),
                 document("2500.55", LocalDate.of(2026, 12, 1))), RATES, DISBURSEMENT_DATE);
 
         assertThat(result.details()).hasSize(2);
-        assertThat(Money.round(result.details().get(0).disburse())).isEqualByComparingTo("986.98");
-        assertThat(Money.round(result.details().get(1).disburse())).isEqualByComparingTo("2443.80");
+        DocumentMathResult first = result.details().get(0);
+        DocumentMathResult second = result.details().get(1);
+        assertThat(first.disburse()).isEqualByComparingTo("986.98");
+        assertThat(second.interest()).isEqualByComparingTo("49.83");
+        assertThat(second.commission()).isEqualByComparingTo("6.13");
+        assertThat(second.ivaAmount()).isEqualByComparingTo("0.80");
+        assertThat(second.disburse()).isEqualByComparingTo("2443.79");
 
         assertThat(result.totalAmount()).isEqualByComparingTo("3500.55");
-        assertThat(result.totalAmountToFinance()).isEqualByComparingTo("3440.491071731711441470");
-        assertThat(result.totalAmountToDisburse()).isEqualByComparingTo("3430.771684454069356647");
-        assertThat(Money.round(result.totalAmountToFinance())).isEqualByComparingTo("3440.49");
-        assertThat(Money.round(result.totalInterests())).isEqualByComparingTo("60.06");
-        assertThat(Money.round(result.totalCommissions())).isEqualByComparingTo("9.72");
-        assertThat(Money.round(result.totalAmountToDisburse())).isEqualByComparingTo("3430.77");
+        assertThat(result.totalAmountToFinance()).isEqualByComparingTo("3440.49");
+        assertThat(result.totalInterests()).isEqualByComparingTo("60.06");
+        assertThat(result.totalCommissions()).isEqualByComparingTo("9.72");
+        assertThat(result.totalAmountToDisburse()).isEqualByComparingTo("3430.77");
         assertThat(result.disbursementDate()).isEqualTo(DISBURSEMENT_DATE);
 
+        // Los totales son la suma literal del detalle: no hay segundo redondeo.
+        assertThat(result.totalAmountToDisburse())
+                .isEqualByComparingTo(first.disburse().add(second.disburse()));
+        assertThat(result.totalInterests())
+                .isEqualByComparingTo(first.interest().add(second.interest()));
+        assertThat(result.totalCommissions())
+                .isEqualByComparingTo(first.commissionWithIva().add(second.commissionWithIva()));
         assertThat(result.totalInterests().add(result.totalCommissions()).add(result.totalAmountToDisburse()))
                 .isEqualByComparingTo(result.totalAmount());
+        assertThat(Money.round(result.totalAmountToDisburse())).isEqualByComparingTo(result.totalAmountToDisburse());
     }
 
     private static DocumentModel document(String nominalAmount, LocalDate dueDate) {

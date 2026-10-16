@@ -160,12 +160,13 @@ const PayerManagementAdmin = () => {
         niu: data.niu.trim(),
         accountNumber: data.accountNumber.trim(),
         creditFacilityNumber: data.creditFacilityNumber.trim(),
-        facilityLimitAmount: Number(data.approvedAmount),
+        // Montos como texto para no perder precisión con Number() en valores grandes (VAL-03).
+        facilityLimitAmount: data.approvedAmount,
         interestRate: percentToFraction(data.interestRate),
         commissionRate: percentToFraction(data.commissionRate),
         calculationBase: data.calculationBase,
         warningThresholdPercentage: percentToFraction(data.warningThreshold),
-        initialAmountInUse: Number(data.consumedAmount || 0),
+        initialAmountInUse: data.consumedAmount || "0",
         initialConsumptionReference: Number(data.consumedAmount) > 0 ? data.consumptionReference.trim() : null,
       });
 

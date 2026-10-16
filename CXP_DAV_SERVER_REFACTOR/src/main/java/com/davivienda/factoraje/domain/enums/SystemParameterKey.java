@@ -214,10 +214,17 @@ public enum SystemParameterKey {
         }
     }
 
-    private String normalizeBase64Key(String value) {
-        if (value.length() > 255) {
+    private static final int MAX_STORED_VALUE_LENGTH = 255;
+
+    private String requireMaxLength(String value) {
+        if (value.length() > MAX_STORED_VALUE_LENGTH) {
             throw new IllegalArgumentException(name() + " no puede superar 255 caracteres.");
         }
+        return value;
+    }
+
+    private String normalizeBase64Key(String value) {
+        requireMaxLength(value);
         byte[] keyBytes;
         try {
             keyBytes = Base64.getDecoder().decode(value);
@@ -232,21 +239,22 @@ public enum SystemParameterKey {
     }
 
     private String normalizeText(String value) {
-        if (value.length() > 255) {
-            throw new IllegalArgumentException(name() + " no puede superar 255 caracteres.");
-        }
-        return value;
+        return requireMaxLength(value);
     }
 
     private String normalizeEmail(String value) {
+        final String email;
         try {
-            return IdentifierNormalizer.requireEmail(value);
+            // Los parámetros se guardan en minúsculas; el correo de usuario conserva mayúsculas (B13).
+            email = IdentifierNormalizer.lowerCase(IdentifierNormalizer.requireEmail(value));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(name() + ": " + e.getMessage());
         }
+        return requireMaxLength(email);
     }
 
     private String normalizeUrl(String value) {
+        requireMaxLength(value);
         try {
             URI uri = new URI(value);
             String scheme = uri.getScheme() != null ? uri.getScheme().toLowerCase(Locale.ROOT) : null;
@@ -302,6 +310,7 @@ public enum SystemParameterKey {
     }
 
     private String normalizeOrigins(String value) {
+        requireMaxLength(value);
         Set<String> origins = new LinkedHashSet<>();
         for (String token : value.split(",")) {
             String origin = token.trim();
@@ -313,7 +322,7 @@ public enum SystemParameterKey {
         if (origins.isEmpty()) {
             throw new IllegalArgumentException(name() + " debe incluir al menos un origen.");
         }
-        return String.join(",", origins);
+        return requireMaxLength(String.join(",", origins));
     }
 
     private String normalizeOrigin(String origin) {

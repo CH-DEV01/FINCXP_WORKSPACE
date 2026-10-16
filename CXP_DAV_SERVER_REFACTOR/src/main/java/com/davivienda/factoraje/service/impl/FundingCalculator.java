@@ -63,25 +63,35 @@ public class FundingCalculator {
 
         BigDecimal discountFactor = calculateDiscountFactor(rates.interestRate(), rates.baseDays(), diffDays);
 
-        // Sin redondear a centavos: cada monto parte del valor completo del anterior (con la
-        // escala de almacenamiento) y solo se redondea a 2 decimales al mostrarlo, como en una
-        // hoja de cálculo. Los totales suman los valores completos.
-        BigDecimal amountToFinance = Money.exact(nominalAmount.multiply(discountFactor, Money.CALC));
-        BigDecimal interest = nominalAmount.subtract(amountToFinance);
+        // Regla única de redondeo: cada componente se redondea a centavos aquí, una sola vez,
+        // como en una factura. El neto absorbe la diferencia, así que
+        // interés + comisión + IVA + neto == nominal exactamente, y todo total (simulación,
+        // lote, carta) es una simple suma de estos centavos. Las tasas (factor y porcentaje)
+        // se conservan con todos sus decimales porque no son dinero.
+        BigDecimal interest = Money.round(
+                nominalAmount.subtract(nominalAmount.multiply(discountFactor, Money.CALC)));
+        BigDecimal amountToFinance = nominalAmount.subtract(interest);
 
-        // La comisión se cobra sobre el monto a financiar (nominal menos intereses); el IVA va aparte.
-        BigDecimal pureCommission = Money.exact(amountToFinance.multiply(rates.commissionRate(), Money.CALC));
-        BigDecimal ivaAmount = Money.exact(pureCommission.multiply(rates.ivaRate(), Money.CALC));
+        // La comisión se cobra sobre el monto a financiar (nominal menos intereses); el IVA
+        // se calcula sobre la comisión ya redondeada, que es la que se cobra.
+        BigDecimal pureCommission = Money.round(amountToFinance.multiply(rates.commissionRate(), Money.CALC));
+        BigDecimal ivaAmount = Money.round(pureCommission.multiply(rates.ivaRate(), Money.CALC));
         BigDecimal totalCommissionWithIva = pureCommission.add(ivaAmount);
 
         BigDecimal disburse = nominalAmount.subtract(interest).subtract(totalCommissionWithIva);
+        if (disburse.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "El monto a desembolsar del documento %s resulta $%s; debe ser mayor a cero. "
+                            + "Revise la tasa de interés, la comisión o el IVA configurados.",
+                    document.displayNumber(), Money.roundOrZero(disburse)));
+        }
 
         log.debug("[CALCULO] Doc {} | vence {} | días = ({} - {}) + 1 = {} | nominal {}"
                         + " | factor = 1 / (1 + ({} / {}) * {}) = {}"
                         + " | monto a financiar = nominal * factor = {} | interés = nominal - monto a financiar = {}"
                         + " | comisión = monto a financiar * {} = {} | IVA = comisión * {} = {} | comisión con IVA = {}"
                         + " | a desembolsar = nominal - interés - comisión con IVA = {}",
-                document.getDocumentNumber(), DATE_FMT.format(dueDate),
+                document.displayNumber(), DATE_FMT.format(dueDate),
                 DATE_FMT.format(dueDate), DATE_FMT.format(disbursementDate), diffDays, nominalAmount,
                 rates.interestRate(), rates.baseDays(), diffDays, discountFactor,
                 amountToFinance, interest,

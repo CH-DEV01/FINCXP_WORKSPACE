@@ -19,9 +19,8 @@ import com.davivienda.factoraje.domain.catalogs.RoleCat;
 import com.davivienda.factoraje.domain.constants.EntityTypeCode;
 import com.davivienda.factoraje.domain.constants.Roles;
 import com.davivienda.factoraje.domain.entities.EntityModel;
+import com.davivienda.factoraje.domain.entities.MasterAgreementModel;
 import com.davivienda.factoraje.domain.entities.UserModel;
-import com.davivienda.factoraje.domain.enums.AgreementTypeEnum;
-import com.davivienda.factoraje.domain.enums.GeneralStatusEnum;
 import com.davivienda.factoraje.dto.holiday.HolidayDTORequest;
 import com.davivienda.factoraje.dto.master_agreement.MasterAgreementDTORequest;
 import com.davivienda.factoraje.dto.user.UserDTORequest;
@@ -81,21 +80,26 @@ class OperatorChangeNoticeTest {
     }
 
     @Test
-    void creatingAnAgreementAlertsBankUsers() {
+    void updatingAnAgreementAlertsBankUsers() {
         MasterAgreementRepository agreements = org.mockito.Mockito.mock(MasterAgreementRepository.class);
         DisbursementPolicyCatRepository disbursements = org.mockito.Mockito.mock(DisbursementPolicyCatRepository.class);
         PaymentPolicyCatRepository payments = org.mockito.Mockito.mock(PaymentPolicyCatRepository.class);
         EntityRepository entities = org.mockito.Mockito.mock(EntityRepository.class);
-        UUID payerId = UUID.randomUUID();
-        UUID supplierId = UUID.randomUUID();
+        UUID agreementId = UUID.randomUUID();
         UUID paymentId = UUID.randomUUID();
         UUID disbursementId = UUID.randomUUID();
-        when(entities.findById(payerId)).thenReturn(Optional.of(
-                EntityModel.builder().id(payerId).name("Pagador Demo").nit("06140101901011").build()));
-        when(entities.findById(supplierId)).thenReturn(Optional.of(
-                EntityModel.builder().id(supplierId).name("Proveedor Uno").nit("06140101901012").build()));
+        EntityModel payer = EntityModel.builder().id(UUID.randomUUID()).name("Pagador Demo").build();
+        EntityModel supplier = EntityModel.builder().id(UUID.randomUUID()).name("Proveedor Uno").build();
+        when(agreements.findById(agreementId)).thenReturn(Optional.of(
+                MasterAgreementModel.builder()
+                        .id(agreementId)
+                        .payer(payer)
+                        .supplier(supplier)
+                        .paymentPolicy(PaymentPolicyCat.builder().id(UUID.randomUUID()).code("P30").build())
+                        .disbursementPolicy(DisbursementPolicyCat.builder().id(UUID.randomUUID()).name("T+0").build())
+                        .build()));
         when(payments.findById(paymentId)).thenReturn(Optional.of(
-                PaymentPolicyCat.builder().id(paymentId).daysCount(30).build()));
+                PaymentPolicyCat.builder().id(paymentId).code("P30").daysCount(30).build()));
         when(disbursements.findById(disbursementId)).thenReturn(Optional.of(
                 DisbursementPolicyCat.builder().id(disbursementId).name("T+1").build()));
         when(agreements.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -103,11 +107,9 @@ class OperatorChangeNoticeTest {
         new MasterAgreementServiceImpl(agreements, disbursements, payments, entities,
                 org.mockito.Mockito.mock(BankAccountRepository.class),
                 org.mockito.Mockito.mock(DisbursementPolicyService.class), mailNotices)
-                .createMasterAgreement(new MasterAgreementDTORequest(
-                        AgreementTypeEnum.STANDARD, payerId, supplierId, paymentId, disbursementId,
-                        GeneralStatusEnum.ACTIVE));
+                .updateMasterAgreement(agreementId, new MasterAgreementDTORequest(paymentId, disbursementId));
 
-        verify(mailNotices).operatorChanged(eq("Acuerdos"), eq(MailNoticePublisher.NO_RECORD),
-                contains("Convenio Pagador Demo – Proveedor Uno"));
+        verify(mailNotices).operatorChanged(eq("Acuerdos"), contains("Convenio Pagador Demo – Proveedor Uno"),
+                contains("política de desembolso T+1"));
     }
 }

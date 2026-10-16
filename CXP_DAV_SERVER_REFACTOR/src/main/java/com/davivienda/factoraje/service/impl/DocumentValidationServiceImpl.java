@@ -2,9 +2,12 @@ package com.davivienda.factoraje.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -25,6 +28,7 @@ import com.davivienda.factoraje.domain.enums.SystemParameterKey;
 import com.davivienda.factoraje.dto.upload_batch.InvoiceRecordDTO;
 import com.davivienda.factoraje.infrastructure.config.SystemParameters;
 import com.davivienda.factoraje.infrastructure.file_parser.excel.BatchValidationError;
+import com.davivienda.factoraje.infrastructure.util.IdentifierNormalizer;
 import com.davivienda.factoraje.infrastructure.util.Money;
 import com.davivienda.factoraje.repository.BankAccountRepository;
 import com.davivienda.factoraje.repository.DisbursementPolicyCatRepository;
@@ -65,9 +69,13 @@ public class DocumentValidationServiceImpl implements DocumentValidationService 
     private static final Pattern ACCOUNT_NUMBER_PATTERN = Pattern.compile("^\\d+$");
     private static final int MAX_ACCOUNT_LENGTH = 50;
     private static final String BANK_ACCOUNT_COLUMN = "Cuenta bancaria";
+    private static final String SUPPLIER_NAME_COLUMN = "Nombre del proveedor";
+    private static final String PAYMENT_POLICY_COLUMN = "Politica de pago";
+    private static final String DISBURSEMENT_DAY_COLUMN = "Dia de desembolso";
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @Override
-    public List<BatchValidationError> validateBatch(List<InvoiceRecordDTO> invoices, UUID masterAgreementId) {
+    public List<BatchValidationError> validateBatch(List<InvoiceRecordDTO> invoices, UUID payerId) {
 
         List<BatchValidationError> errors = new ArrayList<>();
         LocalDate today = disbursementPolicyService.businessToday();
@@ -83,10 +91,14 @@ public class DocumentValidationServiceImpl implements DocumentValidationService 
                 documentRepository::findExistingReceivedStamps, "Sello de recepcion", "sello de recepción", errors);
         Optional<EntityModel> existingSupplier = findExistingSupplier(invoices, errors);
         validateSupplierBankAccount(invoices, existingSupplier, errors);
+        validateNewSupplierNameAgainstRegistry(invoices, existingSupplier, errors);
+        validateSupplierIdentityConsistency(invoices, existingSupplier, payerId, errors);
 
-        Set<String> paymentPolicyCodes = paymentPolicyCatRepository.findAll().stream()
-                .map(PaymentPolicyCat::getCode)
-                .collect(Collectors.toSet());
+        Map<String, Integer> paymentDaysByCode = new HashMap<>();
+        for (PaymentPolicyCat policy : paymentPolicyCatRepository.findAll()) {
+            paymentDaysByCode.put(policy.getCode(), policy.getDaysCount());
+        }
+        Set<String> paymentPolicyCodes = paymentDaysByCode.keySet();
         Set<String> disbursementPolicyCodes = disbursementPolicyCatRepository.findAll().stream()
                 .map(DisbursementPolicyCat::getCode)
                 .collect(Collectors.toSet());
@@ -104,10 +116,11 @@ public class DocumentValidationServiceImpl implements DocumentValidationService 
             }
 
             if (method == IssuanceMethodEnum.PAPER) {
-                if (invoice.documentNumber() == null || invoice.documentNumber().isBlank()) {
+                String paperNumber = IdentifierNormalizer.normalizePaperDocumentNumber(invoice.documentNumber());
+                if (paperNumber == null) {
                     errors.add(new BatchValidationError(invoice.rowIndex(), "Numero de documento", REQUIRED_FIELD,
                             "El número de documento es obligatorio para facturas físicas (PAPER)."));
-                } else if (invoice.documentNumber().length() > 255) {
+                } else if (paperNumber.length() > 255) {
                     errors.add(new BatchValidationError(invoice.rowIndex(), "Numero de documento", MAX_LENGTH_EXCEEDED,
                             "El número de documento físico supera el máximo de 255 caracteres."));
                 }
@@ -118,10 +131,10 @@ public class DocumentValidationServiceImpl implements DocumentValidationService 
             // Validaciones para Creación de Entidades (Proveedor)
             validateRequiredPattern(invoice.supplierNit(), "NIT del proveedor", NIT_PATTERN,
                     "El NIT debe tener exactamente 14 dígitos.", invoice.rowIndex(), errors);
-            validateRequiredText(invoice.supplierName(), "Nombre del proveedor", 255, invoice.rowIndex(), errors);
-            validateCatalogCode(invoice.paymentPolicy(), "Politica de pago", paymentPolicyCodes,
+            validateRequiredText(invoice.supplierName(), SUPPLIER_NAME_COLUMN, 255, invoice.rowIndex(), errors);
+            validateCatalogCode(invoice.paymentPolicy(), PAYMENT_POLICY_COLUMN, paymentPolicyCodes,
                     "La política de pago no existe en el catálogo.", invoice.rowIndex(), errors);
-            validateCatalogCode(invoice.disbursementDay(), "Dia de desembolso", disbursementPolicyCodes,
+            validateCatalogCode(invoice.disbursementDay(), DISBURSEMENT_DAY_COLUMN, disbursementPolicyCodes,
                     "El día de desembolso no existe en el catálogo de políticas de desembolso.", invoice.rowIndex(), errors);
 
             validateDteFormat(invoice, errors);
@@ -145,6 +158,8 @@ public class DocumentValidationServiceImpl implements DocumentValidationService 
                 } else if (invoice.issueDate().isBefore(today.minusDays(maxInvoiceAgeDays))) {
                     errors.add(new BatchValidationError(invoice.rowIndex(), "Fecha de emision", INVALID_DATE,
                             "La factura supera la antigüedad máxima permitida de " + maxInvoiceAgeDays + " días."));
+                } else {
+                    rejectIfAlreadyDue(invoice, today, paymentDaysByCode, errors);
                 }
             } else {
                 errors.add(new BatchValidationError(invoice.rowIndex(), "Fecha de emision", REQUIRED_FIELD,
@@ -152,16 +167,242 @@ public class DocumentValidationServiceImpl implements DocumentValidationService 
             }
 
             if (method == IssuanceMethodEnum.PAPER && invoice.supplierNit() != null
-                    && invoice.documentNumber() != null) {
-                String physicalKey = invoice.supplierNit() + "-" + invoice.documentNumber();
-                if (!seenPhysicalKeys.add(physicalKey)) {
-                    errors.add(new BatchValidationError(invoice.rowIndex(), "Numero de documento", DUPLICATE_IN_FILE,
-                            "Esta factura física viene duplicada dentro de este mismo archivo Excel para este proveedor."));
+                    && invoice.issueDate() != null) {
+                String paperNumber = IdentifierNormalizer.normalizePaperDocumentNumber(invoice.documentNumber());
+                if (paperNumber != null) {
+                    // Misma llave que el índice único y el doble fondeo entre archivos:
+                    // proveedor + número normalizado + año de emisión.
+                    String physicalKey = invoice.supplierNit() + "-" + invoice.issueDate().getYear() + "-" + paperNumber;
+                    if (!seenPhysicalKeys.add(physicalKey)) {
+                        errors.add(new BatchValidationError(invoice.rowIndex(), "Numero de documento", DUPLICATE_IN_FILE,
+                                "Esta factura física viene duplicada dentro de este mismo archivo Excel para este proveedor y año."));
+                    }
                 }
             }
         }
 
         return errors;
+    }
+
+    /**
+     * El vencimiento es emisión + días de la política de pago. Si ya pasó, la fila se
+     * rechaza en la carga para que no consuma cupo ni quede como Cargada.
+     */
+    private static void rejectIfAlreadyDue(InvoiceRecordDTO invoice, LocalDate today,
+            Map<String, Integer> paymentDaysByCode, List<BatchValidationError> errors) {
+
+        Integer paymentDays = paymentDaysByCode.get(invoice.paymentPolicy());
+        if (paymentDays == null) {
+            return;
+        }
+
+        LocalDate dueDate = invoice.issueDate().plusDays(paymentDays);
+        if (dueDate.isBefore(today)) {
+            errors.add(new BatchValidationError(invoice.rowIndex(), "Fecha de emision", INVALID_DATE,
+                    "El documento ya está vencido (vencimiento "
+                            + DATE_FMT.format(dueDate)
+                            + " = emisión + "
+                            + paymentDays
+                            + " días de la política de pago). No se aceptan documentos vencidos."));
+        }
+    }
+
+    /**
+     * Si el NIT es nuevo, el nombre debe ser único en el registro (incluye pagadores y bancos).
+     * Si el proveedor ya existe, la carga conserva el nombre registrado y no el del archivo.
+     */
+    private void validateNewSupplierNameAgainstRegistry(List<InvoiceRecordDTO> invoices,
+            Optional<EntityModel> existingSupplier, List<BatchValidationError> errors) {
+
+        if (existingSupplier.isPresent()) {
+            return;
+        }
+
+        Set<String> namesChecked = new HashSet<>();
+        Set<String> namesAlreadyTaken = new HashSet<>();
+
+        for (InvoiceRecordDTO invoice : invoices) {
+            String name = trimToNull(invoice.supplierName());
+            if (name == null) {
+                continue;
+            }
+            if (namesChecked.add(name) && entityRepository.existsByName(name)) {
+                namesAlreadyTaken.add(name);
+            }
+            if (namesAlreadyTaken.contains(name)) {
+                errors.add(new BatchValidationError(invoice.rowIndex(), SUPPLIER_NAME_COLUMN, VALUE_NOT_ALLOWED,
+                        "Ya existe una entidad registrada con el nombre " + name + "."));
+            }
+        }
+    }
+
+    /**
+     * Nombre, política de pago y día de desembolso deben ser iguales en todas las filas del NIT.
+     * Si el proveedor o el convenio ya existen, el archivo debe coincidir con lo registrado
+     * (el cambio se hace desde la gestión de proveedores o convenios).
+     */
+    private void validateSupplierIdentityConsistency(List<InvoiceRecordDTO> invoices,
+            Optional<EntityModel> existingSupplier, UUID payerId, List<BatchValidationError> errors) {
+
+        String expectedName = null;
+        String expectedPaymentPolicy = null;
+        String expectedDisbursementDay = null;
+
+        for (InvoiceRecordDTO invoice : invoices) {
+            String name = trimToNull(invoice.supplierName());
+            String paymentPolicy = trimToNull(invoice.paymentPolicy());
+            String disbursementDay = trimToNull(invoice.disbursementDay());
+
+            if (name != null) {
+                if (expectedName == null) {
+                    expectedName = name;
+                } else if (!expectedName.equals(name)) {
+                    errors.add(new BatchValidationError(invoice.rowIndex(), SUPPLIER_NAME_COLUMN, SUPPLIER_ACCOUNT,
+                            String.format(
+                                    "Todas las facturas del proveedor (NIT: %s) deben tener el mismo nombre. Se esperaba %s y se recibió %s.",
+                                    invoice.supplierNit(), expectedName, name)));
+                }
+            }
+
+            if (paymentPolicy != null) {
+                if (expectedPaymentPolicy == null) {
+                    expectedPaymentPolicy = paymentPolicy;
+                } else if (!expectedPaymentPolicy.equals(paymentPolicy)) {
+                    errors.add(new BatchValidationError(invoice.rowIndex(), PAYMENT_POLICY_COLUMN, SUPPLIER_ACCOUNT,
+                            String.format(
+                                    "Todas las facturas del proveedor (NIT: %s) deben tener la misma política de pago. Se esperaba %s y se recibió %s.",
+                                    invoice.supplierNit(), expectedPaymentPolicy, paymentPolicy)));
+                }
+            }
+
+            if (disbursementDay != null) {
+                if (expectedDisbursementDay == null) {
+                    expectedDisbursementDay = disbursementDay;
+                } else if (!expectedDisbursementDay.equals(disbursementDay)) {
+                    errors.add(new BatchValidationError(invoice.rowIndex(), DISBURSEMENT_DAY_COLUMN, SUPPLIER_ACCOUNT,
+                            String.format(
+                                    "Todas las facturas del proveedor (NIT: %s) deben tener el mismo día de desembolso. Se esperaba %s y se recibió %s.",
+                                    invoice.supplierNit(), expectedDisbursementDay, disbursementDay)));
+                }
+            }
+        }
+
+        if (invoices.isEmpty() || existingSupplier.isEmpty()) {
+            return;
+        }
+
+        InvoiceRecordDTO firstInvoice = invoices.get(0);
+        String supplierNit = firstInvoice.supplierNit();
+        EntityModel supplier = existingSupplier.get();
+        final String fileName = expectedName;
+        final String filePaymentPolicy = expectedPaymentPolicy;
+        final String fileDisbursementDay = expectedDisbursementDay;
+
+        if (fileName != null && supplier.getName() != null && !supplier.getName().equals(fileName)) {
+            errors.add(new BatchValidationError(firstInvoice.rowIndex(), SUPPLIER_NAME_COLUMN, SUPPLIER_ACCOUNT,
+                    String.format(
+                            "El proveedor (NIT: %s) está registrado como %s y el archivo indica %s. Actualice el nombre desde la gestión de proveedores antes de cargar.",
+                            supplierNit, supplier.getName(), fileName)));
+        }
+
+        if (payerId == null) {
+            return;
+        }
+
+        masterAgreementRepository.findByPayerIdAndSupplierId(payerId, supplier.getId()).ifPresent(agreement -> {
+            String registeredPayment = agreement.getPaymentPolicy() != null
+                    ? agreement.getPaymentPolicy().getCode()
+                    : null;
+            String registeredDisbursement = agreement.getDisbursementPolicy() != null
+                    ? agreement.getDisbursementPolicy().getCode()
+                    : null;
+
+            if (filePaymentPolicy != null && registeredPayment != null
+                    && !registeredPayment.equals(filePaymentPolicy)) {
+                errors.add(new BatchValidationError(firstInvoice.rowIndex(), PAYMENT_POLICY_COLUMN, SUPPLIER_ACCOUNT,
+                        String.format(
+                                "El convenio con el proveedor (NIT: %s) ya tiene la política de pago %s y el archivo indica %s. Actualice el convenio desde la gestión de convenios antes de cargar.",
+                                supplierNit, registeredPayment, filePaymentPolicy)));
+            }
+            if (fileDisbursementDay != null && registeredDisbursement != null
+                    && !registeredDisbursement.equals(fileDisbursementDay)) {
+                errors.add(new BatchValidationError(firstInvoice.rowIndex(), DISBURSEMENT_DAY_COLUMN, SUPPLIER_ACCOUNT,
+                        String.format(
+                                "El convenio con el proveedor (NIT: %s) ya tiene el día de desembolso %s y el archivo indica %s. Actualice el convenio desde la gestión de convenios antes de cargar.",
+                                supplierNit, registeredDisbursement, fileDisbursementDay)));
+            }
+        });
+    }
+
+    /**
+     * Dos NIT nuevos del mismo archivo no pueden crear proveedores con el mismo nombre:
+     * la segunda creación fallaría por unicidad y el usuario vería un falso conflicto de carga.
+     */
+    @Override
+    public List<BatchValidationError> validateNewSupplierNamesInFile(List<InvoiceRecordDTO> invoices) {
+        List<BatchValidationError> errors = new ArrayList<>();
+        if (invoices.isEmpty()) {
+            return errors;
+        }
+
+        Map<String, List<InvoiceRecordDTO>> byNit = invoices.stream()
+                .filter(invoice -> invoice.supplierNit() != null && !invoice.supplierNit().isBlank())
+                .collect(Collectors.groupingBy(InvoiceRecordDTO::supplierNit));
+
+        Set<String> existingNits = byNit.keySet().stream()
+                .filter(entityRepository::existsByNit)
+                .collect(Collectors.toSet());
+
+        Map<String, Set<String>> nitsByName = new HashMap<>();
+        for (Map.Entry<String, List<InvoiceRecordDTO>> entry : byNit.entrySet()) {
+            String nit = entry.getKey();
+            if (existingNits.contains(nit)) {
+                continue;
+            }
+            for (InvoiceRecordDTO invoice : entry.getValue()) {
+                String name = trimToNull(invoice.supplierName());
+                if (name == null) {
+                    continue;
+                }
+                nitsByName.computeIfAbsent(name, ignored -> new HashSet<>()).add(nit);
+            }
+        }
+
+        Set<String> conflictingNames = nitsByName.entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        if (conflictingNames.isEmpty()) {
+            return errors;
+        }
+
+        for (InvoiceRecordDTO invoice : invoices) {
+            if (invoice.supplierNit() == null || existingNits.contains(invoice.supplierNit())) {
+                continue;
+            }
+            String name = trimToNull(invoice.supplierName());
+            if (name == null || !conflictingNames.contains(name)) {
+                continue;
+            }
+            String otherNits = nitsByName.get(name).stream()
+                    .filter(nit -> !nit.equals(invoice.supplierNit()))
+                    .sorted()
+                    .collect(Collectors.joining(", "));
+            errors.add(new BatchValidationError(invoice.rowIndex(), SUPPLIER_NAME_COLUMN, VALUE_NOT_ALLOWED,
+                    "El nombre " + name + " lo comparten varios NIT nuevos en este archivo ("
+                            + otherNits
+                            + "). Cada proveedor nuevo debe tener un nombre distinto."));
+        }
+        return errors;
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /**
@@ -398,7 +639,8 @@ public class DocumentValidationServiceImpl implements DocumentValidationService 
     private void validateDoubleFundingPaperBulk(List<InvoiceRecordDTO> invoices, List<BatchValidationError> errors) {
         List<InvoiceRecordDTO> paperInvoices = invoices.stream()
                 .filter(inv -> IssuanceMethodEnum.fromString(inv.issuanceMethod()) == IssuanceMethodEnum.PAPER)
-                .filter(inv -> inv.supplierNit() != null && inv.issueDate() != null && inv.documentNumber() != null)
+                .filter(inv -> inv.supplierNit() != null && inv.issueDate() != null
+                        && IdentifierNormalizer.normalizePaperDocumentNumber(inv.documentNumber()) != null)
                 .toList();
 
         if (paperInvoices.isEmpty()) return;
@@ -411,16 +653,18 @@ public class DocumentValidationServiceImpl implements DocumentValidationService 
         groupedInvoices.forEach((nit, yearMap) -> {
             yearMap.forEach((year, invoicesInGroup) -> {
                 List<String> documentNumbers = invoicesInGroup.stream()
-                        .map(InvoiceRecordDTO::documentNumber)
+                        .map(inv -> IdentifierNormalizer.normalizePaperDocumentNumber(inv.documentNumber()))
+                        .distinct()
                         .toList();
 
                 Set<String> existingNumbers = documentRepository.findExistingPhysicalDocuments(nit, documentNumbers, year);
 
                 for (InvoiceRecordDTO invoice : invoicesInGroup) {
-                    if (existingNumbers.contains(invoice.documentNumber())) {
+                    String paperNumber = IdentifierNormalizer.normalizePaperDocumentNumber(invoice.documentNumber());
+                    if (existingNumbers.contains(paperNumber)) {
                         errors.add(new BatchValidationError(invoice.rowIndex(), "Numero de documento", DOUBLE_FUNDING,
                                 String.format("Riesgo de Doble Fondeo: El documento físico '%s' del proveedor (NIT: %s) para el año %d ya se encuentra registrado en el sistema.",
-                                        invoice.documentNumber(), nit, year)));
+                                        paperNumber, nit, year)));
                     }
                 }
             });

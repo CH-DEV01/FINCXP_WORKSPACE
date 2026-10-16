@@ -37,16 +37,22 @@ const getSupplierSummaries = async ({ search, page = 0, size = 10 } = {}) => {
   return response.data?.data;
 };
 
-/** Página del catálogo de pagadores. */
-const getPayers = async (page = 0, size = 100, sortBy = "name", sortDir = "ASC") => {
+/**
+ * Página del catálogo de pagadores (sin búsqueda).
+ * Para selectores use getPayerSummaries({ search, page, size }).
+ */
+const getPayers = async (page = 0, size = 20, sortBy = "name", sortDir = "ASC") => {
   const response = await api.get("/v1/entities/payers", {
     params: { page, size, sortBy, sortDir },
   });
   return response.data?.data;
 };
 
-/** Página del catálogo de proveedores. */
-const getSuppliers = async (page = 0, size = 100, sortBy = "name", sortDir = "ASC") => {
+/**
+ * Página del catálogo de proveedores (sin búsqueda).
+ * Para selectores use getSupplierSummaries({ search, page, size }).
+ */
+const getSuppliers = async (page = 0, size = 20, sortBy = "name", sortDir = "ASC") => {
   const response = await api.get("/v1/entities/suppliers", {
     params: { page, size, sortBy, sortDir },
   });

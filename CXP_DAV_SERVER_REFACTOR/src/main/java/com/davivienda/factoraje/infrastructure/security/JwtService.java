@@ -105,7 +105,10 @@ public class JwtService {
     /** El cliente no puede leer el token de la cookie: la vigencia viaja en las respuestas. */
     public SessionWindowDTO window(String token) {
         Claims claims = parse(token);
-        return new SessionWindowDTO(claims.getIssuedAt().getTime(), claims.getExpiration().getTime());
+        return new SessionWindowDTO(
+                claims.getIssuedAt().getTime(),
+                claims.getExpiration().getTime(),
+                System.currentTimeMillis());
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {

@@ -58,9 +58,19 @@ export const payerSchema = z
     approvedAmount: z
       .string()
       .min(1, required)
-      .refine((val) => Number(val) > 0, { message: "Debe ser mayor a 0" }),
+      .refine((val) => Number(val) > 0, { message: "Debe ser mayor a 0" })
+      .refine((val) => {
+        const [integer = "", decimal] = String(val).split(".");
+        return integer.length <= 15 && (decimal === undefined || decimal.length <= 2);
+      }, { message: "Máximo 15 enteros y 2 decimales" }),
     ...editableFields,
-    consumedAmount: z.string(),
+    consumedAmount: z
+      .string()
+      .refine((val) => {
+        if (!val) return true;
+        const [integer = "", decimal] = String(val).split(".");
+        return integer.length <= 15 && (decimal === undefined || decimal.length <= 2);
+      }, { message: "Máximo 15 enteros y 2 decimales" }),
     consumptionReference: z.string().trim().max(255, { message: "Máximo 255 caracteres" }),
   })
   // Todo pagador se registra activo; el estado solo se cambia al editar

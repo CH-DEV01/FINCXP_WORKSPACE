@@ -62,6 +62,10 @@ public interface DocumentRepository extends JpaRepository<DocumentModel, UUID>, 
                         @Param("status") DocumentStatusEnum status,
                         @Param("minDueDate") LocalDate minDueDate);
 
+        /**
+         * Números PAPER ya normalizados (mayúsculas, sin espacios ni guiones). La comparación
+         * usa la misma forma en la que se guardan y en la del índice único.
+         */
         @Query("SELECT d.documentNumber FROM DocumentModel d " +
                         "WHERE d.masterAgreement.supplier.nit = :nit " +
                         "AND d.documentNumber IN :documentNumbers " +

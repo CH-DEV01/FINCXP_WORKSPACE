@@ -13,8 +13,7 @@ import { EMPTY_CREDIT_LINE } from "./credit-line/creditLineConfig";
 
 const PayerCreditLineManager = () => {
   const {
-    payersList,
-    activePayer,
+    selectedPayer,
     isLoadingPayers,
     selectPayer,
     creditLineData,
@@ -46,11 +45,12 @@ const PayerCreditLineManager = () => {
 
       await creditFacilityService.restoreCreditFacility(apiPayload);
       const batchText = repaymentPayload.batchNumber ? ` por el lote ${repaymentPayload.batchNumber}` : "";
+      const restoredAmount = repaymentPayload.amount ?? creditLineData?.currentConsumed;
 
       setIsModalOpen(false);
       Swal.fire({
         title: "¡Abono aplicado!",
-        text: `Se han restaurado $${formatMoney(repaymentPayload.amount)} al cupo de crédito${batchText}.`,
+        text: `Se han restaurado $${formatMoney(restoredAmount)} al cupo de crédito${batchText}.`,
         icon: "success",
         confirmButtonColor: "#dc2626",
       });
@@ -68,8 +68,7 @@ const PayerCreditLineManager = () => {
   return (
     <div className="flex flex-col w-full min-w-0 max-w-none font-sans">
       <CreditLineHeader
-        payers={payersList}
-        activePayer={activePayer}
+        selectedPayer={selectedPayer}
         onSelectPayer={selectPayer}
         isLoadingPayers={isLoadingPayers}
       />

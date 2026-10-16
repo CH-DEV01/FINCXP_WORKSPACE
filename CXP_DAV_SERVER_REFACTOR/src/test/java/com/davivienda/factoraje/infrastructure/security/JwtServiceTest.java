@@ -54,6 +54,20 @@ class JwtServiceTest {
     }
 
     @Test
+    void windowIncludesServerTime() {
+        JwtService service = serviceWith(15, 60);
+        String token = service.generateToken(user);
+        long before = System.currentTimeMillis();
+
+        var window = service.window(token);
+
+        long after = System.currentTimeMillis();
+        assertThat(window.issuedAt()).isEqualTo(claims(token).getIssuedAt().getTime());
+        assertThat(window.expiresAt()).isEqualTo(claims(token).getExpiration().getTime());
+        assertThat(window.serverTime()).isBetween(before, after);
+    }
+
+    @Test
     void refreshingKeepsTheLoginTime() {
         JwtService service = serviceWith(15, 60);
         String token = service.generateToken(user);

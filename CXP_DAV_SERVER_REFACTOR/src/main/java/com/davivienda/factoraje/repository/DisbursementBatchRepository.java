@@ -69,6 +69,17 @@ public interface DisbursementBatchRepository extends JpaRepository<DisbursementB
     """)
     List<RestorableDisbursementBatchDTOResponse> findRestorableByPayer(@Param("payerId") UUID payerId);
 
+    /** Misma selección que {@link #findRestorableByPayer}, con bloqueo para liquidación total. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT b FROM DisbursementBatchModel b
+        WHERE b.payer.id = :payerId
+          AND b.status = com.davivienda.factoraje.domain.enums.DisbursementBatchStatusEnum.SETTLED
+          AND NOT EXISTS (SELECT h.id FROM CreditFacilityHistoryModel h WHERE h.disbursementBatch = b)
+        ORDER BY b.dueDate, b.batchNumber
+    """)
+    List<DisbursementBatchModel> findRestorableEntitiesByPayerForUpdate(@Param("payerId") UUID payerId);
+
     /** Valor nominal de los documentos del lote: lo que consumieron del cupo al cargarse. */
     @Query("""
         SELECT COALESCE(SUM(t.document.nominalAmount), 0)

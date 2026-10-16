@@ -114,6 +114,10 @@ describe("sanitizeAmount", () => {
   it("conserva el punto final mientras se escribe", () => {
     expect(sanitizeAmount("10.")).toBe("10.");
   });
+
+  it("limita a 15 enteros y 2 decimales (VAL-03)", () => {
+    expect(sanitizeAmount("1234567890123456.999")).toBe("123456789012345.99");
+  });
 });
 
 describe("downloadBlob", () => {

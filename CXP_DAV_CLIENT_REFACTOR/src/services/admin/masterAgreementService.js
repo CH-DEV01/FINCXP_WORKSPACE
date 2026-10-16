@@ -16,13 +16,7 @@ const getMasterAgreementsBySupplier = async (supplierId) => {
   return response.data?.data;
 };
 
-/** @param {Object} requestData - MasterAgreementDTORequest. */
-const createMasterAgreement = async (requestData) => {
-  const response = await api.post("/v1/master-agreements", requestData);
-  return response.data?.data;
-};
-
-/** @param {Object} requestData - MasterAgreementDTORequest. */
+/** Actualiza las políticas del convenio: { paymentPolicyId, disbursementPolicyId }. */
 const updateMasterAgreement = async (id, requestData) => {
   const response = await api.put(`/v1/master-agreements/${id}`, requestData);
   return response.data?.data;
@@ -38,6 +32,5 @@ export const masterAgreementService = {
   getMasterAgreements,
   getMasterAgreementsBySupplier,
   getNextDisbursementDate,
-  createMasterAgreement,
   updateMasterAgreement,
 };

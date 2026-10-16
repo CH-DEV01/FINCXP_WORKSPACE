@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
-import { entityService } from "../../services/admin/entityService.js";
 import { masterAgreementService } from "../../services/admin/masterAgreementService.js";
 import { policyService } from "../../services/admin/policyService.js";
 
@@ -14,6 +13,7 @@ import Modal from "../../components/Modal";
 import SearchInput from "../../components/SearchInput";
 import StatusBadge from "../../components/StatusBadge";
 import FieldError from "../../components/form/FieldError";
+import EntitySearchPicker from "../../components/EntitySearchPicker";
 import PayerDirectory from "../../components/payer/PayerDirectory.jsx";
 import useServerPagination from "../../hooks/useServerPagination";
 import { STATUS_OPTIONS } from "../../constants/status";
@@ -22,8 +22,6 @@ import { apiErrorMessage, showError, showLoading, showSuccess } from "../../util
 const masterAgreementSchema = z.object({
   status: z.string().min(1, "El estado es requerido"),
   agreementType: z.string().min(1, "El tipo de convenio es requerido"),
-  payerId: z.string().uuid("Seleccione un pagador válido"),
-  supplierId: z.string().uuid("Seleccione un proveedor válido"),
   paymentPolicyId: z.string().uuid("Seleccione una política de pago"),
   disbursementPolicyId: z.string().uuid("Seleccione una política de desembolso"),
 });
@@ -77,10 +75,9 @@ const lockedProps = (isLocked) => (isLocked ? { tabIndex: -1, "aria-disabled": t
 const logLoadError = (error) => console.error("Error fetching master agreements:", error);
 
 const MasterAgreementManagement = () => {
-  const [payers, setPayers] = useState([]);
-  const [isLoadingPayers, setIsLoadingPayers] = useState(true);
   const [selectedPayer, setSelectedPayer] = useState(null);
-  const [suppliers, setSuppliers] = useState([]);
+  const [formPayer, setFormPayer] = useState(null);
+  const [formSupplier, setFormSupplier] = useState(null);
   const [paymentPolicies, setPaymentPolicies] = useState([]);
   const [disbursementPolicies, setDisbursementPolicies] = useState([]);
 
@@ -120,64 +117,47 @@ const MasterAgreementManagement = () => {
     defaultValues: {
       status: "ACTIVE",
       agreementType: "STANDARD",
-      payerId: "",
-      supplierId: "",
       paymentPolicyId: "",
       disbursementPolicyId: "",
     },
   });
 
   useEffect(() => {
-    const fetchCatalogs = async () => {
+    const fetchPolicies = async () => {
       try {
-        const [payerPage, supplierPage, payment, disbursement] = await Promise.all([
-          entityService.getPayers(),
-          entityService.getSuppliers(),
+        const [payment, disbursement] = await Promise.all([
           policyService.getPaymentPolicies(),
           policyService.getDisbursementPolicies(),
         ]);
-
-        const payerList = payerPage?.content ?? [];
-        setPayers(payerList);
-        setSelectedPayer(payerList[0] ?? null);
-        setSuppliers(supplierPage?.content ?? []);
         setPaymentPolicies(payment);
         setDisbursementPolicies(disbursement);
       } catch (error) {
-        console.error("Error al cargar los catálogos", error);
-      } finally {
-        setIsLoadingPayers(false);
+        console.error("Error al cargar las políticas", error);
       }
     };
-    fetchCatalogs();
+    fetchPolicies();
   }, []);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingParam(null);
+    setFormPayer(null);
+    setFormSupplier(null);
     reset();
   };
 
   const onSubmit = async (formData) => {
+    if (!editingParam) return;
+
     showLoading("Guardando la información, por favor espere.");
 
     try {
-      const requestPayload = {
-        status: formData.status,
-        agreementType: formData.agreementType,
-        payerId: formData.payerId,
-        supplierId: formData.supplierId,
+      await masterAgreementService.updateMasterAgreement(editingParam.id, {
         paymentPolicyId: formData.paymentPolicyId,
         disbursementPolicyId: formData.disbursementPolicyId,
-      };
+      });
 
-      if (editingParam) {
-        await masterAgreementService.updateMasterAgreement(editingParam.id, requestPayload);
-      } else {
-        await masterAgreementService.createMasterAgreement(requestPayload);
-      }
-
-      showSuccess(editingParam ? "Convenio actualizado correctamente." : "Convenio registrado correctamente.");
+      showSuccess("Convenio actualizado correctamente.");
       reload();
       handleCloseModal();
     } catch (error) {
@@ -187,12 +167,20 @@ const MasterAgreementManagement = () => {
 
   const handleEdit = (param) => {
     setEditingParam(param);
+    setFormPayer({
+      id: param.payerId,
+      name: param.PayerName || param.payerName || "Pagador",
+      nit: param.payerNit || "",
+    });
+    setFormSupplier({
+      id: param.supplierId,
+      name: param.supplierName || "Proveedor",
+      nit: param.supplierNit || "",
+    });
 
     reset({
       status: param.status || "ACTIVE",
       agreementType: param.agreementType || "STANDARD",
-      payerId: param.payerId || "",
-      supplierId: param.supplierId || "",
       paymentPolicyId: param.paymentPolicyId || "",
       disbursementPolicyId: param.disbursementPolicyId || "",
     });
@@ -213,12 +201,7 @@ const MasterAgreementManagement = () => {
 
       <div className="flex flex-col lg:flex-row flex-1 min-h-0 gap-4">
         <aside className="lg:w-64 xl:w-72 shrink-0 flex flex-col min-h-[480px] lg:min-h-0 shadow-2xl bg-gradient-to-r from-red-600 to-red-800 bg-red-800 text-white p-4 rounded-xl font-montserrat">
-          <PayerDirectory
-            payers={payers}
-            isLoading={isLoadingPayers}
-            selectedPayerId={selectedPayerId}
-            onSelect={selectPayer}
-          />
+          <PayerDirectory selectedPayerId={selectedPayerId} onSelect={selectPayer} />
         </aside>
 
         <section className="flex-1 min-w-0 min-h-0 flex flex-col">
@@ -252,11 +235,9 @@ const MasterAgreementManagement = () => {
               </div>
             </>
           ) : (
-            !isLoadingPayers && (
-              <div className="flex-1 flex items-center justify-center min-h-[200px] bg-white border border-gray-200 rounded-lg shadow-sm p-6 text-sm text-gray-500">
-                Seleccione un pagador del directorio para ver sus convenios.
-              </div>
-            )
+            <div className="flex-1 flex items-center justify-center min-h-[200px] bg-white border border-gray-200 rounded-lg shadow-sm p-6 text-sm text-gray-500">
+              Seleccione un pagador del directorio para ver sus convenios.
+            </div>
           )}
         </section>
       </div>
@@ -264,7 +245,7 @@ const MasterAgreementManagement = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingParam ? "Modificar convenio marco" : "Registrar nuevo convenio marco"}
+        title="Modificar convenio marco"
         footer={
           <>
             <button
@@ -277,17 +258,15 @@ const MasterAgreementManagement = () => {
               onClick={handleSubmit(onSubmit)}
               className="py-2 px-4 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 shadow-md hover:cursor-pointer transition-colors"
             >
-              {editingParam ? "Guardar cambios" : "Registrar Convenio"}
+              Guardar cambios
             </button>
           </>
         }
       >
         <form className="grid grid-cols-2 gap-4">
-          {/* Estado, tipo, pagador y proveedor quedan bloqueados en edición; solo cambian las políticas */}
+          {/* Estado, tipo, pagador y proveedor son de solo lectura; solo se editan las políticas */}
           <div className="col-span-2 md:col-span-1">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Estado {!editingParam && <span className="text-red-500">*</span>}
-            </label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Estado</label>
             <select
               {...register("status")}
               {...lockedProps(editingParam)}
@@ -303,9 +282,7 @@ const MasterAgreementManagement = () => {
           </div>
 
           <div className="col-span-2 md:col-span-1">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Tipo de Convenio {!editingParam && <span className="text-red-500">*</span>}
-            </label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Tipo de Convenio</label>
             <select
               {...register("agreementType")}
               {...lockedProps(editingParam)}
@@ -319,45 +296,13 @@ const MasterAgreementManagement = () => {
           </div>
 
           <div className="col-span-2 md:col-span-1">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Pagador {!editingParam && <span className="text-red-500">*</span>}
-            </label>
-            <select
-              {...register("payerId")}
-              {...lockedProps(editingParam)}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-sm font-montserrat 
-                                ${errors.payerId ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-red-300"}
-                                ${lockedClass(editingParam)}`}
-            >
-              <option value="">Seleccione un pagador</option>
-              {payers.map((payer) => (
-                <option key={payer.id} value={payer.id}>
-                  {payer.name}
-                </option>
-              ))}
-            </select>
-            <FieldError error={errors.payerId} />
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Pagador</label>
+            <EntitySearchPicker selected={formPayer} onSelect={() => {}} locked />
           </div>
 
           <div className="col-span-2 md:col-span-1">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Proveedor {!editingParam && <span className="text-red-500">*</span>}
-            </label>
-            <select
-              {...register("supplierId")}
-              {...lockedProps(editingParam)}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-sm font-montserrat 
-                                ${errors.supplierId ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-red-300"}
-                                ${lockedClass(editingParam)}`}
-            >
-              <option value="">Seleccione un proveedor</option>
-              {suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.name}
-                </option>
-              ))}
-            </select>
-            <FieldError error={errors.supplierId} />
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Proveedor</label>
+            <EntitySearchPicker selected={formSupplier} onSelect={() => {}} locked />
           </div>
 
           <div className="col-span-2 md:col-span-1">

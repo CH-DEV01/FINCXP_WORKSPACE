@@ -32,6 +32,8 @@ public class GenericExcelParser {
 
     private static final int ROW_CACHE_SIZE = 100;
     private static final int BUFFER_SIZE = 4096;
+    /** Nombre fijo de la hoja con los documentos; no se usa la primera hoja del libro. */
+    public static final String DOCUMENTS_SHEET_NAME = "Documentos";
     public static final String UNREADABLE_FILE_MESSAGE =
             "El archivo no pudo ser leído. Verifique que sea un Excel válido.";
 
@@ -54,7 +56,7 @@ public class GenericExcelParser {
             ExcelRowMapper<T> rowMapper) throws IOException {
 
         try (Workbook workbook = openWorkbook(inputStream)) {
-            return parseFirstSheet(workbook, requiredHeaders, maxRows, rowMapper);
+            return parseDocumentsSheet(workbook, requiredHeaders, maxRows, rowMapper);
         }
     }
 
@@ -81,6 +83,24 @@ public class GenericExcelParser {
         }
     }
 
+    /**
+     * XSSF/HSSF devuelven {@code null} si la hoja no existe; el lector en streaming lanza
+     * una RuntimeException. En ambos casos el mensaje habla de la hoja esperada.
+     */
+    private static Sheet requireDocumentsSheet(Workbook workbook) {
+        try {
+            Sheet sheet = workbook.getSheet(DOCUMENTS_SHEET_NAME);
+            if (sheet != null) {
+                return sheet;
+            }
+        } catch (RuntimeException e) {
+            throw new InvalidFileException(
+                    "Archivo rechazado: no se encontró la hoja \"" + DOCUMENTS_SHEET_NAME + "\".", e);
+        }
+        throw new InvalidFileException(
+                "Archivo rechazado: no se encontró la hoja \"" + DOCUMENTS_SHEET_NAME + "\".");
+    }
+
     /** El lector en streaming descomprime al avanzar, así que un archivo dañado falla aquí y no al abrirlo. */
     private static Row nextRowOrNull(Iterator<Row> rows) {
         try {
@@ -90,13 +110,10 @@ public class GenericExcelParser {
         }
     }
 
-    private <T> ExcelParseResult<T> parseFirstSheet(Workbook workbook, List<String> requiredHeaders, int maxRows,
+    private <T> ExcelParseResult<T> parseDocumentsSheet(Workbook workbook, List<String> requiredHeaders, int maxRows,
             ExcelRowMapper<T> rowMapper) {
 
-        if (workbook.getNumberOfSheets() == 0) {
-            throw new InvalidFileException("El archivo está vacío o la primera fila no contiene los encabezados.");
-        }
-        Sheet sheet = workbook.getSheetAt(0);
+        Sheet sheet = requireDocumentsSheet(workbook);
         Iterator<Row> rows = sheet.iterator();
 
         DataFormatter formatter = new DataFormatter();
@@ -104,7 +121,8 @@ public class GenericExcelParser {
 
         Row headerRow = nextRowOrNull(rows);
         if (headerRow == null || headerRow.getRowNum() != 0) {
-            throw new InvalidFileException("El archivo está vacío o la primera fila no contiene los encabezados.");
+            throw new InvalidFileException(
+                    "La hoja \"" + DOCUMENTS_SHEET_NAME + "\" está vacía o su primera fila no contiene los encabezados.");
         }
 
         Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerRow, formatter);
@@ -147,10 +165,17 @@ public class GenericExcelParser {
     private Map<String, Integer> buildHeaderIndexMap(Row headerRow, DataFormatter formatter) {
         Map<String, Integer> map = new HashMap<>();
         for (Cell cell : headerRow) {
-            String headerName = formatter.formatCellValue(cell).trim().toLowerCase();
-            if (!headerName.isBlank()) {
-                map.put(headerName, cell.getColumnIndex());
+            String rawHeader = formatter.formatCellValue(cell).trim();
+            if (rawHeader.isBlank()) {
+                continue;
             }
+            // Misma clave que la plantilla: minúsculas y trim; acentos y espacios internos no se normalizan (ARC-01).
+            String headerKey = rawHeader.toLowerCase();
+            if (map.containsKey(headerKey)) {
+                throw new InvalidFileException(
+                        "Archivo rechazado: el encabezado contiene la columna \"" + rawHeader + "\" más de una vez.");
+            }
+            map.put(headerKey, cell.getColumnIndex());
         }
         return map;
     }

@@ -32,8 +32,8 @@ const getRequestSuppliers = async (payerId, params) => {
 };
 
 /**
- * Genera el lote de una combinación y devuelve el Blob de su PDF.
- * payload: { payerId, originalFileName, groups: [{ dueDate, requestDate, disbursementDate }] } (un solo grupo)
+ * Genera lote(s) por combinación y devuelve el Blob: PDF si hay un grupo, ZIP si hay varios.
+ * payload: { payerId, originalFileName, groups: [{ dueDate, requestDate, disbursementDate }, ...] }
  */
 const generateBatch = async (payload) => {
   const response = await api.post(`${BASE_URL}/generate-batch`, payload, {

@@ -124,6 +124,7 @@ CREATE TABLE public.documents (
     status character varying(50) NOT NULL,
     updated_at timestamp(6) with time zone NOT NULL,
     master_agreement_id uuid NOT NULL,
+    supplier_id uuid NOT NULL,
     upload_batch_id uuid NOT NULL,
     quarantine_reason character varying(50),
     quarantined_at timestamp(6) with time zone,
@@ -488,6 +489,9 @@ ALTER TABLE ONLY public.bank_accounts
 ALTER TABLE ONLY public.entities
     ADD CONSTRAINT ukrh9g82kd3mu9d7ncd5r451aiu UNIQUE (nit);
 
+-- Nota: uk_credit_facilities_number se agrega en V29; base_v8 simula el esquema previo a las
+-- actualizaciones V9+ que InstalacionInicialScriptTest aplica en orden.
+
 ALTER TABLE ONLY public.upload_batches
     ADD CONSTRAINT upload_batches_pkey PRIMARY KEY (id);
 
@@ -498,7 +502,7 @@ CREATE UNIQUE INDEX uq_documents_control_number ON public.documents USING btree 
 
 CREATE UNIQUE INDEX uq_documents_generation_code ON public.documents USING btree (upper((generation_code)::text)) WHERE (generation_code IS NOT NULL);
 
-CREATE UNIQUE INDEX uq_documents_paper_number_year ON public.documents USING btree (master_agreement_id, document_number, EXTRACT(year FROM issue_date)) WHERE (((issuance_method)::text = 'PAPER'::text) AND (document_number IS NOT NULL));
+CREATE UNIQUE INDEX uq_documents_paper_number_year ON public.documents USING btree (supplier_id, upper(regexp_replace(document_number, '[[:space:]\-]+'::text, ''::text, 'g'::text)), EXTRACT(year FROM issue_date)) WHERE (((issuance_method)::text = 'PAPER'::text) AND (document_number IS NOT NULL));
 
 CREATE UNIQUE INDEX uq_documents_received_stamp ON public.documents USING btree (upper((received_stamp)::text)) WHERE (received_stamp IS NOT NULL);
 

@@ -34,6 +34,7 @@ import com.davivienda.factoraje.infrastructure.util.IdentifierNormalizer;
 import com.davivienda.factoraje.repository.ParameterRepository;
 import com.davivienda.factoraje.repository.PendingSessionRepository;
 import com.davivienda.factoraje.repository.UserRepository;
+import com.davivienda.factoraje.service.PendingSessionService;
 import com.davivienda.factoraje.service.SsoService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,6 +46,7 @@ public class SsoServiceImpl implements SsoService {
 
     private final ParameterRepository parameterRepository;
     private final PendingSessionRepository pendingSessionRepository;
+    private final PendingSessionService pendingSessionService;
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
     private final JwtService jwtService;
@@ -53,11 +55,13 @@ public class SsoServiceImpl implements SsoService {
             ParameterRepository parameterRepository,
             RestTemplate restTemplate,
             PendingSessionRepository pendingSessionRepository,
+            PendingSessionService pendingSessionService,
             UserRepository userRepository,
             JwtService jwtService) {
         this.parameterRepository = parameterRepository;
         this.restTemplate = restTemplate;
         this.pendingSessionRepository = pendingSessionRepository;
+        this.pendingSessionService = pendingSessionService;
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         log.info("SsoServiceImpl initialized");
@@ -206,20 +210,15 @@ public class SsoServiceImpl implements SsoService {
     @Override
     @Transactional
     public String activateSession(String sessionToken) {
+        // El borrado corre en REQUIRES_NEW: si la validación falla, el token ya no se puede reusar.
+        PendingSessionModel session = pendingSessionService.consume(sessionToken);
 
-        // 1. Buscar el token en la BD
-        PendingSessionModel session = pendingSessionRepository.findById(sessionToken)
-                .orElseThrow(() -> new RuntimeException("invalid_session"));
-
-        // 2. Borrarlo inmediatamente para que sea de un solo uso
-        pendingSessionRepository.delete(session);
-
-        // 3. Validar si ya había expirado (aunque lo encontremos, verificamos la hora)
         if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("session_expired");
         }
 
-        UserModel user = userRepository.findByEmail(IdentifierNormalizer.withoutSeparators(session.getUserEmail()))
+        // Misma norma que al registrar (requireEmail → solo trim): se conserva mayúsculas y guiones.
+        UserModel user = userRepository.findByEmail(IdentifierNormalizer.trimmed(session.getUserEmail()))
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no registrado en el sistema local."));
 
         if (user.getStatus() != GeneralStatusEnum.ACTIVE) {

@@ -1,17 +1,38 @@
-import React, { useState } from "react";
-import LoadingSpinner from "../LoadingSpinner.jsx";
+import React, { useCallback, useEffect, useRef } from "react";
 
-const matches = (payer, term) =>
-  !term ||
-  payer.name?.toLowerCase().includes(term) ||
-  payer.nit?.includes(term) ||
-  payer.code?.toLowerCase().includes(term);
+import { entityService } from "../../services/admin/entityService.js";
+import useServerPagination from "../../hooks/useServerPagination.js";
 
-/** Directorio de pagadores con búsqueda por nombre, NIT o código. Pensado para un contenedor rojo. */
-const PayerDirectory = ({ payers, isLoading, selectedPayerId, onSelect }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const term = searchTerm.trim().toLowerCase();
-  const filteredPayers = payers.filter((payer) => matches(payer, term));
+const PAGE_SIZE = 10;
+
+const logLoadError = (error) => console.error("Error al cargar el directorio de pagadores", error);
+
+/**
+ * Directorio de pagadores con búsqueda paginada en el servidor (nombre / NIT).
+ * Pensado para un contenedor rojo. Si `autoSelectFirst`, elige el primer resultado
+ * de la página 1 sin filtro cuando aún no hay selección.
+ */
+const PayerDirectory = ({ selectedPayerId, onSelect, autoSelectFirst = true }) => {
+  const fetchPayers = useCallback(
+    ({ search, page }) => entityService.getPayerSummaries({ search, page, size: PAGE_SIZE }),
+    [],
+  );
+
+  const { items, totalPages, isLoading, searchTerm, setSearchTerm, currentPage, setCurrentPage } = useServerPagination(
+    fetchPayers,
+    { onError: logLoadError },
+  );
+
+  const onSelectRef = useRef(onSelect);
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  });
+
+  useEffect(() => {
+    if (!autoSelectFirst || selectedPayerId || isLoading || items.length === 0) return;
+    if (searchTerm.trim() || currentPage !== 1) return;
+    onSelectRef.current(items[0]);
+  }, [autoSelectFirst, selectedPayerId, isLoading, items, searchTerm, currentPage]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -31,9 +52,10 @@ const PayerDirectory = ({ payers, isLoading, selectedPayerId, onSelect }) => {
           <input
             type="text"
             className="block w-full pl-10 pr-3 py-2 border border-red-500/50 rounded-lg leading-5 bg-red-900/40 text-white placeholder-red-300 focus:outline-none focus:bg-white focus:text-gray-900 focus:placeholder-gray-400 sm:text-sm transition-colors"
-            placeholder="Buscar por nombre, NIT o código..."
+            placeholder="Buscar por nombre o NIT..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Buscar pagador por nombre o NIT"
           />
         </div>
       </div>
@@ -43,20 +65,18 @@ const PayerDirectory = ({ payers, isLoading, selectedPayerId, onSelect }) => {
       <div className="flex-1 relative min-h-[300px]">
         <div className="absolute inset-0 overflow-y-auto pr-2 custom-scrollbar">
           {isLoading ? (
-            <div className="flex justify-center py-4">
-              <LoadingSpinner />
+            <div className="flex justify-center py-8" role="status" aria-label="Cargando pagadores">
+              <div className="h-8 w-8 rounded-full border-2 border-red-200 border-t-white animate-spin" />
             </div>
-          ) : payers.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="text-center py-6 text-red-200 text-sm bg-red-900/30 rounded-lg border border-red-800">
-              No hay pagadores registrados.
-            </div>
-          ) : filteredPayers.length === 0 ? (
-            <div className="text-center py-6 text-red-200 text-sm bg-red-900/30 rounded-lg border border-red-800">
-              No se encontraron pagadores que coincidan con &quot;{searchTerm}&quot;.
+              {searchTerm.trim()
+                ? `No se encontraron pagadores que coincidan con "${searchTerm}".`
+                : "No hay pagadores registrados."}
             </div>
           ) : (
             <div className="w-full space-y-2">
-              {filteredPayers.map((payer) => {
+              {items.map((payer) => {
                 const active = selectedPayerId === payer.id;
                 return (
                   <button
@@ -91,6 +111,30 @@ const PayerDirectory = ({ payers, isLoading, selectedPayerId, onSelect }) => {
           )}
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-3 flex items-center justify-between gap-2 text-[10px] text-red-100 flex-shrink-0">
+          <button
+            type="button"
+            disabled={currentPage <= 1 || isLoading}
+            onClick={() => setCurrentPage(currentPage - 1)}
+            className="px-2 py-1 rounded bg-red-900/40 hover:bg-red-900/70 disabled:opacity-40 cursor-pointer disabled:cursor-default"
+          >
+            Anterior
+          </button>
+          <span>
+            Página {currentPage} de {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={currentPage >= totalPages || isLoading}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className="px-2 py-1 rounded bg-red-900/40 hover:bg-red-900/70 disabled:opacity-40 cursor-pointer disabled:cursor-default"
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
     </div>
   );
 };

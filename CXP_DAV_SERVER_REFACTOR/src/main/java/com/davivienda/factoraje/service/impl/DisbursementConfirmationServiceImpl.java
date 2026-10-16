@@ -91,15 +91,6 @@ public class DisbursementConfirmationServiceImpl implements DisbursementConfirma
         return DisbursementBatchSummaryDTOResponse.fromEntity(saved, amountToDisburse);
     }
 
-    @Override
-    @Transactional
-    public void confirmDisbursement(List<UUID> documentIds, UUID confirmedById) {
-        markDisbursed(documentIds, findUser(confirmedById));
-        mailNotices.operatorChanged("Desembolsos",
-                documentIds.size() + " documento(s) pendientes de desembolso",
-                documentIds.size() + " documento(s) desembolsados");
-    }
-
     private static String statusLabel(DisbursementBatchStatusEnum status) {
         if (status == null) {
             return "—";
@@ -128,8 +119,8 @@ public class DisbursementConfirmationServiceImpl implements DisbursementConfirma
         for (DocumentModel doc : documents) {
             if (doc.getStatus() != DocumentStatusEnum.REQUESTED_FOR_DISBURSEMENT) {
                 log.warn("Intento de confirmación inválido. Documento {} en estado {}.",
-                        doc.getDocumentNumber(), doc.getStatus());
-                throw new DocumentNotAvailableException("El documento " + doc.getDocumentNumber() +
+                        doc.displayNumber(), doc.getStatus());
+                throw new DocumentNotAvailableException("El documento " + doc.displayNumber() +
                         " no está listo para ser desembolsado.");
             }
 
